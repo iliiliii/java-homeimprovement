@@ -54,6 +54,12 @@
             <artifactId>ruoyi-generator</artifactId>
         </dependency>
 
+        <!-- evs-home智能家居模块-->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>evs-home</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

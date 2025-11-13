@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.web.mapper.CustomersMapper">
+    
+    <resultMap type="Customers" id="CustomersResult">
+        <result property="id"    column="id"    />
+        <result property="name"    column="name"    />
+        <result property="phone"    column="phone"    />
+        <result property="email"    column="email"    />
+        <result property="address"    column="address"    />
+        <result property="level"    column="level"    />
+        <result property="source"    column="source"    />
+        <result property="remarks"    column="remarks"    />
+        <result property="avatar"    column="avatar"    />
+        <result property="isActive"    column="is_active"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+        <result property="deletedAt"    column="deleted_at"    />
+        <result property="createdBy"    column="created_by"    />
+        <result property="updatedBy"    column="updated_by"    />
+        <result property="deletedBy"    column="deleted_by"    />
+    </resultMap>
+
+    <sql id="selectCustomersVo">
+        select id, name, phone, email, address, level, source, remarks, avatar, is_active, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by from customers
+    </sql>
+
+    <select id="selectCustomersList" parameterType="Customers" resultMap="CustomersResult">
+        <include refid="selectCustomersVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
+            <if test="address != null  and address != ''"> and address = #{address}</if>
+            <if test="level != null  and level != ''"> and level = #{level}</if>
+            <if test="source != null  and source != ''"> and source = #{source}</if>
+            <if test="remarks != null  and remarks != ''"> and remarks = #{remarks}</if>
+            <if test="avatar != null  and avatar != ''"> and avatar = #{avatar}</if>
+            <if test="isActive != null "> and is_active = #{isActive}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+            <if test="updatedAt != null "> and updated_at = #{updatedAt}</if>
+            <if test="deletedAt != null "> and deleted_at = #{deletedAt}</if>
+            <if test="createdBy != null  and createdBy != ''"> and created_by = #{createdBy}</if>
+            <if test="updatedBy != null  and updatedBy != ''"> and updated_by = #{updatedBy}</if>
+            <if test="deletedBy != null  and deletedBy != ''"> and deleted_by = #{deletedBy}</if>
+        </where>
+    </select>
+    
+    <select id="selectCustomersById" parameterType="String" resultMap="CustomersResult">
+        <include refid="selectCustomersVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertCustomers" parameterType="Customers">
+        insert into customers
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="email != null">email,</if>
+            <if test="address != null">address,</if>
+            <if test="level != null">level,</if>
+            <if test="source != null">source,</if>
+            <if test="remarks != null">remarks,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="isActive != null">is_active,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+            <if test="deletedAt != null">deleted_at,</if>
+            <if test="createdBy != null">created_by,</if>
+            <if test="updatedBy != null">updated_by,</if>
+            <if test="deletedBy != null">deleted_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="email != null">#{email},</if>
+            <if test="address != null">#{address},</if>
+            <if test="level != null">#{level},</if>
+            <if test="source != null">#{source},</if>
+            <if test="remarks != null">#{remarks},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="isActive != null">#{isActive},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+            <if test="deletedAt != null">#{deletedAt},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            <if test="updatedBy != null">#{updatedBy},</if>
+            <if test="deletedBy != null">#{deletedBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCustomers" parameterType="Customers">
+        update customers
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="level != null">level = #{level},</if>
+            <if test="source != null">source = #{source},</if>
+            <if test="remarks != null">remarks = #{remarks},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="deletedAt != null">deleted_at = #{deletedAt},</if>
+            <if test="createdBy != null">created_by = #{createdBy},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            <if test="deletedBy != null">deleted_by = #{deletedBy},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCustomersById" parameterType="String">
+        delete from customers where id = #{id}
+    </delete>
+
+    <delete id="deleteCustomersByIds" parameterType="String">
+        delete from customers where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
