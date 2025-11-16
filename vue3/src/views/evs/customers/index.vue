@@ -17,53 +17,15 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="创建时间" prop="createdAt">
-        <el-date-picker clearable
-          v-model="queryParams.createdAt"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择创建时间">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item label="更新时间" prop="updatedAt">
-        <el-date-picker clearable
-          v-model="queryParams.updatedAt"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择更新时间">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item label="删除时间" prop="deletedAt">
-        <el-date-picker clearable
-          v-model="queryParams.deletedAt"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择删除时间">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item label="创建人" prop="createdBy">
-        <el-input
-          v-model="queryParams.createdBy"
-          placeholder="请输入创建人"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="更新人" prop="updatedBy">
-        <el-input
-          v-model="queryParams.updatedBy"
-          placeholder="请输入更新人"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="删除人" prop="deletedBy">
-        <el-input
-          v-model="queryParams.deletedBy"
-          placeholder="请输入删除人"
-          clearable
-          @keyup.enter="handleQuery"
-        />
+      <el-form-item label="客户等级" prop="level">
+        <el-select v-model="queryParams.level" placeholder="请选择客户等级" clearable>
+          <el-option
+            v-for="dict in user_level"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -119,29 +81,15 @@
       <el-table-column label="客户姓名" align="center" prop="name" />
       <el-table-column label="手机号" align="center" prop="phone" />
       <el-table-column label="地址" align="center" prop="address" />
-      <el-table-column label="客户等级" align="center" prop="level" />
+      <el-table-column label="客户等级" align="center" prop="level">
+        <template #default="scope">
+          <dict-tag :options="user_level" :value="scope.row.level"/>
+        </template>
+      </el-table-column>
       <el-table-column label="客户来源" align="center" prop="source" />
       <el-table-column label="备注" align="center" prop="remarks" />
       <el-table-column label="头像" align="center" prop="avatar" />
       <el-table-column label="是否启用" align="center" prop="isActive" />
-      <el-table-column label="创建时间" align="center" prop="createdAt" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createdAt, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="更新时间" align="center" prop="updatedAt" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.updatedAt, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="删除时间" align="center" prop="deletedAt" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.deletedAt, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建人" align="center" prop="createdBy" />
-      <el-table-column label="更新人" align="center" prop="updatedBy" />
-      <el-table-column label="删除人" align="center" prop="deletedBy" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['evs:customers:edit']">修改</el-button>
@@ -172,6 +120,16 @@
         </el-form-item>
         <el-form-item label="地址" prop="address">
           <el-input v-model="form.address" type="textarea" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="客户等级" prop="level">
+          <el-select v-model="form.level" placeholder="请选择客户等级">
+            <el-option
+              v-for="dict in user_level"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="备注" prop="remarks">
           <el-input v-model="form.remarks" type="textarea" placeholder="请输入内容" />
@@ -227,6 +185,7 @@
 import { listCustomers, getCustomers, delCustomers, addCustomers, updateCustomers } from "@/api/evs/customers"
 
 const { proxy } = getCurrentInstance()
+const { user_level } = proxy.useDict('user_level')
 
 const customersList = ref([])
 const open = ref(false)
@@ -251,12 +210,6 @@ const data = reactive({
     remarks: null,
     avatar: null,
     isActive: null,
-    createdAt: null,
-    updatedAt: null,
-    deletedAt: null,
-    createdBy: null,
-    updatedBy: null,
-    deletedBy: null
   },
   rules: {
     name: [
