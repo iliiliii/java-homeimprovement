@@ -1,0 +1,43 @@
+# 测试环境配置
+spring:
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ruoyi_test?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  # MyBatis配置
+  mybatis:
+    mapper-locations: classpath:mapper/**/*.xml
+    type-aliases-package: com.ruoyi.web.domain
+    configuration:
+      map-underscore-to-camel-case: true
+      cache-enabled: false
+
+  # 日志配置
+  output:
+    ansi:
+      enabled: always
+
+# 日志配置
+logging:
+  level:
+    com.ruoyi: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.test: DEBUG
+    com.ruoyi.web.mapper: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# 测试特定配置
+test:
+  database:
+    cleanup: true
+    auto-increment: true
