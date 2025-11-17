@@ -20,7 +20,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 DROP TABLE IF EXISTS `customers`;
 CREATE TABLE `customers` (
-  `id` VARCHAR(30) NOT NULL COMMENT '客户ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '客户ID',
   `name` VARCHAR(100) NOT NULL COMMENT '客户姓名',
   `phone` VARCHAR(20) NOT NULL COMMENT '手机号',
   `email` VARCHAR(255) COMMENT '邮箱',
@@ -50,9 +50,9 @@ CREATE TABLE `customers` (
 -- ----------------------------
 DROP TABLE IF EXISTS `projects`;
 CREATE TABLE `projects` (
-  `id` VARCHAR(30) NOT NULL COMMENT '项目ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '项目ID',
   `name` VARCHAR(200) NOT NULL COMMENT '项目名称',
-  `customer_id` VARCHAR(30) NOT NULL COMMENT '客户ID',
+  `customer_id` VARCHAR(32) NOT NULL COMMENT '客户ID',
   `project_code` VARCHAR(50) COMMENT '项目编号',
   `description` TEXT COMMENT '项目描述',
   `address` VARCHAR(500) NOT NULL COMMENT '项目地址',
@@ -88,8 +88,8 @@ CREATE TABLE `projects` (
 -- ----------------------------
 DROP TABLE IF EXISTS `project_members`;
 CREATE TABLE `project_members` (
-  `id` VARCHAR(30) NOT NULL COMMENT '成员ID',
-  `project_id` VARCHAR(30) NOT NULL COMMENT '项目ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '成员ID',
+  `project_id` VARCHAR(32) NOT NULL COMMENT '项目ID',
   `user_id` BIGINT(20) NOT NULL COMMENT '用户ID（关联sys_user）',
   `role` VARCHAR(20) NOT NULL COMMENT '项目角色（DESIGNER:设计师、PM:项目经理、WORKER:工长、SUPERVISOR:监理）',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
@@ -113,8 +113,8 @@ CREATE TABLE `project_members` (
 -- ----------------------------
 DROP TABLE IF EXISTS `project_contracts`;
 CREATE TABLE `project_contracts` (
-  `id` VARCHAR(30) NOT NULL COMMENT '合同ID',
-  `project_id` VARCHAR(30) NOT NULL COMMENT '项目ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '合同ID',
+  `project_id` VARCHAR(32) NOT NULL COMMENT '项目ID',
   `contract_no` VARCHAR(50) NOT NULL COMMENT '合同编号',
   `contract_amount` DECIMAL(15,2) NOT NULL COMMENT '合同金额',
   `payment_terms` TEXT COMMENT '付款条款',
@@ -138,8 +138,8 @@ CREATE TABLE `project_contracts` (
 -- ----------------------------
 DROP TABLE IF EXISTS `project_budgets`;
 CREATE TABLE `project_budgets` (
-  `id` VARCHAR(30) NOT NULL COMMENT '预算ID',
-  `project_id` VARCHAR(30) NOT NULL COMMENT '项目ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '预算ID',
+  `project_id` VARCHAR(32) NOT NULL COMMENT '项目ID',
   `total_budget` DECIMAL(15,2) NOT NULL COMMENT '总预算',
   `actual_cost` DECIMAL(15,2) DEFAULT 0.00 COMMENT '实际成本',
   `status` VARCHAR(20) NOT NULL DEFAULT 'DRAFT' COMMENT '预算状态',
@@ -158,8 +158,8 @@ CREATE TABLE `project_budgets` (
 -- ----------------------------
 DROP TABLE IF EXISTS `budget_items`;
 CREATE TABLE `budget_items` (
-  `id` VARCHAR(30) NOT NULL COMMENT '明细ID',
-  `budget_id` VARCHAR(30) NOT NULL COMMENT '预算ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '明细ID',
+  `budget_id` VARCHAR(32) NOT NULL COMMENT '预算ID',
   `category` VARCHAR(50) NOT NULL COMMENT '预算分类',
   `item_name` VARCHAR(200) NOT NULL COMMENT '项目名称',
   `planned_amount` DECIMAL(15,2) NOT NULL COMMENT '计划金额',
@@ -182,8 +182,8 @@ CREATE TABLE `budget_items` (
 -- ----------------------------
 DROP TABLE IF EXISTS `project_schedules`;
 CREATE TABLE `project_schedules` (
-  `id` VARCHAR(30) NOT NULL COMMENT '进度ID',
-  `project_id` VARCHAR(30) NOT NULL COMMENT '项目ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '进度ID',
+  `project_id` VARCHAR(32) NOT NULL COMMENT '项目ID',
   `stage` VARCHAR(20) NOT NULL COMMENT '施工阶段（DISMANTLING:拆除、WATER_ELECTRIC:水电、TILES:泥瓦、WOODWORK:木工、PAINTING:油漆、INSTALLATION:安装、SOFT_FURNISHING:软装、ACCEPTANCE:验收）',
   `stage_order` INT NOT NULL COMMENT '阶段顺序（1-8）',
   `plan_start_date` DATETIME COMMENT '计划开始日期',
@@ -211,8 +211,8 @@ CREATE TABLE `project_schedules` (
 -- ----------------------------
 DROP TABLE IF EXISTS `schedule_records`;
 CREATE TABLE `schedule_records` (
-  `id` VARCHAR(30) NOT NULL COMMENT '记录ID',
-  `schedule_id` VARCHAR(30) NOT NULL COMMENT '进度ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '记录ID',
+  `schedule_id` VARCHAR(32) NOT NULL COMMENT '进度ID',
   `record_type` VARCHAR(20) NOT NULL COMMENT '记录类型（START:开始、PROGRESS:进度更新、COMPLETE:完成、ISSUE:问题）',
   `completion_rate` DECIMAL(5,2) COMMENT '完成度百分比',
   `description` TEXT COMMENT '记录描述',
@@ -233,9 +233,9 @@ CREATE TABLE `schedule_records` (
 -- ----------------------------
 DROP TABLE IF EXISTS `quality_inspections`;
 CREATE TABLE `quality_inspections` (
-  `id` VARCHAR(30) NOT NULL COMMENT '质检ID',
-  `project_id` VARCHAR(30) NOT NULL COMMENT '项目ID',
-  `schedule_id` VARCHAR(30) COMMENT '关联进度ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '质检ID',
+  `project_id` VARCHAR(32) NOT NULL COMMENT '项目ID',
+  `schedule_id` VARCHAR(32) COMMENT '关联进度ID',
   `inspection_type` VARCHAR(50) NOT NULL COMMENT '质检类型',
   `title` VARCHAR(200) NOT NULL COMMENT '质检标题',
   `description` TEXT COMMENT '质检描述',
@@ -264,8 +264,8 @@ CREATE TABLE `quality_inspections` (
 -- ----------------------------
 DROP TABLE IF EXISTS `quality_issues`;
 CREATE TABLE `quality_issues` (
-  `id` VARCHAR(30) NOT NULL COMMENT '问题ID',
-  `inspection_id` VARCHAR(30) NOT NULL COMMENT '质检ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '问题ID',
+  `inspection_id` VARCHAR(32) NOT NULL COMMENT '质检ID',
   `title` VARCHAR(200) NOT NULL COMMENT '问题标题',
   `description` TEXT NOT NULL COMMENT '问题描述',
   `severity` VARCHAR(20) NOT NULL DEFAULT 'MEDIUM' COMMENT '严重程度',
@@ -296,8 +296,8 @@ CREATE TABLE `quality_issues` (
 -- ----------------------------
 DROP TABLE IF EXISTS `quality_fixes`;
 CREATE TABLE `quality_fixes` (
-  `id` VARCHAR(30) NOT NULL COMMENT '修复ID',
-  `issue_id` VARCHAR(30) NOT NULL COMMENT '问题ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '修复ID',
+  `issue_id` VARCHAR(32) NOT NULL COMMENT '问题ID',
   `fix_description` TEXT NOT NULL COMMENT '修复描述',
   `images` TEXT NOT NULL COMMENT '修复图片JSON',
   `status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '修复状态',
@@ -322,7 +322,7 @@ CREATE TABLE `quality_fixes` (
 -- ----------------------------
 DROP TABLE IF EXISTS `team_members`;
 CREATE TABLE `team_members` (
-  `id` VARCHAR(30) NOT NULL COMMENT '成员ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '成员ID',
   `user_id` BIGINT(20) NOT NULL COMMENT '用户ID（关联sys_user）',
   `member_name` VARCHAR(100) NOT COMMENT '成员姓名',
   `phone` VARCHAR(20) COMMENT '联系电话',
@@ -349,8 +349,8 @@ CREATE TABLE `team_members` (
 DROP TABLE IF EXISTS `file_uploads`;
 -- 文件上传表
 CREATE TABLE IF NOT EXISTS `file_uploads` (
-  `id` VARCHAR(30) NOT NULL COMMENT '文件ID (CUID)',
-  `uploader_id` VARCHAR(30) NOT NULL COMMENT '上传人ID',
+  `id` VARCHAR(32) NOT NULL COMMENT '文件ID (CUID)',
+  `uploader_id` VARCHAR(32) NOT NULL COMMENT '上传人ID',
   `uploader_name` VARCHAR(100) NOT NULL COMMENT '上传人姓名',
   `file_name` VARCHAR(255) NOT NULL COMMENT '文件名',
   `original_name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
@@ -362,12 +362,12 @@ CREATE TABLE IF NOT EXISTS `file_uploads` (
   `tags` TEXT NOT NULL DEFAULT '[]' COMMENT '标签JSON数组',
   `category` VARCHAR(50) COMMENT '分类',
   `description` TEXT COMMENT '描述',
-  `project_id` VARCHAR(30) COMMENT '项目ID',
+  `project_id` VARCHAR(32) COMMENT '项目ID',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted_at` DATETIME COMMENT '删除时间',
-  `updated_by` VARCHAR(30) COMMENT '更新人',
+  `updated_by` VARCHAR(32) COMMENT '更新人',
   PRIMARY KEY (`id`),
   KEY `idx_uploader_id` (`uploader_id`),
   KEY `idx_type` (`type`),
