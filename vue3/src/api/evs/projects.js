@@ -1,0 +1,44 @@
+import request from '@/utils/request'
+
+// 查询项目信息列表
+export function listProjects(query) {
+  return request({
+    url: '/evs/projects/list',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询项目信息详细
+export function getProjects(id) {
+  return request({
+    url: '/evs/projects/' + id,
+    method: 'get'
+  })
+}
+
+// 新增项目信息
+export function addProjects(data) {
+  return request({
+    url: '/evs/projects',
+    method: 'post',
+    data: data
+  })
+}
+
+// 修改项目信息
+export function updateProjects(data) {
+  return request({
+    url: '/evs/projects',
+    method: 'put',
+    data: data
+  })
+}
+
+// 删除项目信息
+export function delProjects(id) {
+  return request({
+    url: '/evs/projects/' + id,
+    method: 'delete'
+  })
+}
