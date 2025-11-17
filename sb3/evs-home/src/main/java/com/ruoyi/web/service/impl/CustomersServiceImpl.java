@@ -12,7 +12,7 @@ import com.ruoyi.common.utils.uuid.IdUtils;
  * 客户档案Service业务层处理
  * 
  * @author evs
- * @date 2025-11-16
+ * @date 2025-11-18
  */
 @Service
 public class CustomersServiceImpl implements ICustomersService 
@@ -94,5 +94,28 @@ public class CustomersServiceImpl implements ICustomersService
     public int deleteCustomersById(String id)
     {
         return customersMapper.deleteCustomersById(id);
+    }
+
+    @Override
+    public boolean checkPhoneExists(String phone, String excludeId)
+    {
+        if (phone == null || phone.trim().isEmpty())
+        {
+            return false;
+        }
+
+        Customers customer = customersMapper.selectCustomersByPhone(phone.trim());
+        if (customer == null)
+        {
+            return false;
+        }
+
+        // 如果指定了排除ID，且查询到的客户ID与排除ID相同，则不算重复
+        if (excludeId != null && !excludeId.trim().isEmpty() && excludeId.equals(customer.getId()))
+        {
+            return false;
+        }
+
+        return true;
     }
 }

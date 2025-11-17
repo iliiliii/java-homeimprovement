@@ -36,14 +36,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="level != null  and level != ''"> and level = #{level}</if>
             <if test="source != null  and source != ''"> and source = #{source}</if>
             <if test="remarks != null  and remarks != ''"> and remarks = #{remarks}</if>
-            <if test="avatar != null  and avatar != ''"> and avatar = #{avatar}</if>
-            <if test="isActive != null "> and is_active = #{isActive}</if>
         </where>
     </select>
     
     <select id="selectCustomersById" parameterType="String" resultMap="CustomersResult">
         <include refid="selectCustomersVo"/>
         where id = #{id}
+    </select>
+
+    <select id="selectCustomersByPhone" parameterType="String" resultMap="CustomersResult">
+        <include refid="selectCustomersVo"/>
+        where phone = #{phone}
+        limit 1
     </select>
 
     <insert id="insertCustomers" parameterType="Customers">

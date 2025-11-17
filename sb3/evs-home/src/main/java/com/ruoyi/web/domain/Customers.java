@@ -11,7 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 客户档案对象 customers
  * 
  * @author evs
- * @date 2025-11-16
+ * @date 2025-11-18
  */
 public class Customers extends BaseEntity
 {
@@ -48,14 +48,14 @@ public class Customers extends BaseEntity
     private String remarks;
 
     /** 头像 */
-    @Excel(name = "头像")
     private String avatar;
 
     /** 是否启用 */
-    @Excel(name = "是否启用")
     private Integer isActive;
 
     /** 创建时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Excel(name = "创建时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date createdAt;
 
     /** 更新时间 */

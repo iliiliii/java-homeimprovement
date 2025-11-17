@@ -25,7 +25,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * 客户档案Controller
  * 
  * @author evs
- * @date 2025-11-16
+ * @date 2025-11-18
  */
 @RestController
 @RequestMapping("/evs/customers")
@@ -100,5 +100,16 @@ public class CustomersController extends BaseController
     public AjaxResult remove(@PathVariable String[] ids)
     {
         return toAjax(customersService.deleteCustomersByIds(ids));
+    }
+
+    /**
+     * 检查手机号是否存在
+     */
+    @PreAuthorize("@ss.hasPermi('evs:customers:list')")
+    @GetMapping("/checkPhone/{phone}")
+    public AjaxResult checkPhone(@PathVariable("phone") String phone, String excludeId)
+    {
+        boolean exists = customersService.checkPhoneExists(phone, excludeId);
+        return success(exists);
     }
 }
