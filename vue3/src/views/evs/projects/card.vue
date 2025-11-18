@@ -321,34 +321,35 @@
       </template>
 
       <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
-        <el-space direction="vertical" :size="20" style="width: 100%;">
-          <!-- 项目设置操作 -->
-          <el-card size="small" shadow="never" style="background: #fff7e6; border: 1px solid #ffd591; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="flex: 1;">
-                <div style="font-weight: 600; margin-bottom: 8px;">
-                  <el-icon style="vertical-align: middle;"><Setting /></el-icon>
-                  <span style="margin-left: 10px; font-size: 16px;">项目设置</span>
-                </div>
-                <div style="font-size: 14px; color: #666;">管理项目预算、施工进度和项目信息</div>
+        <!-- 项目设置操作 - 独立撑满宽度 -->
+        <el-card size="small" shadow="never" style="background: #fff7e6; border: 1px solid #ffd591; margin-bottom: 20px; width: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; margin-bottom: 8px;">
+                <el-icon style="vertical-align: middle;"><Setting /></el-icon>
+                <span style="margin-left: 10px; font-size: 16px;">项目设置</span>
               </div>
-              <div style="flex: 2; display: flex; justify-content: flex-end; align-items: center; gap: 16px;">
-                <el-button size="default" @click="handleBudgetManagement(currentProject)" style="padding: 10px 20px;">
-                  <el-icon style="margin-right: 8px;"><Wallet /></el-icon>
-                  管理预算
-                </el-button>
-                <el-button size="default" @click="handleProgressManagement(currentProject)" style="padding: 10px 20px;">
-                  <el-icon style="margin-right: 8px;"><Clock /></el-icon>
-                  管理进度
-                </el-button>
-                <el-button size="default" type="primary" @click="handleUpdate(currentProject)" style="padding: 10px 24px;">
-                  <el-icon style="margin-right: 8px;"><Edit /></el-icon>
-                  编辑项目
-                </el-button>
-              </div>
+              <div style="font-size: 14px; color: #666;">管理项目预算、施工进度和项目信息</div>
             </div>
-          </el-card>
+            <div style="flex: 2; display: flex; justify-content: flex-end; align-items: center; gap: 16px;">
+              <el-button size="default" @click="handleBudgetManagement(currentProject)" style="padding: 10px 20px;">
+                <el-icon style="margin-right: 8px;"><Wallet /></el-icon>
+                管理预算
+              </el-button>
+              <el-button size="default" @click="handleProgressManagement(currentProject)" style="padding: 10px 20px;">
+                <el-icon style="margin-right: 8px;"><Clock /></el-icon>
+                管理进度
+              </el-button>
+              <el-button size="default" type="primary" @click="handleUpdate(currentProject)" style="padding: 10px 24px;">
+                <el-icon style="margin-right: 8px;"><Edit /></el-icon>
+                编辑项目
+              </el-button>
+            </div>
+          </div>
+        </el-card>
 
+        <!-- 其他信息卡片使用 el-space -->
+        <el-space direction="vertical" :size="20" style="width: 100%;">
           <!-- 项目基本信息 -->
           <el-card size="small" shadow="never" style="padding: 8px;">
             <template #header>
