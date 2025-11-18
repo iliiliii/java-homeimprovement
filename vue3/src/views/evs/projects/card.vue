@@ -320,55 +320,52 @@
         </div>
       </template>
 
-      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 4px;">
-        <el-space direction="vertical" :size="16" style="width: 100%;">
+      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
+        <el-space direction="vertical" :size="20" style="width: 100%;">
           <!-- 项目设置操作 -->
-          <el-card size="small" shadow="never" style="background: #fff7e6; border: 1px solid #ffd591;">
+          <el-card size="small" shadow="never" style="background: #fff7e6; border: 1px solid #ffd591; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <div style="font-weight: 600; margin-bottom: 4px;">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 8px;">
                   <el-icon style="vertical-align: middle;"><Setting /></el-icon>
-                  <span style="margin-left: 6px;">项目设置</span>
+                  <span style="margin-left: 10px; font-size: 16px;">项目设置</span>
                 </div>
-                <div style="font-size: 13px; color: #666;">管理项目预算、施工进度和团队成员</div>
+                <div style="font-size: 14px; color: #666;">管理项目预算、施工进度和项目信息</div>
               </div>
-              <el-space wrap>
-                <el-button size="small" @click="handleBudgetManagement(currentProject)">
-                  <el-icon><Wallet /></el-icon>
-                  <span>管理预算</span>
+              <div style="flex: 2; display: flex; justify-content: flex-end; align-items: center; gap: 16px;">
+                <el-button size="default" @click="handleBudgetManagement(currentProject)" style="padding: 10px 20px;">
+                  <el-icon style="margin-right: 8px;"><Wallet /></el-icon>
+                  管理预算
                 </el-button>
-                <el-button size="small" @click="handleProgressManagement(currentProject)">
-                  <el-icon><Clock /></el-icon>
-                  <span>管理进度</span>
+                <el-button size="default" @click="handleProgressManagement(currentProject)" style="padding: 10px 20px;">
+                  <el-icon style="margin-right: 8px;"><Clock /></el-icon>
+                  管理进度
                 </el-button>
-                <el-button size="small" type="primary" @click="handleUpdate(currentProject)">
-                  <el-icon><Edit /></el-icon>
-                  <span>编辑项目</span>
+                <el-button size="default" type="primary" @click="handleUpdate(currentProject)" style="padding: 10px 24px;">
+                  <el-icon style="margin-right: 8px;"><Edit /></el-icon>
+                  编辑项目
                 </el-button>
-              </el-space>
+              </div>
             </div>
           </el-card>
 
           <!-- 项目基本信息 -->
-          <el-card size="small" shadow="never">
+          <el-card size="small" shadow="never" style="padding: 8px;">
             <template #header>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <el-icon style="color: #1677ff; font-size: 16px;"><InfoFilled /></el-icon>
-                <span style="font-weight: 600;">项目基本信息</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <el-icon style="color: #1677ff; font-size: 18px;"><InfoFilled /></el-icon>
+                <span style="font-weight: 600; font-size: 15px;">项目基本信息</span>
               </div>
             </template>
-            <el-descriptions :column="2" size="small" border>
+            <el-descriptions :column="3" size="default" border>
               <el-descriptions-item label="项目名称" :span="2">
                 <span style="font-weight: 600;">{{ currentProject.name }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="项目编号">
-                {{ currentProject.projectCode || '-' }}
               </el-descriptions-item>
               <el-descriptions-item label="项目状态">
                 <dict-tag :options="project_status" :value="currentProject.status" />
               </el-descriptions-item>
-              <el-descriptions-item label="工地地址" :span="2">
-                {{ currentProject.address || '-' }}
+              <el-descriptions-item label="项目编号">
+                {{ currentProject.projectCode || '-' }}
               </el-descriptions-item>
               <el-descriptions-item label="工地面积">
                 {{ currentProject.area ? currentProject.area + '㎡' : '-' }}
@@ -384,70 +381,83 @@
                 </el-link>
                 <span v-else>{{ currentProject.customerId }}</span>
               </el-descriptions-item>
+              <el-descriptions-item label="工地地址" :span="3">
+                {{ currentProject.address || '-' }}
+              </el-descriptions-item>
               <el-descriptions-item label="开始日期">
                 {{ parseTime(currentProject.startDate, '{y}-{m}-{d}') }}
               </el-descriptions-item>
               <el-descriptions-item label="预计完工">
                 {{ parseTime(currentProject.endDate, '{y}-{m}-{d}') }}
               </el-descriptions-item>
-              <el-descriptions-item label="实际完工" :span="2">
+              <el-descriptions-item label="实际完工">
                 {{ currentProject.actualEndDate ? parseTime(currentProject.actualEndDate, '{y}-{m}-{d}') : '进行中' }}
               </el-descriptions-item>
-              <el-descriptions-item label="项目描述" :span="2">
+              <el-descriptions-item label="项目描述" :span="3">
                 {{ currentProject.description || '-' }}
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
 
           <!-- 项目预算 -->
-          <el-card size="small" shadow="never">
+          <el-card size="small" shadow="never" style="padding: 8px;">
             <template #header>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <el-icon style="color: #faad14; font-size: 16px;"><Coin /></el-icon>
-                <span style="font-weight: 600;">项目预算</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <el-icon style="color: #faad14; font-size: 18px;"><Coin /></el-icon>
+                <span style="font-weight: 600; font-size: 15px;">项目预算</span>
               </div>
             </template>
             <div v-if="currentProject.budget && currentProject.budget > 0">
-              <el-row :gutter="16" style="margin-bottom: 12px;">
-                <el-col :span="12">
-                  <el-card size="small" shadow="never" style="background: #fafafa;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <span style="font-size: 13px;">总预算</span>
-                      <span style="font-weight: 600; color: #faad14; font-size: 14px;">
+              <el-row :gutter="16" style="margin-bottom: 16px;">
+                <el-col :span="8">
+                  <el-card size="small" shadow="never" style="background: #fafafa; height: 100%;">
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px 0;">
+                      <div style="font-size: 13px; color: #666; margin-bottom: 6px;">总预算</div>
+                      <div style="font-weight: 600; color: #faad14; font-size: 18px;">
                         ¥{{ formatBudget(currentProject.budget) }}万
-                      </span>
+                      </div>
                     </div>
                   </el-card>
                 </el-col>
-                <el-col :span="12">
-                  <el-card size="small" shadow="never" style="background: #fafafa;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <span style="font-size: 13px;">已支出</span>
-                      <span style="font-weight: 600; color: #faad14; font-size: 14px;">
+                <el-col :span="8">
+                  <el-card size="small" shadow="never" style="background: #fafafa; height: 100%;">
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px 0;">
+                      <div style="font-size: 13px; color: #666; margin-bottom: 6px;">已支出</div>
+                      <div style="font-weight: 600; color: #faad14; font-size: 18px;">
                         ¥{{ formatBudget(currentProject.actualCost || 0) }}万
-                      </span>
+                      </div>
+                    </div>
+                  </el-card>
+                </el-col>
+                <el-col :span="8">
+                  <el-card size="small" shadow="never" style="background: #f0f9ff; height: 100%;">
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px 0;">
+                      <div style="font-size: 13px; color: #666; margin-bottom: 6px;">使用率</div>
+                      <div style="font-weight: 600; color: #1677ff; font-size: 18px;">
+                        {{ calculateProgress(currentProject.actualCost || 0, currentProject.budget) }}%
+                      </div>
                     </div>
                   </el-card>
                 </el-col>
               </el-row>
-              <el-card size="small" shadow="never" style="background: #fff7e6; border-color: #faad14;">
-                <div style="margin-bottom: 8px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 16px; font-weight: 600;">预算总额</span>
-                    <span style="color: #faad14; font-size: 20px; font-weight: 600;">
-                      ¥{{ formatBudget(currentProject.budget) }}万
-                    </span>
-                  </div>
-                  <el-progress
-                    :percentage="calculateProgress(currentProject.actualCost || 0, currentProject.budget)"
-                    :stroke-width="12"
-                  />
-                  <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px;">
-                    <span style="color: #666;">剩余预算</span>
-                    <span :style="{ color: (currentProject.budget - (currentProject.actualCost || 0)) >= 0 ? '#52c41a' : '#ff4d4f', fontWeight: 600 }">
-                      ¥{{ formatBudget((currentProject.budget || 0) - (currentProject.actualCost || 0)) }}万
-                    </span>
-                  </div>
+              <el-card size="small" shadow="never" style="background: #fff7e6; border-color: #faad14; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span style="font-size: 16px; font-weight: 600;">预算执行情况</span>
+                  <span style="color: #faad14; font-size: 20px; font-weight: 600;">
+                    ¥{{ formatBudget(currentProject.budget) }}万
+                  </span>
+                </div>
+                <el-progress
+                  :percentage="calculateProgress(currentProject.actualCost || 0, currentProject.budget)"
+                  :stroke-width="14"
+                  :show-text="false"
+                  style="margin-bottom: 12px;"
+                />
+                <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                  <span style="color: #666;">剩余预算</span>
+                  <span :style="{ color: (currentProject.budget - (currentProject.actualCost || 0)) >= 0 ? '#52c41a' : '#ff4d4f', fontWeight: 600, fontSize: '15px' }">
+                    ¥{{ formatBudget((currentProject.budget || 0) - (currentProject.actualCost || 0)) }}万
+                  </span>
                 </div>
               </el-card>
             </div>
@@ -457,34 +467,50 @@
           </el-card>
 
           <!-- 项目进度 -->
-          <el-card size="small" shadow="never" v-if="currentProject.progress !== undefined">
+          <el-card size="small" shadow="never" v-if="currentProject.progress !== undefined" style="padding: 8px;">
             <template #header>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <el-icon style="color: #52c41a; font-size: 16px;"><TrendCharts /></el-icon>
-                <span style="font-weight: 600;">项目进度</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <el-icon style="color: #52c41a; font-size: 18px;"><TrendCharts /></el-icon>
+                <span style="font-weight: 600; font-size: 15px;">项目进度</span>
               </div>
             </template>
             <el-row :gutter="16">
-              <el-col :span="8">
-                <el-card size="small" shadow="never" style="text-align: center; background: #f0f5ff;">
-                  <div style="font-size: 24px; font-weight: bold; color: #1677ff;">{{ currentProject.progress || 0 }}%</div>
-                  <div style="font-size: 12px; color: #666; margin-top: 4px;">完成进度</div>
+              <el-col :span="6">
+                <el-card size="small" shadow="never" style="text-align: center; background: #f0f5ff; height: 100%;">
+                  <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px 8px;">
+                    <div style="font-size: 28px; font-weight: bold; color: #1677ff; margin-bottom: 8px;">{{ currentProject.progress || 0 }}%</div>
+                    <div style="font-size: 13px; color: #666;">完成进度</div>
+                  </div>
                 </el-card>
               </el-col>
-              <el-col :span="8">
-                <el-card size="small" shadow="never" style="text-align: center; background: #f6ffed;">
-                  <div style="font-size: 24px; font-weight: bold; color: #52c41a;">
-                    <dict-tag :options="project_status" :value="currentProject.status" />
+              <el-col :span="6">
+                <el-card size="small" shadow="never" style="text-align: center; background: #f6ffed; height: 100%;">
+                  <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px 8px;">
+                    <div style="font-size: 20px; font-weight: bold; color: #52c41a; margin-bottom: 8px;">
+                      <dict-tag :options="project_status" :value="currentProject.status" />
+                    </div>
+                    <div style="font-size: 13px; color: #666;">当前状态</div>
                   </div>
-                  <div style="font-size: 12px; color: #666; margin-top: 4px;">当前状态</div>
                 </el-card>
               </el-col>
-              <el-col :span="8">
-                <el-card size="small" shadow="never" style="text-align: center; background: #fff7e6;">
-                  <div style="font-size: 18px; font-weight: bold; color: #fa8c16;">
-                    {{ currentProject.actualEndDate ? parseTime(currentProject.actualEndDate, '{y}-{m}-{d}') : '进行中' }}
+              <el-col :span="6">
+                <el-card size="small" shadow="never" style="text-align: center; background: #fff7e6; height: 100%;">
+                  <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px 8px;">
+                    <div style="font-size: 16px; font-weight: bold; color: #fa8c16; margin-bottom: 8px;">
+                      {{ currentProject.actualEndDate ? parseTime(currentProject.actualEndDate, '{y}-{m}-{d}') : '进行中' }}
+                    </div>
+                    <div style="font-size: 13px; color: #666;">实际完工</div>
                   </div>
-                  <div style="font-size: 12px; color: #666; margin-top: 4px;">实际完工</div>
+                </el-card>
+              </el-col>
+              <el-col :span="6">
+                <el-card size="small" shadow="never" style="text-align: center; background: #f9f0ff; height: 100%;">
+                  <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px 8px;">
+                    <div style="font-size: 16px; font-weight: bold; color: #722ed1; margin-bottom: 8px;">
+                      {{ calculateDaysRemaining(currentProject.endDate, currentProject.actualEndDate) }}
+                    </div>
+                    <div style="font-size: 13px; color: #666;">剩余天数</div>
+                  </div>
                 </el-card>
               </el-col>
             </el-row>
@@ -843,6 +869,29 @@ function calculateProgress(actual, total) {
   if (!total || total === 0) return 0
   const percent = (actual / total) * 100
   return Math.min(Math.round(percent), 100)
+}
+
+/** 计算剩余天数 */
+function calculateDaysRemaining(endDate, actualEndDate) {
+  if (actualEndDate) {
+    // 如果有实际完工日期，显示"已完成"
+    return "已完成"
+  }
+  if (!endDate) {
+    return "未设置"
+  }
+  const today = new Date()
+  const end = new Date(endDate)
+  const diffTime = end - today
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) {
+    return `逾期${Math.abs(diffDays)}天`
+  } else if (diffDays === 0) {
+    return "今日到期"
+  } else {
+    return `${diffDays}天`
+  }
 }
 
 /** 查看项目详情 */
