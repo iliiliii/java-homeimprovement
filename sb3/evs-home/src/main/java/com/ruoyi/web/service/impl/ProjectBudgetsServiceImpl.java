@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.ProjectBudgetsMapper;
 import com.ruoyi.web.domain.ProjectBudgets;
 import com.ruoyi.web.service.IProjectBudgetsService;
+import com.ruoyi.common.utils.uuid.IdUtils;
 
 /**
  * 项目预算Service业务层处理
@@ -52,6 +53,10 @@ public class ProjectBudgetsServiceImpl implements IProjectBudgetsService
     @Override
     public int insertProjectBudgets(ProjectBudgets projectBudgets)
     {
+        // 如果 id 为空，自动生成 UUID
+        if (projectBudgets.getId() == null || projectBudgets.getId().isEmpty()) {
+            projectBudgets.setId(IdUtils.fastSimpleUUID());
+        }
         return projectBudgetsMapper.insertProjectBudgets(projectBudgets);
     }
 

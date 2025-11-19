@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.ProjectMembersMapper;
 import com.ruoyi.web.domain.ProjectMembers;
 import com.ruoyi.web.service.IProjectMembersService;
+import com.ruoyi.common.utils.uuid.IdUtils;
 
 /**
  * 项目成员Service业务层处理
@@ -52,6 +53,10 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
     @Override
     public int insertProjectMembers(ProjectMembers projectMembers)
     {
+        // 如果 id 为空，自动生成 UUID
+        if (projectMembers.getId() == null || projectMembers.getId().isEmpty()) {
+            projectMembers.setId(IdUtils.fastSimpleUUID());
+        }
         return projectMembersMapper.insertProjectMembers(projectMembers);
     }
 
