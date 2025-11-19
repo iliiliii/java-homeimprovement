@@ -87,7 +87,10 @@
                   {{ project.address }}
                 </div>
               </div>
-              <dict-tag :options="project_status" :value="project.status" style="margin-left: 8px; flex-shrink: 0;"/>
+              
+              <el-tag  style="margin-left: 8px; flex-shrink: 0;">
+                <dict-tag v-if="project.status" :options="project_status" :value="project.status" />
+              </el-tag>
             </div>
           </template>
 
@@ -151,7 +154,7 @@
 
           <!-- 卡片底部操作按钮 -->
           <template #footer>
-            <div style="display: flex; justify-content: space-around; gap: 4px;">
+            <div style="display: flex; justify-content: space-around; gap: 8px; margin-top: 4px;">
               <el-button
                 type="primary"
                 link
@@ -201,6 +204,7 @@
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
+      style="margin-top: 16px;"
     />
 
     <!-- 添加或修改项目信息对话框 -->
@@ -616,6 +620,7 @@
       width="900px"
       append-to-body
       :show-close="true"
+      :close-on-click-modal="false"
       class="project-budget-dialog"
     >
       <template #header>
@@ -625,178 +630,15 @@
         </div>
       </template>
 
-      <el-space direction="vertical" :size="20" style="width: 100%;">
-        <!-- 预算总额显示 -->
-        <div
-          style="
-            background: #fff7e6;
-            border: 1px solid #ffd591;
-            border-radius: 8px;
-            padding: 16px;
-            text-align: center;
-          "
-        >
-          <div style="font-size: 14px; color: #999; margin-bottom: 8px;">预算总额</div>
-          <div style="font-size: 32px; color: #faad14; font-weight: bold;">
-            ¥{{ totalBudgetAmount.toLocaleString() }}
-          </div>
-          <div style="font-size: 12px; color: #999; margin-top: 8px;">
-            {{ budgetItems.length }} 个预算项
-          </div>
-        </div>
+      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
+        <ProjectBudget
+          v-if="currentBudgetProject"
+          :project="currentBudgetProject"
+          @save="handleSaveBudget"
+        />
+      </div>
 
-        <!-- 预算列表表格 -->
-        <el-table
-          :data="budgetItems"
-          size="small"
-          :show-header="true"
-          empty-text="暂无预算项，请点击下方按钮添加"
-          style="width: 100%"
-        >
-          <el-table-column prop="category" label="预算类别" width="25%" />
-          <el-table-column prop="amount" label="预算金额" width="25%">
-            <template #default="scope">
-              <span style="color: #faad14; font-weight: bold;">
-                ¥{{ scope.row.amount.toLocaleString() }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="description" label="说明" width="35%">
-            <template #default="scope">
-              <span v-if="scope.row.description">{{ scope.row.description }}</span>
-              <span v-else style="color: #999;">-</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="15%">
-            <template #default="scope">
-              <el-space size="small">
-                <el-button
-                  type="primary"
-                  link
-                  size="small"
-                  @click="handleEditBudgetItem(scope.row)"
-                  :disabled="editingBudgetItem?.id === scope.row.id"
-                >
-                  编辑
-                </el-button>
-                <el-popconfirm
-                  title="确认删除"
-                  description="确定要删除这项预算吗？"
-                  @confirm="handleDeleteBudgetItem(scope.row.id)"
-                  confirm-button-text="确定"
-                  cancel-button-text="取消"
-                >
-                  <template #reference>
-                    <el-button
-                      type="danger"
-                      link
-                      size="small"
-                      :disabled="editingBudgetItem?.id === scope.row.id"
-                    >
-                      删除
-                    </el-button>
-                  </template>
-                </el-popconfirm>
-              </el-space>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <!-- 添加/编辑预算表单 -->
-        <div
-          v-if="isAddingBudget || editingBudgetItem"
-          :style="{
-            background: editingBudgetItem ? '#e6f7ff' : '#f5f5f5',
-            padding: '20px',
-            borderRadius: '8px',
-            border: editingBudgetItem ? '2px solid #1677ff' : '1px solid #d9d9d9',
-          }"
-        >
-          <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-            <span :style="{ fontWeight: 'bold', fontSize: '15px', color: editingBudgetItem ? '#1677ff' : '#000' }">
-              {{ editingBudgetItem ? '📝 编辑预算项' : '➕ 添加预算项' }}
-            </span>
-            <span v-if="editingBudgetItem" style="font-size: 12px; color: #666;">
-              正在编辑：{{ editingBudgetItem.category }}
-            </span>
-          </div>
-
-          <el-form :model="budgetItemForm" label-position="top">
-            <el-space direction="vertical" :size="16" style="width: 100%;">
-              <el-space :size="16" style="width: 100%;">
-                <el-form-item label="预算类别" style="flex: 1; margin-bottom: 0;">
-                  <el-select
-                    v-model="budgetItemForm.category"
-                    placeholder="选择预算类别"
-                    size="large"
-                    style="width: 100%"
-                  >
-                    <el-option value="拆除工程" label="拆除工程" />
-                    <el-option value="水电安装" label="水电安装" />
-                    <el-option value="泥瓦工程" label="泥瓦工程" />
-                    <el-option value="木工工程" label="木工工程" />
-                    <el-option value="油漆工程" label="油漆工程" />
-                    <el-option value="材料费" label="材料费" />
-                    <el-option value="人工费" label="人工费" />
-                    <el-option value="管理费" label="管理费" />
-                    <el-option value="其他" label="其他" />
-                  </el-select>
-                </el-form-item>
-
-                <el-form-item label="预算金额" style="flex: 1; margin-bottom: 0;">
-                  <el-input-number
-                    v-model="budgetItemForm.amount"
-                    placeholder="输入预算金额"
-                    size="large"
-                    :min="0"
-                    style="width: 100%"
-                    :formatter="(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                    :parser="(value) => value.replace(/¥\s?|(,*)/g, '')"
-                  />
-                </el-form-item>
-              </el-space>
-
-              <el-form-item label="说明（可选）" style="margin-bottom: 0;">
-                <el-input
-                  v-model="budgetItemForm.description"
-                  placeholder="输入预算说明"
-                  size="large"
-                />
-              </el-form-item>
-
-              <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
-                <el-button size="large" @click="handleCancelBudgetEdit">取消</el-button>
-                <el-button
-                  type="primary"
-                  size="large"
-                  :style="{ minWidth: '100px' }"
-                  @click="editingBudgetItem ? handleUpdateBudgetItem() : handleAddBudgetItem()"
-                >
-                  {{ editingBudgetItem ? '确认修改' : '确认添加' }}
-                </el-button>
-              </div>
-            </el-space>
-          </el-form>
-        </div>
-
-        <!-- 添加预算项按钮 -->
-        <el-button
-          v-else
-          type="dashed"
-          style="width: 100%"
-          @click="handleStartAddBudget"
-        >
-          <el-icon><Plus /></el-icon>
-          添加预算项
-        </el-button>
-      </el-space>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="budgetOpen = false">取消</el-button>
-          <el-button type="primary" @click="handleSaveBudgetItems">保存预算</el-button>
-        </div>
-      </template>
+      <!-- 预算管理对话框不需要footer，通过组件内部操作关闭 -->
     </el-dialog>
 
     <!-- 进度管理对话框 -->
@@ -805,6 +647,7 @@
       width="900px"
       append-to-body
       :show-close="true"
+      :close-on-click-modal="false"
       class="project-progress-dialog"
     >
       <template #header>
@@ -814,192 +657,15 @@
         </div>
       </template>
 
-      <el-space direction="vertical" :size="20" style="width: 100%;">
-        <!-- 进度统计 -->
-        <div
-          style="
-            background: #f0f5ff;
-            border: 1px solid #adc6ff;
-            border-radius: 8px;
-            padding: 16px;
-          "
-        >
-          <el-space :size="20" style="width: 100%; justify-content: space-around;">
-            <div style="text-align: center;">
-              <div style="font-size: 14px; color: #999;">总阶段</div>
-              <div style="font-size: 28px; color: #1677ff; font-weight: bold; margin-top: 4px;">
-                {{ timelineItems.length }}
-              </div>
-            </div>
-            <div style="text-align: center;">
-              <div style="font-size: 14px; color: #999;">已完成</div>
-              <div style="font-size: 28px; color: #52c41a; font-weight: bold; margin-top: 4px;">
-                {{ completedCount }}
-              </div>
-            </div>
-            <div style="text-align: center;">
-              <div style="font-size: 14px; color: #999;">进行中</div>
-              <div style="font-size: 28px; color: #1677ff; font-weight: bold; margin-top: 4px;">
-                {{ inProgressCount }}
-              </div>
-            </div>
-            <div style="text-align: center;">
-              <div style="font-size: 14px; color: #999;">完成度</div>
-              <div style="font-size: 28px; color: #722ed1; font-weight: bold; margin-top: 4px;">
-                {{ calculateTimelinePercentage(completedCount, timelineItems.length) }}%
-              </div>
-            </div>
-          </el-space>
-        </div>
+      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
+        <ProjectProgress
+          v-if="currentProgressProject"
+          :project="currentProgressProject"
+          @save="handleSaveProgress"
+        />
+      </div>
 
-        <!-- 施工时间轴 -->
-        <div v-if="timelineItems.length > 0" style="max-height: 400px; overflow-y: auto; padding: 0 16px;">
-          <el-timeline>
-            <el-timeline-item
-              v-for="item in timelineItems"
-              :key="item.id"
-              :color="item.status === 'completed' ? '#52c41a' : item.status === 'inProgress' ? '#1677ff' : '#d9d9d9'"
-              :icon="getTimelineIcon(item.status)"
-            >
-              <div
-                style="
-                  background: #fafafa;
-                  padding: 12px;
-                  border-radius: 8px;
-                  margin-bottom: 12px;
-                "
-              >
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <div style="flex: 1;">
-                    <div style="margin-bottom: 8px;">
-                      <span style="font-size: 15px; font-weight: bold; margin-right: 8px;">
-                        {{ item.title }}
-                      </span>
-                      <el-tag :color="getTimelineStatusConfig(item.status).color" size="small">
-                        {{ getTimelineStatusConfig(item.status).label }}
-                      </el-tag>
-                    </div>
-                    <div style="color: #666; margin-bottom: 8px;">{{ item.description }}</div>
-                    <div style="font-size: 13px; color: #999;">
-                      <el-icon style="vertical-align: middle; margin-right: 4px;"><Calendar /></el-icon>
-                      {{ item.date }}
-                    </div>
-                  </div>
-                  <el-space>
-                    <el-select
-                      :model-value="item.status"
-                      size="small"
-                      style="width: 100px;"
-                      @change="(status) => handleUpdateTimelineStatus(item.id, status)"
-                    >
-                      <el-option value="pending" label="待开始" />
-                      <el-option value="inProgress" label="进行中" />
-                      <el-option value="completed" label="已完成" />
-                    </el-select>
-                    <el-popconfirm
-                      title="确认删除"
-                      description="确定要删除这个施工阶段吗？"
-                      @confirm="handleDeleteTimelineItem(item.id)"
-                      confirm-button-text="确定"
-                      cancel-button-text="取消"
-                    >
-                      <template #reference>
-                        <el-button
-                          type="danger"
-                          link
-                          size="small"
-                          icon="Delete"
-                        />
-                      </template>
-                    </el-popconfirm>
-                  </el-space>
-                </div>
-              </div>
-            </el-timeline-item>
-          </el-timeline>
-        </div>
-
-        <!-- 添加施工阶段表单 -->
-        <div
-          v-if="isAddingTimeline"
-          style="
-            background: #f5f5f5;
-            padding: 16px;
-            border-radius: 8px;
-          "
-        >
-          <el-form :model="timelineForm" label-position="top">
-            <el-form-item label="施工阶段" required>
-              <el-select
-                v-model="timelineForm.title"
-                placeholder="选择施工阶段"
-                size="large"
-                style="width: 100%"
-              >
-                <el-option value="基础工程" label="基础工程" />
-                <el-option value="安装工程" label="安装工程" />
-                <el-option value="泥瓦工程" label="泥瓦工程" />
-                <el-option value="木工工程" label="木工工程" />
-                <el-option value="油漆工程" label="油漆工程" />
-                <el-option value="收尾工程" label="收尾工程" />
-              </el-select>
-            </el-form-item>
-
-            <el-form-item label="阶段说明" required>
-              <el-input
-                v-model="timelineForm.description"
-                type="textarea"
-                :rows="3"
-                placeholder="描述该阶段的工作内容"
-              />
-            </el-form-item>
-
-            <el-space :size="20" style="width: 100%;">
-              <el-form-item label="计划日期" required style="margin-bottom: 0; flex: 1;">
-                <el-date-picker
-                  v-model="timelineForm.date"
-                  placeholder="选择日期"
-                  value-format="YYYY-MM-DD"
-                  style="width: 100%"
-                />
-              </el-form-item>
-
-              <el-form-item label="当前状态" style="margin-bottom: 0; width: 120px;">
-                <el-select v-model="timelineForm.status" style="width: 100%">
-                  <el-option value="pending" label="待开始" />
-                  <el-option value="inProgress" label="进行中" />
-                  <el-option value="completed" label="已完成" />
-                </el-select>
-              </el-form-item>
-            </el-space>
-
-            <div style="margin-top: 16px;">
-              <el-space>
-                <el-button type="primary" @click="handleAddTimelineItem">确认添加</el-button>
-                <el-button @click="handleCancelTimelineEdit">取消</el-button>
-              </el-space>
-            </div>
-          </el-form>
-        </div>
-
-        <!-- 添加施工阶段按钮 -->
-        <el-button
-          v-else
-          type="dashed"
-          style="width: 100%"
-          @click="handleStartAddTimeline"
-        >
-          <el-icon><Plus /></el-icon>
-          添加施工阶段
-        </el-button>
-      </el-space>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="progressOpen = false">取消</el-button>
-          <el-button type="primary" @click="handleSaveTimelineItems">保存进度</el-button>
-        </div>
-      </template>
+      <!-- 进度管理对话框不需要footer，通过组件内部操作关闭 -->
     </el-dialog>
   </div>
 </template>
@@ -1008,6 +674,8 @@
 import { listProjects, getProjects, delProjects, addProjects, updateProjects } from "@/api/evs/projects"
 import { listCustomers } from "@/api/evs/customers"
 import { useRouter } from 'vue-router'
+import ProjectProgress from './components/ProjectProgress.vue'
+import ProjectBudget from './components/ProjectBudget.vue'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()
@@ -1032,35 +700,10 @@ const currentProject = ref({})
 // 预算管理弹窗
 const budgetOpen = ref(false)
 const currentBudgetProject = ref({})
-const budgetItems = ref([]) // 预算条目数组
-const isAddingBudget = ref(false)
-const editingBudgetItem = ref(null)
-const budgetItemForm = ref({
-  category: '',
-  amount: null,
-  description: ''
-})
 
 // 进度管理弹窗
 const progressOpen = ref(false)
 const currentProgressProject = ref({})
-const timelineItems = ref([]) // 时间轴条目数组
-const isAddingTimeline = ref(false)
-const timelineForm = ref({
-  title: '',
-  description: '',
-  date: '',
-  status: 'pending'
-})
-
-// 计算统计数据
-const completedCount = computed(() => {
-  return timelineItems.value.filter(t => t.status === 'completed').length
-})
-
-const inProgressCount = computed(() => {
-  return timelineItems.value.filter(t => t.status === 'inProgress').length
-})
 
 const data = reactive({
   form: {},
@@ -1093,12 +736,7 @@ const { queryParams, form, rules } = toRefs(data)
 // 判断是否为编辑模式
 const isEdit = computed(() => form.value.id != null)
 
-// 计算预算总额
-const totalBudgetAmount = computed(() => {
-  return budgetItems.value.reduce((sum, item) => sum + (item.amount || 0), 0)
-})
-
-// 时间轴状态配置
+// 时间轴状态配置（用于详情弹窗显示）
 const timelineStatusConfig = {
   pending: { label: '待开始', color: '' },
   inProgress: { label: '进行中', color: 'primary' },
@@ -1120,13 +758,6 @@ function getTimelineIcon(status) {
     default:
       return ''
   }
-}
-
-// 计算时间轴完成百分比
-function calculateTimelinePercentage(completed, total) {
-  if (total === 0) return 0
-  const percent = (completed / total) * 100
-  return Math.min(Math.round(percent), 100)
 }
 
 /** 查询项目信息列表 */
@@ -1347,125 +978,11 @@ function handleViewDetail(project) {
 /** 预算管理 */
 function handleBudgetManagement(project) {
   currentBudgetProject.value = project
-  // 加载项目的预算条目（这里暂时使用模拟数据，后续需要从API加载）
-  budgetItems.value = project.budgetItems || []
-  resetBudgetForm()
   budgetOpen.value = true
 }
 
-/** 重置预算表单 */
-function resetBudgetForm() {
-  budgetItemForm.value = {
-    category: '',
-    amount: null,
-    description: ''
-  }
-  isAddingBudget.value = false
-  editingBudgetItem.value = null
-}
-
-/** 开始添加预算项 */
-function handleStartAddBudget() {
-  resetBudgetForm()
-  isAddingBudget.value = true
-}
-
-/** 取消预算编辑 */
-function handleCancelBudgetEdit() {
-  resetBudgetForm()
-}
-
-/** 添加预算项 */
-function handleAddBudgetItem() {
-  // 验证表单
-  if (!budgetItemForm.value.category) {
-    proxy.$modal.msgError("请选择预算类别")
-    return
-  }
-  if (!budgetItemForm.value.amount || budgetItemForm.value.amount <= 0) {
-    proxy.$modal.msgError("请输入有效的预算金额")
-    return
-  }
-
-  const newItem = {
-    id: Date.now().toString(), // 临时ID，后端会生成真实ID
-    category: budgetItemForm.value.category,
-    amount: budgetItemForm.value.amount,
-    description: budgetItemForm.value.description
-  }
-
-  budgetItems.value.push(newItem)
-  proxy.$modal.msgSuccess("预算项已添加")
-  resetBudgetForm()
-}
-
-/** 编辑预算项 */
-function handleEditBudgetItem(item) {
-  editingBudgetItem.value = item
-  budgetItemForm.value = {
-    category: item.category,
-    amount: item.amount,
-    description: item.description || ''
-  }
-  isAddingBudget.value = false
-}
-
-/** 更新预算项 */
-function handleUpdateBudgetItem() {
-  if (!editingBudgetItem.value) return
-
-  // 验证表单
-  if (!budgetItemForm.value.category) {
-    proxy.$modal.msgError("请选择预算类别")
-    return
-  }
-  if (!budgetItemForm.value.amount || budgetItemForm.value.amount <= 0) {
-    proxy.$modal.msgError("请输入有效的预算金额")
-    return
-  }
-
-  const index = budgetItems.value.findIndex(item => item.id === editingBudgetItem.value.id)
-  if (index !== -1) {
-    budgetItems.value[index] = {
-      ...editingBudgetItem.value,
-      category: budgetItemForm.value.category,
-      amount: budgetItemForm.value.amount,
-      description: budgetItemForm.value.description
-    }
-    proxy.$modal.msgSuccess("预算项已更新")
-    resetBudgetForm()
-  }
-}
-
-/** 删除预算项 */
-function handleDeleteBudgetItem(itemId) {
-  budgetItems.value = budgetItems.value.filter(item => item.id !== itemId)
-  proxy.$modal.msgSuccess("预算项已删除")
-
-  // 如果删除的是正在编辑的项，清除编辑状态
-  if (editingBudgetItem.value?.id === itemId) {
-    resetBudgetForm()
-  }
-}
-
-/** 保存预算条目 */
-function handleSaveBudgetItems() {
-  if (budgetItems.value.length === 0) {
-    proxy.$modal.msgWarning("请至少添加一项预算")
-    return
-  }
-
-  // 计算总预算
-  const totalBudget = budgetItems.value.reduce((sum, item) => sum + item.amount, 0)
-
-  // 更新项目信息
-  const updateData = {
-    id: currentBudgetProject.value.id,
-    name: currentBudgetProject.value.name,
-    budget: totalBudget,
-    budgetItems: budgetItems.value
-  }
-
+/** 处理预算保存事件 */
+function handleSaveBudget(updateData) {
   updateProjects(updateData).then(response => {
     proxy.$modal.msgSuccess("预算已保存")
     budgetOpen.value = false
@@ -1478,99 +995,11 @@ function handleSaveBudgetItems() {
 /** 进度管理 */
 function handleProgressManagement(project) {
   currentProgressProject.value = project
-  // 加载项目的时间轴条目（这里暂时使用模拟数据，后续需要从API加载）
-  timelineItems.value = project.timeline || []
-  resetTimelineForm()
   progressOpen.value = true
 }
 
-/** 重置时间轴表单 */
-function resetTimelineForm() {
-  timelineForm.value = {
-    title: '',
-    description: '',
-    date: '',
-    status: 'pending'
-  }
-  isAddingTimeline.value = false
-}
-
-/** 开始添加时间轴条目 */
-function handleStartAddTimeline() {
-  resetTimelineForm()
-  isAddingTimeline.value = true
-}
-
-/** 取消时间轴编辑 */
-function handleCancelTimelineEdit() {
-  resetTimelineForm()
-}
-
-/** 添加时间轴条目 */
-function handleAddTimelineItem() {
-  // 验证表单
-  if (!timelineForm.value.title) {
-    proxy.$modal.msgError("请选择施工阶段")
-    return
-  }
-  if (!timelineForm.value.description) {
-    proxy.$modal.msgError("请输入阶段说明")
-    return
-  }
-  if (!timelineForm.value.date) {
-    proxy.$modal.msgError("请选择计划日期")
-    return
-  }
-
-  const newItem = {
-    id: Date.now().toString(), // 临时ID，后端会生成真实ID
-    title: timelineForm.value.title,
-    description: timelineForm.value.description,
-    date: timelineForm.value.date,
-    status: timelineForm.value.status
-  }
-
-  timelineItems.value.push(newItem)
-  proxy.$modal.msgSuccess("施工阶段已添加")
-  resetTimelineForm()
-}
-
-/** 更新时间轴条目状态 */
-function handleUpdateTimelineStatus(itemId, status) {
-  const index = timelineItems.value.findIndex(item => item.id === itemId)
-  if (index !== -1) {
-    timelineItems.value[index] = {
-      ...timelineItems.value[index],
-      status: status
-    }
-    proxy.$modal.msgSuccess("状态已更新")
-  }
-}
-
-/** 删除时间轴条目 */
-function handleDeleteTimelineItem(itemId) {
-  timelineItems.value = timelineItems.value.filter(item => item.id !== itemId)
-  proxy.$modal.msgSuccess("施工阶段已删除")
-}
-
-/** 保存时间轴条目 */
-function handleSaveTimelineItems() {
-  if (timelineItems.value.length === 0) {
-    proxy.$modal.msgWarning("请至少添加一个施工阶段")
-    return
-  }
-
-  // 计算项目总进度（基于完成的阶段）
-  const totalProgress = calculateTimelinePercentage(completedCount.value, timelineItems.value.length)
-
-  // 更新项目信息
-  const updateData = {
-    id: currentProgressProject.value.id,
-    name: currentProgressProject.value.name,
-    progress: totalProgress,
-    timeline: timelineItems.value
-  }
-
+/** 处理进度保存事件 */
+function handleSaveProgress(updateData) {
   updateProjects(updateData).then(response => {
     proxy.$modal.msgSuccess("进度已保存")
     progressOpen.value = false
@@ -1644,6 +1073,20 @@ getCustomersList()
 
 // 确保进度对话框中的所有内容区域宽度为 100%
 .project-progress-dialog .el-dialog__body .el-space__item > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// Dialog 滚动容器优化
+.project-budget-dialog .el-dialog__body > div[style*="overflow-y: auto"],
+.project-progress-dialog .el-dialog__body > div[style*="overflow-y: auto"] {
+  box-sizing: border-box;
+}
+
+// 确保内容在滚动容器中正确显示
+.project-budget-dialog .project-budget-container,
+.project-progress-dialog .project-progress-container {
+  padding: 8px 0;
   width: 100%;
   box-sizing: border-box;
 }
