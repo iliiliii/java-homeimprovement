@@ -10,12 +10,18 @@
         />
       </el-form-item>
       <el-form-item label="施工阶段" prop="stage">
-        <el-input
+        <el-select
           v-model="queryParams.stage"
-          placeholder="请输入施工阶段"
+          placeholder="请选择施工阶段"
           clearable
-          @keyup.enter="handleQuery"
-        />
+        >
+          <el-option
+            v-for="dict in project_schedule"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="阶段顺序" prop="stageOrder">
         <el-input
@@ -77,7 +83,11 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="进度ID" align="center" prop="id" />
       <el-table-column label="项目ID" align="center" prop="projectId" />
-      <el-table-column label="施工阶段" align="center" prop="stage" />
+      <el-table-column label="施工阶段" align="center" prop="stage">
+        <template #default="scope">
+          {{ project_schedule.find(item => item.value === scope.row.stage)?.label || scope.row.stage }}
+        </template>
+      </el-table-column>
       <el-table-column label="阶段顺序" align="center" prop="stageOrder" />
       <el-table-column label="阶段状态" align="center" prop="status" />
       <el-table-column label="完成度百分比" align="center" prop="completionRate" />
@@ -104,7 +114,14 @@
           <el-input v-model="form.projectId" placeholder="请输入项目ID" />
         </el-form-item>
         <el-form-item label="施工阶段" prop="stage">
-          <el-input v-model="form.stage" placeholder="请输入施工阶段" />
+          <el-select v-model="form.stage" placeholder="请选择施工阶段">
+            <el-option
+              v-for="dict in project_schedule"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="阶段顺序" prop="stageOrder">
           <el-input v-model="form.stageOrder" placeholder="请输入阶段顺序" />
@@ -182,8 +199,10 @@
 
 <script setup name="ProjectSchedules">
 import { listProjectSchedules, getProjectSchedules, delProjectSchedules, addProjectSchedules, updateProjectSchedules } from "@/api/evs/projectSchedules"
+import { useDict } from '@/utils/dict'
 
 const { proxy } = getCurrentInstance()
+const { project_schedule } = useDict('project_schedule')
 
 const projectSchedulesList = ref([])
 const open = ref(false)
