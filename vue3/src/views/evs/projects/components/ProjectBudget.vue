@@ -22,23 +22,24 @@
 
       <!-- 预算列表表格 -->
       <el-table
+        v-loading="loading"
         :data="budgetItems"
         size="small"
         :show-header="true"
         empty-text="暂无预算项，请点击下方按钮添加"
         style="width: 100%"
       >
-        <el-table-column prop="category" label="预算类别" width="25%" />
-        <el-table-column prop="amount" label="预算金额" width="25%">
+        <el-table-column prop="category" label="预算类别" width="40%" />
+        <el-table-column label="计划金额" width="25%">
           <template #default="scope">
             <span style="color: #faad14; font-weight: bold;">
-              ¥{{ scope.row.amount.toLocaleString() }}
+              ¥{{ scope.row.plannedAmount?.toLocaleString() || 0 }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="说明" width="35%">
+        <el-table-column label="备注" width="25%">
           <template #default="scope">
-            <span v-if="scope.row.description">{{ scope.row.description }}</span>
+            <span v-if="scope.row.remarks">{{ scope.row.remarks }}</span>
             <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
@@ -56,7 +57,7 @@
               </el-button>
               <el-popconfirm
                 title="确认删除"
-                description="确定要���除这项预算吗？"
+                description="确定要删除这项预算吗？"
                 @confirm="handleDeleteBudgetItem(scope.row.id)"
                 confirm-button-text="确定"
                 cancel-button-text="取消"
@@ -87,44 +88,48 @@
         "
       >
         <el-form :model="budgetItemForm" label-position="top">
-          <el-space direction="vertical" :size="16" style="width: 100%;">
-            <el-space :size="16" style="width: 100%;">
-              <el-form-item label="预算类别" style="flex: 1; margin-bottom: 0;">
-                <el-select
-                  v-model="budgetItemForm.category"
-                  placeholder="选择预算类别"
-                  size="large"
-                  style="width: 100%"
-                >
-                  <el-option value="拆除工程" label="拆除工程" />
-                  <el-option value="水电安装" label="水电安装" />
-                  <el-option value="泥瓦工程" label="泥瓦工程" />
-                  <el-option value="木工工程" label="木工工程" />
-                  <el-option value="油漆工程" label="油漆工程" />
-                  <el-option value="材料费" label="材料费" />
-                  <el-option value="人工费" label="人工费" />
-                  <el-option value="管理费" label="管理费" />
-                  <el-option value="其他" label="其他" />
-                </el-select>
-              </el-form-item>
+          <el-space  direction="vertical" :size="16" style="width: 100%;">
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="预算类别">
+                  <el-select
+                    v-model="budgetItemForm.category"
+                    placeholder="选择预算类别"
+                    size="large"
+                    style="width: 100%"
+                  >
+                    <el-option value="拆除工程" label="拆除工程" />
+                    <el-option value="水电安装" label="水电安装" />
+                    <el-option value="泥瓦工程" label="泥瓦工程" />
+                    <el-option value="木工工程" label="木工工程" />
+                    <el-option value="油漆工程" label="油漆工程" />
+                    <el-option value="材料费" label="材料费" />
+                    <el-option value="人工费" label="人工费" />
+                    <el-option value="管理费" label="管理费" />
+                    <el-option value="其他" label="其他" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-              <el-form-item label="预算金额" style="flex: 1; margin-bottom: 0;">
-                <el-input-number
-                  v-model="budgetItemForm.amount"
-                  placeholder="输入预算金额"
-                  size="large"
-                  :min="0"
-                  style="width: 100%"
-                  :formatter="(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                  :parser="(value) => value.replace(/¥\s?|(,*)/g, '')"
-                />
-              </el-form-item>
-            </el-space>
+              <el-col :span="12">
+                <el-form-item label="计划金额">
+                  <el-input-number
+                    v-model="budgetItemForm.plannedAmount"
+                    placeholder="输入计划金额"
+                    size="large"
+                    :min="0"
+                    style="width: 100%"
+                    :formatter="(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                    :parser="(value) => value.replace(/¥\s?|(,*)/g, '')"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-            <el-form-item label="说明（可选）" style="margin-bottom: 0;">
+            <el-form-item label="备注（可选）">
               <el-input
-                v-model="budgetItemForm.description"
-                placeholder="输入预算说明"
+                v-model="budgetItemForm.remarks"
+                placeholder="输入备注说明"
                 size="large"
               />
             </el-form-item>
@@ -159,7 +164,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { listProjectBudgets, addProjectBudgets, updateProjectBudgets, delProjectBudgets } from '@/api/evs/projectBudgets'
 
 const { proxy } = getCurrentInstance()
 
@@ -179,29 +185,43 @@ const emit = defineEmits(['save'])
 const budgetItems = ref([]) // 预算条目数组
 const isAddingBudget = ref(false)
 const editingBudgetItem = ref(null)
+const loading = ref(false) // 新增：加载状态
 const budgetItemForm = ref({
+  projectId: props.project.id,
   category: '',
-  amount: null,
-  description: ''
+  plannedAmount: null,
+  remarks: ''
 })
 
-// 计算预算总额
+// 计算预算总额（使用计划金额）
 const totalBudgetAmount = computed(() => {
-  return budgetItems.value.reduce((sum, item) => sum + (item.amount || 0), 0)
+  return budgetItems.value.reduce((sum, item) => sum + (item.plannedAmount || 0), 0)
 })
 
-// 初始化数据
-const initData = () => {
-  budgetItems.value = props.project.budgetItems || []
-  resetBudgetForm()
+// 从API加载预算数据
+function loadBudgetItems() {
+  if (!props.project.id) {
+    budgetItems.value = []
+    return
+  }
+
+  loading.value = true
+  listProjectBudgets({ projectId: props.project.id }).then(response => {
+    budgetItems.value = response.rows || []
+    loading.value = false
+  }).catch(() => {
+    loading.value = false
+    budgetItems.value = []
+  })
 }
 
 // 重置预算表单
 function resetBudgetForm() {
   budgetItemForm.value = {
+    projectId: props.project.id,
     category: '',
-    amount: null,
-    description: ''
+    plannedAmount: null,
+    remarks: ''
   }
   isAddingBudget.value = false
   editingBudgetItem.value = null
@@ -219,42 +239,44 @@ function handleCancelBudgetEdit() {
 }
 
 // 添加预算项
-function handleAddBudgetItem() {
+async function handleAddBudgetItem() {
   // 验证表单
   if (!budgetItemForm.value.category) {
     proxy.$modal.msgError("请选择预算类别")
     return
   }
-  if (!budgetItemForm.value.amount || budgetItemForm.value.amount <= 0) {
-    proxy.$modal.msgError("请输入有效的预算金��")
+  if (!budgetItemForm.value.plannedAmount || budgetItemForm.value.plannedAmount <= 0) {
+    proxy.$modal.msgError("请输入有效的计划金额")
     return
   }
 
-  const newItem = {
-    id: Date.now().toString(), // 临时ID，后端会生成真实ID
-    category: budgetItemForm.value.category,
-    amount: budgetItemForm.value.amount,
-    description: budgetItemForm.value.description
+  try {
+    loading.value = true
+    await addProjectBudgets(budgetItemForm.value)
+    proxy.$modal.msgSuccess("预算项已添加")
+    resetBudgetForm()
+    loadBudgetItems() // 重新加载数据
+  } catch (error) {
+    proxy.$modal.msgError("添加失败，请重试")
+  } finally {
+    loading.value = false
   }
-
-  budgetItems.value.push(newItem)
-  proxy.$modal.msgSuccess("预算项已添加")
-  resetBudgetForm()
 }
 
 // 编辑预算项
 function handleEditBudgetItem(item) {
   editingBudgetItem.value = item
   budgetItemForm.value = {
+    projectId: item.projectId,
     category: item.category,
-    amount: item.amount,
-    description: item.description || ''
+    plannedAmount: item.plannedAmount,
+    remarks: item.remarks || ''
   }
   isAddingBudget.value = false
 }
 
 // 更新预算项
-function handleUpdateBudgetItem() {
+async function handleUpdateBudgetItem() {
   if (!editingBudgetItem.value) return
 
   // 验证表单
@@ -262,32 +284,43 @@ function handleUpdateBudgetItem() {
     proxy.$modal.msgError("请选择预算类别")
     return
   }
-  if (!budgetItemForm.value.amount || budgetItemForm.value.amount <= 0) {
-    proxy.$modal.msgError("请输入有效的预算金额")
+  if (!budgetItemForm.value.plannedAmount || budgetItemForm.value.plannedAmount <= 0) {
+    proxy.$modal.msgError("请输入有效的计划金额")
     return
   }
 
-  const index = budgetItems.value.findIndex(item => item.id === editingBudgetItem.value.id)
-  if (index !== -1) {
-    budgetItems.value[index] = {
-      ...editingBudgetItem.value,
-      category: budgetItemForm.value.category,
-      amount: budgetItemForm.value.amount,
-      description: budgetItemForm.value.description
-    }
+  try {
+    loading.value = true
+    await updateProjectBudgets({
+      id: editingBudgetItem.value.id,
+      ...budgetItemForm.value
+    })
     proxy.$modal.msgSuccess("预算项已更新")
     resetBudgetForm()
+    loadBudgetItems() // 重新加载数据
+  } catch (error) {
+    proxy.$modal.msgError("更新失败，请重试")
+  } finally {
+    loading.value = false
   }
 }
 
 // 删除预算项
-function handleDeleteBudgetItem(itemId) {
-  budgetItems.value = budgetItems.value.filter(item => item.id !== itemId)
-  proxy.$modal.msgSuccess("预算项已删除")
+async function handleDeleteBudgetItem(itemId) {
+  try {
+    loading.value = true
+    await delProjectBudgets(itemId)
+    proxy.$modal.msgSuccess("预算项已删除")
+    loadBudgetItems() // 重新加载数据
 
-  // 如果删除的是正在编辑的项，清除编辑状态
-  if (editingBudgetItem.value?.id === itemId) {
-    resetBudgetForm()
+    // 如果删除的是正在编辑的项，清除编辑状态
+    if (editingBudgetItem.value?.id === itemId) {
+      resetBudgetForm()
+    }
+  } catch (error) {
+    proxy.$modal.msgError("删除失败，请重试")
+  } finally {
+    loading.value = false
   }
 }
 
@@ -316,14 +349,17 @@ function handleSaveBudgetItems() {
 // 暴露方法给父组件
 defineExpose({
   budgetItems,
+  totalBudgetAmount,
+  loadBudgetItems,
   resetBudgetForm,
-  handleSaveBudgetItems
+  handleSaveBudgetItems,
+  handleStartAddBudget
 })
 
 // 监听项目变化，初始化数据
 watch(() => props.project, (newProject) => {
-  if (newProject) {
-    initData()
+  if (newProject && newProject.id) {
+    loadBudgetItems()
   }
 }, { immediate: true, deep: true })
 </script>

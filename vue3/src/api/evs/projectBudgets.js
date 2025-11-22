@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// 查询项目预算列表
+// 查询预算明细列表
 export function listProjectBudgets(query) {
   return request({
     url: '/evs/projectBudgets/list',
@@ -9,7 +9,7 @@ export function listProjectBudgets(query) {
   })
 }
 
-// 查询项目预算详细
+// 查询预算明细详细
 export function getProjectBudgets(id) {
   return request({
     url: '/evs/projectBudgets/' + id,
@@ -17,7 +17,7 @@ export function getProjectBudgets(id) {
   })
 }
 
-// 新增项目预算
+// 新增预算明细
 export function addProjectBudgets(data) {
   return request({
     url: '/evs/projectBudgets',
@@ -26,7 +26,7 @@ export function addProjectBudgets(data) {
   })
 }
 
-// 修改项目预算
+// 修改预算明细
 export function updateProjectBudgets(data) {
   return request({
     url: '/evs/projectBudgets',
@@ -35,7 +35,7 @@ export function updateProjectBudgets(data) {
   })
 }
 
-// 删除项目预算
+// 删除预算明细
 export function delProjectBudgets(id) {
   return request({
     url: '/evs/projectBudgets/' + id,

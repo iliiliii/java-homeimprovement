@@ -9,37 +9,34 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 项目预算对象 project_budgets
+ * 预算明细对象 project_budgets
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public class ProjectBudgets extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
-    /** 预算ID */
+    /** 明细ID */
     private String id;
 
     /** 项目ID */
     @Excel(name = "项目ID")
     private String projectId;
 
-    /** 总预算 */
-    @Excel(name = "总预算")
-    private BigDecimal totalBudget;
+    /** 预算分类（拆除工程、水电安装、泥瓦工程、木工工程、油漆工程、材料费、人工费、管理费、其他） */
+    @Excel(name = "预算分类", readConverterExp = "拆=除工程、水电安装、泥瓦工程、木工工程、油漆工程、材料费、人工费、管理费、其他")
+    private String category;
 
-    /** 实际成本 */
-    @Excel(name = "实际成本")
-    private BigDecimal actualCost;
+    /** 计划金额 */
+    @Excel(name = "计划金额")
+    private BigDecimal plannedAmount;
 
-    /** 预算状态 */
-    @Excel(name = "预算状态")
-    private String status;
+    /** 备注 */
+    private String remarks;
 
     /** 创建时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "创建时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date createdAt;
 
     /** 更新时间 */
@@ -71,34 +68,34 @@ public class ProjectBudgets extends BaseEntity
         return projectId;
     }
 
-    public void setTotalBudget(BigDecimal totalBudget) 
+    public void setCategory(String category) 
     {
-        this.totalBudget = totalBudget;
+        this.category = category;
     }
 
-    public BigDecimal getTotalBudget() 
+    public String getCategory() 
     {
-        return totalBudget;
+        return category;
     }
 
-    public void setActualCost(BigDecimal actualCost) 
+    public void setPlannedAmount(BigDecimal plannedAmount) 
     {
-        this.actualCost = actualCost;
+        this.plannedAmount = plannedAmount;
     }
 
-    public BigDecimal getActualCost() 
+    public BigDecimal getPlannedAmount() 
     {
-        return actualCost;
+        return plannedAmount;
     }
 
-    public void setStatus(String status) 
+    public void setRemarks(String remarks) 
     {
-        this.status = status;
+        this.remarks = remarks;
     }
 
-    public String getStatus() 
+    public String getRemarks() 
     {
-        return status;
+        return remarks;
     }
 
     public void setCreatedAt(Date createdAt) 
@@ -146,9 +143,9 @@ public class ProjectBudgets extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("id", getId())
             .append("projectId", getProjectId())
-            .append("totalBudget", getTotalBudget())
-            .append("actualCost", getActualCost())
-            .append("status", getStatus())
+            .append("category", getCategory())
+            .append("plannedAmount", getPlannedAmount())
+            .append("remarks", getRemarks())
             .append("createdAt", getCreatedAt())
             .append("updatedAt", getUpdatedAt())
             .append("createdBy", getCreatedBy())

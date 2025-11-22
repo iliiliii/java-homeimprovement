@@ -7,9 +7,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="ProjectBudgets" id="ProjectBudgetsResult">
         <result property="id"    column="id"    />
         <result property="projectId"    column="project_id"    />
-        <result property="totalBudget"    column="total_budget"    />
-        <result property="actualCost"    column="actual_cost"    />
-        <result property="status"    column="status"    />
+        <result property="category"    column="category"    />
+        <result property="plannedAmount"    column="planned_amount"    />
+        <result property="remarks"    column="remarks"    />
         <result property="createdAt"    column="created_at"    />
         <result property="updatedAt"    column="updated_at"    />
         <result property="createdBy"    column="created_by"    />
@@ -17,14 +17,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectBudgetsVo">
-        select id, project_id, total_budget, actual_cost, status, created_at, updated_at, created_by, updated_by from project_budgets
+        select id, project_id, category, planned_amount, remarks, created_at, updated_at, created_by, updated_by from project_budgets
     </sql>
 
     <select id="selectProjectBudgetsList" parameterType="ProjectBudgets" resultMap="ProjectBudgetsResult">
         <include refid="selectProjectBudgetsVo"/>
         <where>  
-            <if test="projectId != null  and projectId != ''"> and project_id = #{projectId}</if>
-            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="category != null  and category != ''"> and category = #{category}</if>
+            <if test="plannedAmount != null "> and planned_amount = #{plannedAmount}</if>
         </where>
     </select>
     
@@ -37,10 +37,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into project_budgets
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
-            <if test="projectId != null and projectId != ''">project_id,</if>
-            <if test="totalBudget != null">total_budget,</if>
-            <if test="actualCost != null">actual_cost,</if>
-            <if test="status != null and status != ''">status,</if>
+            <if test="projectId != null">project_id,</if>
+            <if test="category != null and category != ''">category,</if>
+            <if test="plannedAmount != null">planned_amount,</if>
+            <if test="remarks != null">remarks,</if>
             <if test="createdAt != null">created_at,</if>
             <if test="updatedAt != null">updated_at,</if>
             <if test="createdBy != null">created_by,</if>
@@ -48,10 +48,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
-            <if test="projectId != null and projectId != ''">#{projectId},</if>
-            <if test="totalBudget != null">#{totalBudget},</if>
-            <if test="actualCost != null">#{actualCost},</if>
-            <if test="status != null and status != ''">#{status},</if>
+            <if test="projectId != null">#{projectId},</if>
+            <if test="category != null and category != ''">#{category},</if>
+            <if test="plannedAmount != null">#{plannedAmount},</if>
+            <if test="remarks != null">#{remarks},</if>
             <if test="createdAt != null">#{createdAt},</if>
             <if test="updatedAt != null">#{updatedAt},</if>
             <if test="createdBy != null">#{createdBy},</if>
@@ -62,10 +62,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateProjectBudgets" parameterType="ProjectBudgets">
         update project_budgets
         <trim prefix="SET" suffixOverrides=",">
-            <if test="projectId != null and projectId != ''">project_id = #{projectId},</if>
-            <if test="totalBudget != null">total_budget = #{totalBudget},</if>
-            <if test="actualCost != null">actual_cost = #{actualCost},</if>
-            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="category != null and category != ''">category = #{category},</if>
+            <if test="plannedAmount != null">planned_amount = #{plannedAmount},</if>
+            <if test="remarks != null">remarks = #{remarks},</if>
             <if test="createdAt != null">created_at = #{createdAt},</if>
             <if test="updatedAt != null">updated_at = #{updatedAt},</if>
             <if test="createdBy != null">created_by = #{createdBy},</if>

@@ -22,10 +22,10 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
- * 项目预算Controller
+ * 预算明细Controller
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 @RestController
 @RequestMapping("/evs/projectBudgets")
@@ -35,7 +35,7 @@ public class ProjectBudgetsController extends BaseController
     private IProjectBudgetsService projectBudgetsService;
 
     /**
-     * 查询项目预算列表
+     * 查询预算明细列表
      */
     @PreAuthorize("@ss.hasPermi('evs:projectBudgets:list')")
     @GetMapping("/list")
@@ -47,20 +47,20 @@ public class ProjectBudgetsController extends BaseController
     }
 
     /**
-     * 导出项目预算列表
+     * 导出预算明细列表
      */
     @PreAuthorize("@ss.hasPermi('evs:projectBudgets:export')")
-    @Log(title = "项目预算", businessType = BusinessType.EXPORT)
+    @Log(title = "预算明细", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, ProjectBudgets projectBudgets)
     {
         List<ProjectBudgets> list = projectBudgetsService.selectProjectBudgetsList(projectBudgets);
         ExcelUtil<ProjectBudgets> util = new ExcelUtil<ProjectBudgets>(ProjectBudgets.class);
-        util.exportExcel(response, list, "项目预算数据");
+        util.exportExcel(response, list, "预算明细数据");
     }
 
     /**
-     * 获取项目预算详细信息
+     * 获取预算明细详细信息
      */
     @PreAuthorize("@ss.hasPermi('evs:projectBudgets:query')")
     @GetMapping(value = "/{id}")
@@ -70,10 +70,10 @@ public class ProjectBudgetsController extends BaseController
     }
 
     /**
-     * 新增项目预算
+     * 新增预算明细
      */
     @PreAuthorize("@ss.hasPermi('evs:projectBudgets:add')")
-    @Log(title = "项目预算", businessType = BusinessType.INSERT)
+    @Log(title = "预算明细", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody ProjectBudgets projectBudgets)
     {
@@ -81,10 +81,10 @@ public class ProjectBudgetsController extends BaseController
     }
 
     /**
-     * 修改项目预算
+     * 修改预算明细
      */
     @PreAuthorize("@ss.hasPermi('evs:projectBudgets:edit')")
-    @Log(title = "项目预算", businessType = BusinessType.UPDATE)
+    @Log(title = "预算明细", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody ProjectBudgets projectBudgets)
     {
@@ -92,10 +92,10 @@ public class ProjectBudgetsController extends BaseController
     }
 
     /**
-     * 删除项目预算
+     * 删除预算明细
      */
     @PreAuthorize("@ss.hasPermi('evs:projectBudgets:remove')")
-    @Log(title = "项目预算", businessType = BusinessType.DELETE)
+    @Log(title = "预算明细", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids)
     {

@@ -4,55 +4,55 @@ import java.util.List;
 import com.ruoyi.web.domain.ProjectBudgets;
 
 /**
- * 项目预算Mapper接口
+ * 预算明细Mapper接口
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public interface ProjectBudgetsMapper 
 {
     /**
-     * 查询项目预算
+     * 查询预算明细
      * 
-     * @param id 项目预算主键
-     * @return 项目预算
+     * @param id 预算明细主键
+     * @return 预算明细
      */
     public ProjectBudgets selectProjectBudgetsById(String id);
 
     /**
-     * 查询项目预算列表
+     * 查询预算明细列表
      * 
-     * @param projectBudgets 项目预算
-     * @return 项目预算集合
+     * @param projectBudgets 预算明细
+     * @return 预算明细集合
      */
     public List<ProjectBudgets> selectProjectBudgetsList(ProjectBudgets projectBudgets);
 
     /**
-     * 新增项目预算
+     * 新增预算明细
      * 
-     * @param projectBudgets 项目预算
+     * @param projectBudgets 预算明细
      * @return 结果
      */
     public int insertProjectBudgets(ProjectBudgets projectBudgets);
 
     /**
-     * 修改项目预算
+     * 修改预算明细
      * 
-     * @param projectBudgets 项目预算
+     * @param projectBudgets 预算明细
      * @return 结果
      */
     public int updateProjectBudgets(ProjectBudgets projectBudgets);
 
     /**
-     * 删除项目预算
+     * 删除预算明细
      * 
-     * @param id 项目预算主键
+     * @param id 预算明细主键
      * @return 结果
      */
     public int deleteProjectBudgetsById(String id);
 
     /**
-     * 批量删除项目预算
+     * 批量删除预算明细
      * 
      * @param ids 需要删除的数据主键集合
      * @return 结果

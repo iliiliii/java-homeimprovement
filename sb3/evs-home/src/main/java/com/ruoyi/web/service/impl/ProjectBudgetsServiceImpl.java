@@ -6,13 +6,15 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.ProjectBudgetsMapper;
 import com.ruoyi.web.domain.ProjectBudgets;
 import com.ruoyi.web.service.IProjectBudgetsService;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.uuid.IdUtils;
 
 /**
- * 项目预算Service业务层处理
+ * 预算明细Service业务层处理
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 @Service
 public class ProjectBudgetsServiceImpl implements IProjectBudgetsService 
@@ -21,10 +23,10 @@ public class ProjectBudgetsServiceImpl implements IProjectBudgetsService
     private ProjectBudgetsMapper projectBudgetsMapper;
 
     /**
-     * 查询项目预算
+     * 查询预算明细
      * 
-     * @param id 项目预算主键
-     * @return 项目预算
+     * @param id 预算明细主键
+     * @return 预算明细
      */
     @Override
     public ProjectBudgets selectProjectBudgetsById(String id)
@@ -33,10 +35,10 @@ public class ProjectBudgetsServiceImpl implements IProjectBudgetsService
     }
 
     /**
-     * 查询项目预算列表
+     * 查询预算明细列表
      * 
-     * @param projectBudgets 项目预算
-     * @return 项目预算
+     * @param projectBudgets 预算明细
+     * @return 预算明细
      */
     @Override
     public List<ProjectBudgets> selectProjectBudgetsList(ProjectBudgets projectBudgets)
@@ -45,9 +47,9 @@ public class ProjectBudgetsServiceImpl implements IProjectBudgetsService
     }
 
     /**
-     * 新增项目预算
+     * 新增预算明细
      * 
-     * @param projectBudgets 项目预算
+     * @param projectBudgets 预算明细
      * @return 结果
      */
     @Override
@@ -57,25 +59,29 @@ public class ProjectBudgetsServiceImpl implements IProjectBudgetsService
         if (projectBudgets.getId() == null || projectBudgets.getId().isEmpty()) {
             projectBudgets.setId(IdUtils.fastSimpleUUID());
         }
+        projectBudgets.setCreatedAt(DateUtils.getNowDate());
+        projectBudgets.setCreatedBy(SecurityUtils.getUsername());
         return projectBudgetsMapper.insertProjectBudgets(projectBudgets);
     }
 
     /**
-     * 修改项目预算
+     * 修改预算明细
      * 
-     * @param projectBudgets 项目预算
+     * @param projectBudgets 预算明细
      * @return 结果
      */
     @Override
     public int updateProjectBudgets(ProjectBudgets projectBudgets)
     {
+        projectBudgets.setUpdatedAt(DateUtils.getNowDate());
+        projectBudgets.setUpdatedBy(SecurityUtils.getUsername());
         return projectBudgetsMapper.updateProjectBudgets(projectBudgets);
     }
 
     /**
-     * 批量删除项目预算
+     * 批量删除预算明细
      * 
-     * @param ids 需要删除的项目预算主键
+     * @param ids 需要删除的预算明细主键
      * @return 结果
      */
     @Override
@@ -85,9 +91,9 @@ public class ProjectBudgetsServiceImpl implements IProjectBudgetsService
     }
 
     /**
-     * 删除项目预算信息
+     * 删除预算明细信息
      * 
-     * @param id 项目预算主键
+     * @param id 预算明细主键
      * @return 结果
      */
     @Override

@@ -1,10 +1,18 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="项目ID" prop="projectId">
+      <el-form-item label="预算分类" prop="category">
         <el-input
-          v-model="queryParams.projectId"
-          placeholder="请输入项目ID"
+          v-model="queryParams.category"
+          placeholder="请输入预算分类"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="计划金额" prop="plannedAmount">
+        <el-input
+          v-model="queryParams.plannedAmount"
+          placeholder="请输入计划金额"
           clearable
           @keyup.enter="handleQuery"
         />
@@ -59,16 +67,10 @@
 
     <el-table v-loading="loading" :data="projectBudgetsList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="预算ID" align="center" prop="id" />
+      <el-table-column label="明细ID" align="center" prop="id" />
       <el-table-column label="项目ID" align="center" prop="projectId" />
-      <el-table-column label="总预算" align="center" prop="totalBudget" />
-      <el-table-column label="实际成本" align="center" prop="actualCost" />
-      <el-table-column label="预算状态" align="center" prop="status" />
-      <el-table-column label="创建时间" align="center" prop="createdAt" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createdAt, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
+      <el-table-column label="预算分类" align="center" prop="category" />
+      <el-table-column label="计划金额" align="center" prop="plannedAmount" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['evs:projectBudgets:edit']">修改</el-button>
@@ -85,39 +87,20 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改项目预算对话框 -->
+    <!-- 添加或修改预算明细对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="projectBudgetsRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="项目ID" prop="projectId">
           <el-input v-model="form.projectId" placeholder="请输入项目ID" />
         </el-form-item>
-        <el-form-item label="总预算" prop="totalBudget">
-          <el-input v-model="form.totalBudget" placeholder="请输入总预算" />
+        <el-form-item label="预算分类" prop="category">
+          <el-input v-model="form.category" placeholder="请输入预算分类" />
         </el-form-item>
-        <el-form-item label="实际成本" prop="actualCost">
-          <el-input v-model="form.actualCost" placeholder="请输入实际成本" />
+        <el-form-item label="计划金额" prop="plannedAmount">
+          <el-input v-model="form.plannedAmount" placeholder="请输入计划金额" />
         </el-form-item>
-        <el-form-item label="创建时间" prop="createdAt">
-          <el-date-picker clearable
-            v-model="form.createdAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择创建时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="更新时间" prop="updatedAt">
-          <el-date-picker clearable
-            v-model="form.updatedAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择更新时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="创建人" prop="createdBy">
-          <el-input v-model="form.createdBy" placeholder="请输入创建人" />
-        </el-form-item>
-        <el-form-item label="更新人" prop="updatedBy">
-          <el-input v-model="form.updatedBy" placeholder="请输入更新人" />
+        <el-form-item label="备注" prop="remarks">
+          <el-input v-model="form.remarks" type="textarea" placeholder="请输入内容" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -150,25 +133,22 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    projectId: null,
-    status: null,
+    category: null,
+    plannedAmount: null,
   },
   rules: {
-    projectId: [
-      { required: true, message: "项目ID不能为空", trigger: "blur" }
+    category: [
+      { required: true, message: "预算分类不能为空", trigger: "blur" }
     ],
-    totalBudget: [
-      { required: true, message: "总预算不能为空", trigger: "blur" }
-    ],
-    status: [
-      { required: true, message: "预算状态不能为空", trigger: "change" }
+    plannedAmount: [
+      { required: true, message: "计划金额不能为空", trigger: "blur" }
     ],
   }
 })
 
 const { queryParams, form, rules } = toRefs(data)
 
-/** 查询项目预算列表 */
+/** 查询预算明细列表 */
 function getList() {
   loading.value = true
   listProjectBudgets(queryParams.value).then(response => {
@@ -189,9 +169,9 @@ function reset() {
   form.value = {
     id: null,
     projectId: null,
-    totalBudget: null,
-    actualCost: null,
-    status: null,
+    category: null,
+    plannedAmount: null,
+    remarks: null,
     createdAt: null,
     updatedAt: null,
     createdBy: null,
@@ -223,7 +203,7 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset()
   open.value = true
-  title.value = "添加项目预算"
+  title.value = "添加预算明细"
 }
 
 /** 修改按钮操作 */
@@ -233,7 +213,7 @@ function handleUpdate(row) {
   getProjectBudgets(_id).then(response => {
     form.value = response.data
     open.value = true
-    title.value = "修改项目预算"
+    title.value = "修改预算明细"
   })
 }
 
@@ -261,7 +241,7 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value
-  proxy.$modal.confirm('是否确认删除项目预算编号为"' + _ids + '"的数据项？').then(function() {
+  proxy.$modal.confirm('是否确认删除预算明细编号为"' + _ids + '"的数据项？').then(function() {
     return delProjectBudgets(_ids)
   }).then(() => {
     getList()
