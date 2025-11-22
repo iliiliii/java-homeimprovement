@@ -7,7 +7,7 @@ import com.ruoyi.web.domain.Customers;
  * 客户档案Mapper接口
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public interface CustomersMapper 
 {
@@ -53,7 +53,7 @@ public interface CustomersMapper
 
     /**
      * 批量删除客户档案
-     *
+     * 
      * @param ids 需要删除的数据主键集合
      * @return 结果
      */

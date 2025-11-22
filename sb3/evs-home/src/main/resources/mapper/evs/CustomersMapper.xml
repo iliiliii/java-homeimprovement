@@ -20,22 +20,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="deletedAt"    column="deleted_at"    />
         <result property="createdBy"    column="created_by"    />
         <result property="updatedBy"    column="updated_by"    />
-        <result property="deletedBy"    column="deleted_by"    />
     </resultMap>
 
     <sql id="selectCustomersVo">
-        select id, name, phone, email, address, level, source, remarks, avatar, is_active, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by from customers
+        select id, name, phone, email, address, level, source, remarks, avatar, is_active, created_at, updated_at, deleted_at, created_by, updated_by from customers
     </sql>
 
     <select id="selectCustomersList" parameterType="Customers" resultMap="CustomersResult">
         <include refid="selectCustomersVo"/>
         <where>  
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
-            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
-            <if test="address != null  and address != ''"> and address = #{address}</if>
-            <if test="level != null  and level != ''"> and level = #{level}</if>
+            <if test="phone != null  and phone != ''"> and phone like concat('%', #{phone}, '%')</if>
             <if test="source != null  and source != ''"> and source = #{source}</if>
-            <if test="remarks != null  and remarks != ''"> and remarks = #{remarks}</if>
         </where>
     </select>
     
@@ -68,7 +64,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="deletedAt != null">deleted_at,</if>
             <if test="createdBy != null">created_by,</if>
             <if test="updatedBy != null">updated_by,</if>
-            <if test="deletedBy != null">deleted_by,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
@@ -86,7 +81,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="deletedAt != null">#{deletedAt},</if>
             <if test="createdBy != null">#{createdBy},</if>
             <if test="updatedBy != null">#{updatedBy},</if>
-            <if test="deletedBy != null">#{deletedBy},</if>
          </trim>
     </insert>
 
@@ -107,7 +101,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="deletedAt != null">deleted_at = #{deletedAt},</if>
             <if test="createdBy != null">created_by = #{createdBy},</if>
             <if test="updatedBy != null">updated_by = #{updatedBy},</if>
-            <if test="deletedBy != null">deleted_by = #{deletedBy},</if>
         </trim>
         where id = #{id}
     </update>

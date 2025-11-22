@@ -25,7 +25,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * 客户档案Controller
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 @RestController
 @RequestMapping("/evs/customers")
@@ -99,10 +99,14 @@ public class CustomersController extends BaseController
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids)
     {
-        return toAjax(customersService.deleteCustomersByIds(ids));
+        for (String id : ids) {
+            customersService.softDeleteCustomersById(id);
+        }
+        return success();
+        // return toAjax(customersService.softDeleteCustomersById(ids));
     }
 
-    /**
+        /**
      * 检查手机号是否存在
      */
     @PreAuthorize("@ss.hasPermi('evs:customers:list')")

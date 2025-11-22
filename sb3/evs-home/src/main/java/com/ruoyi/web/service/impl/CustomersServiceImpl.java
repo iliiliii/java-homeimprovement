@@ -7,12 +7,14 @@ import com.ruoyi.web.mapper.CustomersMapper;
 import com.ruoyi.web.domain.Customers;
 import com.ruoyi.web.service.ICustomersService;
 import com.ruoyi.common.utils.uuid.IdUtils;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 
 /**
  * 客户档案Service业务层处理
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 @Service
 public class CustomersServiceImpl implements ICustomersService 
@@ -57,6 +59,8 @@ public class CustomersServiceImpl implements ICustomersService
         if (customers.getId() == null || customers.getId().isEmpty()) {
             customers.setId(IdUtils.fastSimpleUUID());
         }
+        customers.setCreatedAt(DateUtils.getNowDate());
+        customers.setCreatedBy(SecurityUtils.getUsername());
         return customersMapper.insertCustomers(customers);
     }
 
@@ -69,6 +73,8 @@ public class CustomersServiceImpl implements ICustomersService
     @Override
     public int updateCustomers(Customers customers)
     {
+        customers.setUpdatedAt(DateUtils.getNowDate());
+        customers.setUpdatedBy(SecurityUtils.getUsername());
         return customersMapper.updateCustomers(customers);
     }
 
@@ -82,6 +88,18 @@ public class CustomersServiceImpl implements ICustomersService
     public int deleteCustomersByIds(String[] ids)
     {
         return customersMapper.deleteCustomersByIds(ids);
+    }
+
+    @Override
+    public int softDeleteCustomersById(String id)
+    {
+        Customers customers = customersMapper.selectCustomersById(id);
+        if (customers == null) {
+            return 0;
+        }
+        customers.setDeletedAt(DateUtils.getNowDate());
+        customers.setIsActive(0);
+        return customersMapper.updateCustomers(customers);
     }
 
     /**

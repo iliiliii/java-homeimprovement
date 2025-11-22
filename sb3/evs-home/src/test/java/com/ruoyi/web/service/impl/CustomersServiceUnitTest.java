@@ -14,9 +14,16 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.core.domain.entity.SysUser;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import java.util.HashSet;
 
 /**
  * 客户档案Service层独立单元测试类
@@ -52,6 +59,24 @@ class CustomersServiceUnitTest {
         testCustomer.setIsActive(1);
         testCustomer.setCreatedAt(new Date());
         testCustomer.setUpdatedAt(new Date());
+        
+        // 清理 SecurityContext，确保每个测试开始时都是干净的状态
+        SecurityContextHolder.clearContext();
+    }
+    
+    /**
+     * 辅助方法：模拟登录用户
+     * @param username 用户名
+     */
+    private void mockLoginUser(String username) {
+        SysUser sysUser = new SysUser();
+        sysUser.setUserId(1L);
+        sysUser.setUserName(username);
+        LoginUser loginUser = new LoginUser(sysUser, new HashSet<>());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(loginUser, null, null);
+        SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+        securityContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
@@ -197,7 +222,8 @@ class CustomersServiceUnitTest {
     @Test
     @DisplayName("测试新增客户")
     void testInsertCustomers_WithValidCustomer_ShouldReturnSuccess() {
-        // Given
+        // Given - 模拟登录用户
+        mockLoginUser("testuser");
         when(customersMapper.insertCustomers(any(Customers.class))).thenReturn(1);
 
         // When
@@ -211,7 +237,8 @@ class CustomersServiceUnitTest {
     @Test
     @DisplayName("测试更新客户")
     void testUpdateCustomers_WithValidCustomer_ShouldReturnSuccess() {
-        // Given
+        // Given - 模拟登录用户
+        mockLoginUser("testuser");
         when(customersMapper.updateCustomers(any(Customers.class))).thenReturn(1);
 
         // When

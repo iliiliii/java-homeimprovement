@@ -11,7 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 客户档案对象 customers
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public class Customers extends BaseEntity
 {
@@ -44,18 +44,17 @@ public class Customers extends BaseEntity
     private String source;
 
     /** 备注 */
-    @Excel(name = "备注")
     private String remarks;
 
     /** 头像 */
+    @Excel(name = "头像")
     private String avatar;
 
     /** 是否启用 */
+    @Excel(name = "是否启用")
     private Integer isActive;
 
     /** 创建时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "创建时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date createdAt;
 
     /** 更新时间 */
@@ -69,9 +68,6 @@ public class Customers extends BaseEntity
 
     /** 更新人 */
     private String updatedBy;
-
-    /** 删除人 */
-    private String deletedBy;
 
     public void setId(String id) 
     {
@@ -223,16 +219,6 @@ public class Customers extends BaseEntity
         return updatedBy;
     }
 
-    public void setDeletedBy(String deletedBy) 
-    {
-        this.deletedBy = deletedBy;
-    }
-
-    public String getDeletedBy() 
-    {
-        return deletedBy;
-    }
-
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -251,7 +237,6 @@ public class Customers extends BaseEntity
             .append("deletedAt", getDeletedAt())
             .append("createdBy", getCreatedBy())
             .append("updatedBy", getUpdatedBy())
-            .append("deletedBy", getDeletedBy())
             .toString();
     }
 }

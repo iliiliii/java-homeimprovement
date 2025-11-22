@@ -7,7 +7,7 @@ import com.ruoyi.web.domain.Customers;
  * 客户档案Service接口
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public interface ICustomersService 
 {
@@ -53,7 +53,7 @@ public interface ICustomersService
 
     /**
      * 删除客户档案信息
-     *
+     * 
      * @param id 客户档案主键
      * @return 结果
      */
@@ -61,10 +61,18 @@ public interface ICustomersService
 
     /**
      * 检查手机号是否存在
-     *
+     * 
      * @param phone 手机号
      * @param excludeId 排除的客户ID（编辑时使用）
      * @return 是否存在
      */
     public boolean checkPhoneExists(String phone, String excludeId);
+
+    /**
+     * 软删除客户档案信息
+     * 
+     * @param id 客户档案主键
+     * @return 结果
+     */
+    public int softDeleteCustomersById(String id);
 }
