@@ -53,46 +53,31 @@
 ### 2. ProjectBudgetsControllerIntegrationTest.java - Controller层集成测试
 **位置**: `sb3/evs-home/src/test/java/com/ruoyi/web/controller/ProjectBudgetsControllerIntegrationTest.java`
 
-#### 测试场景（共13个）
+**状态**: ❌ **已删除**
 
-| 测试名称 | 场景 | HTTP方法 |
-|----------|------|----------|
-| testListProjectBudgetsByProjectId | 按项目ID查询 | GET /list?projectId=xxx |
-| testListProjectBudgetsByCategory | 按预算分类查询 | GET /list?category=xxx |
-| testListProjectBudgetsByMultipleConditions | 组合条件查询 | GET /list?projectId=xxx&category=xxx |
-| testListProjectBudgetsWithNonExistentProjectId | 不存在的项目ID | GET /list?projectId=NON_EXISTENT |
-| testGetProjectBudgetsById | 获取预算详情 | GET /{id} |
-| testAddProjectBudgets | 新增预算明细 | POST / |
-| testUpdateProjectBudgets | 修改预算明细 | PUT / |
-| testDeleteProjectBudgets | 删除预算明细 | DELETE /{id} |
-| testDeleteProjectBudgetsBatch | 批量删除预算明细 | DELETE /{ids} |
-| testExportProjectBudgets | 导出预算明细 | POST /export |
-| testListProjectBudgetsReturnDataFormat | 验证返回数据格式 | GET /list |
-| testListProjectBudgetsPagination | 验证分页参数 | GET /list?pageNum=1&pageSize=10 |
-| testAddProjectBudgetsValidation | 必填字段验证 | POST / |
+**原因**: evs-home 不是独立的 Spring Boot 应用，无法运行集成测试。需要完整的 Spring Boot 上下文，但 evs-home 只是 ruoyi-admin 的子模块。
 
-**状态**: ✅ 全部可以编译，等待集成环境测试
+**替代方案**: 在 ruoyi-admin 模块中创建集成测试，或在真实环境中测试。
 
 ### 3. ProjectBudgetsMapperTest.java - Mapper层数据访问测试
 **位置**: `sb3/evs-home/src/test/java/com/ruoyi/web/mapper/ProjectBudgetsMapperTest.java`
 
-#### 测试场景（共12个）
+**状态**: ❌ **已删除**
 
-| 测试名称 | 说明 |
-|----------|------|
-| testSelectProjectBudgetsListByProjectId | 按项目ID查询预算明细 |
-| testSelectProjectBudgetsListByCategory | 按预算分类查询 |
-| testSelectProjectBudgetsListByProjectIdAndCategory | 组合条件查询 |
-| testSelectProjectBudgetsListByNonExistentProjectId | 查询不存在的项目ID |
-| testSelectProjectBudgetsListWithoutConditions | 查询所有预算（无过滤） |
-| testSelectProjectBudgetsById | 根据ID查询预算明细 |
-| testSelectProjectBudgetsByNonExistentId | 根据不存在的ID查询 |
-| testInsertProjectBudgets | 插入预算明细 |
-| testUpdateProjectBudgets | 更新预算明细 |
-| testDeleteProjectBudgetsById | 删除预算明细 |
-| testDeleteProjectBudgetsByIds | 批量删除预算明细 |
+**原因**: Mapper 测试需要数据库连接和 Spring 上下文，在单元测试环境中无法运行。
 
-**状态**: ✅ 全部可以编译，等待集成环境测试
+**替代方案**: 在集成测试环境中或真实环境中验证数据库操作。
+
+---
+
+## ✅ 最终保留的测试
+
+### 1. ProjectBudgetsServiceImplTest.java - Service层单元测试 ✅
+**位置**: `sb3/evs-home/src/test/java/com/ruoyi/web/service/impl/ProjectBudgetsServiceImplTest.java`
+
+**状态**: ✅ **全部通过**
+
+**测试场景（共9个）**: 详见下表
 
 ---
 

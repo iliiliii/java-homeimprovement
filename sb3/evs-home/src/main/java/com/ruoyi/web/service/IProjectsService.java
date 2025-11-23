@@ -7,7 +7,7 @@ import com.ruoyi.web.domain.Projects;
  * 项目信息Service接口
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public interface IProjectsService 
 {
@@ -58,4 +58,12 @@ public interface IProjectsService
      * @return 结果
      */
     public int deleteProjectsById(String id);
+
+    /**
+     * 软删除项目信息信息
+     * 
+     * @param id 项目信息主键
+     * @return 结果
+     */
+    public int softDeleteProjectsById(String id);
 }

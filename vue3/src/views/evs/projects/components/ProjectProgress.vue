@@ -111,7 +111,11 @@
           </div>
         </el-timeline-item>
       </el-timeline>
-      <el-empty v-else description="暂无施工阶段" />
+      <div v-else style="text-align: center; padding: 20px 0; color: #999; font-size: 13px;">
+        <el-text  title="暂无施工阶段" :column="1" class="mx-1" type="info" size="small" >
+        暂无施工阶段，请点击下方按钮添加
+      </el-text>
+      </div>
     </div>
 
     <!-- 添加/编辑施工阶段表单 -->

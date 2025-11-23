@@ -6,9 +6,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     
     <resultMap type="Projects" id="ProjectsResult">
         <result property="id"    column="id"    />
+        <result property="projectType"    column="project_type"    />
         <result property="name"    column="name"    />
         <result property="customerId"    column="customer_id"    />
-        <result property="projectCode"    column="project_code"    />
         <result property="description"    column="description"    />
         <result property="address"    column="address"    />
         <result property="area"    column="area"    />
@@ -20,26 +20,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="status"    column="status"    />
         <result property="priority"    column="priority"    />
         <result property="progress"    column="progress"    />
-        <result property="isActive"    column="is_active"    />
+        <result property="budgetsUrl"    column="budgets_url"    />
+        <result property="contractsUrl"    column="contracts_url"    />
         <result property="createdAt"    column="created_at"    />
         <result property="updatedAt"    column="updated_at"    />
         <result property="deletedAt"    column="deleted_at"    />
         <result property="createdBy"    column="created_by"    />
         <result property="updatedBy"    column="updated_by"    />
-        <result property="deletedBy"    column="deleted_by"    />
     </resultMap>
 
     <sql id="selectProjectsVo">
-        select id, name, customer_id, project_code, description, address, area, budget, actual_cost, start_date, end_date, actual_end_date, status, priority, progress, is_active, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by from projects
+        select id, project_type, name, customer_id, description, address, area, budget, actual_cost, start_date, end_date, actual_end_date, status, priority, progress, budgets_url, contracts_url, created_at, updated_at, deleted_at, created_by, updated_by from projects
     </sql>
 
     <select id="selectProjectsList" parameterType="Projects" resultMap="ProjectsResult">
         <include refid="selectProjectsVo"/>
         <where>  
+            <if test="projectType != null  and projectType != ''"> and project_type = #{projectType}</if>
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
-            <if test="customerId != null  and customerId != ''"> and customer_id = #{customerId}</if>
-            <if test="address != null  and address != ''"> and address = #{address}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="priority != null  and priority != ''"> and priority = #{priority}</if>
         </where>
     </select>
     
@@ -52,9 +52,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into projects
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
+            <if test="projectType != null and projectType != ''">project_type,</if>
             <if test="name != null and name != ''">name,</if>
-            <if test="customerId != null and customerId != ''">customer_id,</if>
-            <if test="projectCode != null">project_code,</if>
+            <if test="customerId != null">customer_id,</if>
             <if test="description != null">description,</if>
             <if test="address != null and address != ''">address,</if>
             <if test="area != null">area,</if>
@@ -63,22 +63,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="startDate != null">start_date,</if>
             <if test="endDate != null">end_date,</if>
             <if test="actualEndDate != null">actual_end_date,</if>
-            <if test="status != null">status,</if>
-            <if test="priority != null">priority,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="priority != null and priority != ''">priority,</if>
             <if test="progress != null">progress,</if>
-            <if test="isActive != null">is_active,</if>
+            <if test="budgetsUrl != null">budgets_url,</if>
+            <if test="contractsUrl != null">contracts_url,</if>
             <if test="createdAt != null">created_at,</if>
             <if test="updatedAt != null">updated_at,</if>
             <if test="deletedAt != null">deleted_at,</if>
             <if test="createdBy != null">created_by,</if>
             <if test="updatedBy != null">updated_by,</if>
-            <if test="deletedBy != null">deleted_by,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
+            <if test="projectType != null and projectType != ''">#{projectType},</if>
             <if test="name != null and name != ''">#{name},</if>
-            <if test="customerId != null and customerId != ''">#{customerId},</if>
-            <if test="projectCode != null">#{projectCode},</if>
+            <if test="customerId != null">#{customerId},</if>
             <if test="description != null">#{description},</if>
             <if test="address != null and address != ''">#{address},</if>
             <if test="area != null">#{area},</if>
@@ -87,25 +87,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="startDate != null">#{startDate},</if>
             <if test="endDate != null">#{endDate},</if>
             <if test="actualEndDate != null">#{actualEndDate},</if>
-            <if test="status != null">#{status},</if>
-            <if test="priority != null">#{priority},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="priority != null and priority != ''">#{priority},</if>
             <if test="progress != null">#{progress},</if>
-            <if test="isActive != null">#{isActive},</if>
+            <if test="budgetsUrl != null">#{budgetsUrl},</if>
+            <if test="contractsUrl != null">#{contractsUrl},</if>
             <if test="createdAt != null">#{createdAt},</if>
             <if test="updatedAt != null">#{updatedAt},</if>
             <if test="deletedAt != null">#{deletedAt},</if>
             <if test="createdBy != null">#{createdBy},</if>
             <if test="updatedBy != null">#{updatedBy},</if>
-            <if test="deletedBy != null">#{deletedBy},</if>
          </trim>
     </insert>
 
     <update id="updateProjects" parameterType="Projects">
         update projects
         <trim prefix="SET" suffixOverrides=",">
+            <if test="projectType != null and projectType != ''">project_type = #{projectType},</if>
             <if test="name != null and name != ''">name = #{name},</if>
-            <if test="customerId != null and customerId != ''">customer_id = #{customerId},</if>
-            <if test="projectCode != null">project_code = #{projectCode},</if>
+            <if test="customerId != null">customer_id = #{customerId},</if>
             <if test="description != null">description = #{description},</if>
             <if test="address != null and address != ''">address = #{address},</if>
             <if test="area != null">area = #{area},</if>
@@ -114,16 +114,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="startDate != null">start_date = #{startDate},</if>
             <if test="endDate != null">end_date = #{endDate},</if>
             <if test="actualEndDate != null">actual_end_date = #{actualEndDate},</if>
-            <if test="status != null">status = #{status},</if>
-            <if test="priority != null">priority = #{priority},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="priority != null and priority != ''">priority = #{priority},</if>
             <if test="progress != null">progress = #{progress},</if>
-            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="budgetsUrl != null">budgets_url = #{budgetsUrl},</if>
+            <if test="contractsUrl != null">contracts_url = #{contractsUrl},</if>
             <if test="createdAt != null">created_at = #{createdAt},</if>
             <if test="updatedAt != null">updated_at = #{updatedAt},</if>
             <if test="deletedAt != null">deleted_at = #{deletedAt},</if>
             <if test="createdBy != null">created_by = #{createdBy},</if>
             <if test="updatedBy != null">updated_by = #{updatedBy},</if>
-            <if test="deletedBy != null">deleted_by = #{deletedBy},</if>
         </trim>
         where id = #{id}
     </update>

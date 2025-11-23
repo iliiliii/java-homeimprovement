@@ -6,13 +6,13 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectsService;
-import com.ruoyi.common.utils.uuid.IdUtils;
+import com.ruoyi.common.utils.DateUtils;
 
 /**
  * 项目信息Service业务层处理
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 @Service
 public class ProjectsServiceImpl implements IProjectsService 
@@ -53,10 +53,6 @@ public class ProjectsServiceImpl implements IProjectsService
     @Override
     public int insertProjects(Projects projects)
     {
-        // 如果 id 为空，自动生成 UUID
-        if (projects.getId() == null || projects.getId().isEmpty()) {
-            projects.setId(IdUtils.fastSimpleUUID());
-        }
         return projectsMapper.insertProjects(projects);
     }
 
@@ -94,5 +90,16 @@ public class ProjectsServiceImpl implements IProjectsService
     public int deleteProjectsById(String id)
     {
         return projectsMapper.deleteProjectsById(id);
+    }
+
+    @Override
+    public int softDeleteProjectsById(String id)
+    {
+        Projects projects = projectsMapper.selectProjectsById(id);
+        if (projects == null) {
+            return 0;
+        }
+        projects.setDeletedAt(DateUtils.getNowDate());
+        return projectsMapper.updateProjects(projects);
     }
 }

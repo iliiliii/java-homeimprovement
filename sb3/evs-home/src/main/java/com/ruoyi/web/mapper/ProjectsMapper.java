@@ -7,7 +7,7 @@ import com.ruoyi.web.domain.Projects;
  * 项目信息Mapper接口
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public interface ProjectsMapper 
 {

@@ -12,7 +12,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 项目信息对象 projects
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
 public class Projects extends BaseEntity
 {
@@ -21,20 +21,18 @@ public class Projects extends BaseEntity
     /** 项目ID */
     private String id;
 
+    /** 项目类型（RESIDENTIAL:家装、COMMERCIAL:工装） */
+    @Excel(name = "项目类型", readConverterExp = "R=ESIDENTIAL:家装、COMMERCIAL:工装")
+    private String projectType;
+
     /** 项目名称 */
     @Excel(name = "项目名称")
     private String name;
 
     /** 客户ID */
-    @Excel(name = "客户ID")
     private String customerId;
 
-    /** 项目编号 */
-    @Excel(name = "项目编号")
-    private String projectCode;
-
     /** 项目描述 */
-    @Excel(name = "项目描述")
     private String description;
 
     /** 项目地址 */
@@ -50,7 +48,6 @@ public class Projects extends BaseEntity
     private BigDecimal budget;
 
     /** 实际费用 */
-    @Excel(name = "实际费用")
     private BigDecimal actualCost;
 
     /** 开始日期 */
@@ -64,8 +61,6 @@ public class Projects extends BaseEntity
     private Date endDate;
 
     /** 实际完工日期 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "实际完工日期", width = 30, dateFormat = "yyyy-MM-dd")
     private Date actualEndDate;
 
     /** 项目状态 */
@@ -77,15 +72,15 @@ public class Projects extends BaseEntity
     private String priority;
 
     /** 进度百分比 */
-    @Excel(name = "进度百分比")
     private BigDecimal progress;
 
-    /** 是否启用 */
-    private Integer isActive;
+    /** 预算文件URL */
+    private String budgetsUrl;
+
+    /** 合同文件URL */
+    private String contractsUrl;
 
     /** 创建时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "创建时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date createdAt;
 
     /** 更新时间 */
@@ -100,9 +95,6 @@ public class Projects extends BaseEntity
     /** 更新人 */
     private String updatedBy;
 
-    /** 删除人 */
-    private String deletedBy;
-
     public void setId(String id) 
     {
         this.id = id;
@@ -111,6 +103,16 @@ public class Projects extends BaseEntity
     public String getId() 
     {
         return id;
+    }
+
+    public void setProjectType(String projectType) 
+    {
+        this.projectType = projectType;
+    }
+
+    public String getProjectType() 
+    {
+        return projectType;
     }
 
     public void setName(String name) 
@@ -131,16 +133,6 @@ public class Projects extends BaseEntity
     public String getCustomerId() 
     {
         return customerId;
-    }
-
-    public void setProjectCode(String projectCode) 
-    {
-        this.projectCode = projectCode;
-    }
-
-    public String getProjectCode() 
-    {
-        return projectCode;
     }
 
     public void setDescription(String description) 
@@ -253,14 +245,24 @@ public class Projects extends BaseEntity
         return progress;
     }
 
-    public void setIsActive(Integer isActive) 
+    public void setBudgetsUrl(String budgetsUrl) 
     {
-        this.isActive = isActive;
+        this.budgetsUrl = budgetsUrl;
     }
 
-    public Integer getIsActive() 
+    public String getBudgetsUrl() 
     {
-        return isActive;
+        return budgetsUrl;
+    }
+
+    public void setContractsUrl(String contractsUrl) 
+    {
+        this.contractsUrl = contractsUrl;
+    }
+
+    public String getContractsUrl() 
+    {
+        return contractsUrl;
     }
 
     public void setCreatedAt(Date createdAt) 
@@ -313,23 +315,13 @@ public class Projects extends BaseEntity
         return updatedBy;
     }
 
-    public void setDeletedBy(String deletedBy) 
-    {
-        this.deletedBy = deletedBy;
-    }
-
-    public String getDeletedBy() 
-    {
-        return deletedBy;
-    }
-
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("id", getId())
+            .append("projectType", getProjectType())
             .append("name", getName())
             .append("customerId", getCustomerId())
-            .append("projectCode", getProjectCode())
             .append("description", getDescription())
             .append("address", getAddress())
             .append("area", getArea())
@@ -341,13 +333,13 @@ public class Projects extends BaseEntity
             .append("status", getStatus())
             .append("priority", getPriority())
             .append("progress", getProgress())
-            .append("isActive", getIsActive())
+            .append("budgetsUrl", getBudgetsUrl())
+            .append("contractsUrl", getContractsUrl())
             .append("createdAt", getCreatedAt())
             .append("updatedAt", getUpdatedAt())
             .append("deletedAt", getDeletedAt())
             .append("createdBy", getCreatedBy())
             .append("updatedBy", getUpdatedBy())
-            .append("deletedBy", getDeletedBy())
             .toString();
     }
 }
