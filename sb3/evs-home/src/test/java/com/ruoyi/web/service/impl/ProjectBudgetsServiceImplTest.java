@@ -1,6 +1,7 @@
 package com.ruoyi.web.service.impl;
 
 import com.ruoyi.web.domain.ProjectBudgets;
+import com.ruoyi.web.mapper.ProjectBudgetsMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
