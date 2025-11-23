@@ -112,7 +112,16 @@ const showTip = computed(
 watch(() => props.modelValue, val => {
   if (val) {
     // 首先将值转为数组
-    const list = Array.isArray(val) ? val : props.modelValue.split(",")
+    let list = []
+    if (Array.isArray(val)) {
+      list = val
+    } else if (typeof val === 'string') {
+      list = val.split(",")
+    } else if (typeof val === 'object') {
+      // 单个文件对象，转换为数组
+      list = [val]
+    }
+
     // 然后将数组转为对象数组
     fileList.value = list.map(item => {
       if (typeof item === "string") {
