@@ -165,7 +165,7 @@ function handleExceed() {
 // 上传失败
 function handleUploadError(err) {
   proxy.$modal.msgError("上传文件失败")
-  proxy.$modal.closeLoading()
+  uploadedSuccessfully()
 }
 
 // 上传成功回调
@@ -175,7 +175,6 @@ function handleUploadSuccess(res, file) {
     uploadedSuccessfully()
   } else {
     number.value--
-    proxy.$modal.closeLoading()
     proxy.$modal.msgError(res.msg)
     proxy.$refs.fileUpload.handleRemove(file)
     uploadedSuccessfully()
@@ -195,8 +194,9 @@ function uploadedSuccessfully() {
     uploadList.value = []
     number.value = 0
     emit("update:modelValue", listToString(fileList.value))
-    proxy.$modal.closeLoading()
   }
+  // 兜底：确保一定关闭loading
+  proxy.$modal.closeLoading()
 }
 
 // 获取文件名称
