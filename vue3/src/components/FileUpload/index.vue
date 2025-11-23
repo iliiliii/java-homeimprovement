@@ -201,6 +201,10 @@ function uploadedSuccessfully() {
 
 // 获取文件名称
 function getFileName(name) {
+  // 如果name不存在或为空，返回空字符串
+  if (!name) {
+    return ''
+  }
   // 如果是url那么取最后的名字 如果不是直接返回
   if (name.lastIndexOf("/") > -1) {
     return name.slice(name.lastIndexOf("/") + 1)
