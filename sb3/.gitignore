@@ -45,3 +45,7 @@ nbdist/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+# 上传的文件
+D:/ruoyi/uploadPath/
+upload/

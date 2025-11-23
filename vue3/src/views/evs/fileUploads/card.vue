@@ -44,7 +44,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" :loading="uploading" @click="handleSubmit">提交</el-button>
+          <el-button type="primary" :loading="loading" @click="handleSubmit">提交</el-button>
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
@@ -109,7 +109,6 @@ import { listFileUploads, delFileUploads, addFileUploads } from "@/api/evs/fileU
 const { proxy } = getCurrentInstance()
 
 const loading = ref(false)
-const uploading = ref(false)
 const fileList = ref([])
 const uploadedFilesList = ref([])
 const total = ref(0)
@@ -156,7 +155,7 @@ async function handleSubmit() {
     return
   }
 
-  uploading.value = true
+  loading.value = true
   try {
     // 由于FileUpload组件已经将文件上传到/common/upload，
     // 现在需要将文件元数据保存到数据库
@@ -190,7 +189,7 @@ async function handleSubmit() {
     }
 
     proxy.$modal.msgSuccess(`成功上传 ${fileList.value.length} 个文件`)
-    uploading.value = false
+    loading.value = false
 
     // 重置表单
     handleReset()
@@ -200,7 +199,7 @@ async function handleSubmit() {
   } catch (error) {
     console.error('保存文件信息失败:', error)
     proxy.$modal.msgError('保存文件信息失败')
-    uploading.value = false
+    loading.value = false
   }
 }
 
