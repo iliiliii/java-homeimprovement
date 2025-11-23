@@ -509,9 +509,14 @@ function handleUpdate(row) {
     roleOptions.value = response.roles
     form.value.postIds = response.postIds
     form.value.roleIds = response.roleIds
+    // 确保头像字段被正确设置
+    if (response.data.avatar) {
+      form.value.avatar = response.data.avatar
+    }
+    // 编辑模式下密码为空，不显示密码字段
+    form.value.password = ""
     open.value = true
     title.value = "修改成员"
-    form.password = ""
   })
 }
 
