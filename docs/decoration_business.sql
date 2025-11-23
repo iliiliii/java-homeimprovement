@@ -254,20 +254,21 @@ CREATE TABLE `project_quality_fixes` (
 DROP TABLE IF EXISTS `team_members`;
 CREATE TABLE `team_members` (
   `id` VARCHAR(32) NOT NULL COMMENT '成员ID',
+  `user_id` VARCHAR(32) NOT NULL COMMENT '用户ID',
   `member_name` VARCHAR(100) NOT NULL COMMENT '成员姓名',
   `phone` VARCHAR(20) COMMENT '联系电话',
   `role` VARCHAR(20) NOT NULL COMMENT '团队角色（DESIGNER:设计师、PM:项目经理、WORKER:工长、SUPERVISOR:监理）',
   `skills` TEXT COMMENT '技能特长',
   `avatar` VARCHAR(500) COMMENT '头像',
   `experience_years` INT COMMENT '工作经验（年）',
-  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME COMMENT '删除时间',
   `created_by` VARCHAR(64) COMMENT '创建人',
   `updated_by` VARCHAR(64) COMMENT '更新人',
   PRIMARY KEY (`id`),
   KEY `idx_role` (`role`),
-  KEY `idx_status` (`is_active`),
+  KEY `idx_deleted_at` (`deleted_at`),
   KEY `idx_member_name` (`member_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='团队成员表';
 

@@ -132,27 +132,54 @@
           <div style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1677ff;">
             {{ editingTimelineItem ? '编辑施工阶段' : '添加施工阶段' }}
           </div>
-          <el-form-item label="施工阶段" required style="margin-bottom: 0;">
-            <el-select
-              v-model="timelineForm.title"
-              placeholder="选择施工阶段"
-              size="large"
-              style="width: 100%"
-            >
-              <el-option
-                v-for="dict in availableStages"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-              />
-              <el-option
-                v-if="availableStages.length === 0"
-                disabled
-                value=""
-                label="暂无可选施工阶段"
-              />
-            </el-select>
-          </el-form-item>
+
+          <el-row :gutter="16">
+            <el-col :span="8">
+              <el-form-item label="施工阶段" required style="margin-bottom: 0;">
+                <el-select
+                  v-model="timelineForm.title"
+                  placeholder="选择施工阶段"
+                  size="large"
+                  style="width: 100%"
+                >
+                  <el-option
+                    v-for="dict in availableStages"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
+                  />
+                  <el-option
+                    v-if="availableStages.length === 0"
+                    disabled
+                    value=""
+                    label="暂无可选施工阶段"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="8">
+              <el-form-item label="计划日期" required style="margin-bottom: 0;">
+                <el-date-picker
+                  v-model="timelineForm.date"
+                  placeholder="选择日期"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
+                  size="large"
+                />
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="8">
+              <el-form-item label="当前状态" style="margin-bottom: 0;">
+                <el-select v-model="timelineForm.status" style="width: 100%" size="large">
+                  <el-option value="pending" label="待开始" />
+                  <el-option value="inProgress" label="进行中" />
+                  <el-option value="completed" label="已完成" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
 
           <el-form-item label="阶段说明" required style="margin-bottom: 0;">
             <el-input
@@ -160,27 +187,9 @@
               type="textarea"
               :rows="3"
               placeholder="描述该阶段的工作内容"
+              size="large"
             />
           </el-form-item>
-
-          <el-space :size="16" style="width: 100%;">
-            <el-form-item label="计划日期" required style="margin-bottom: 0; flex: 1;">
-              <el-date-picker
-                v-model="timelineForm.date"
-                placeholder="选择日期"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              />
-            </el-form-item>
-
-            <el-form-item label="当前状态" style="margin-bottom: 0; width: 120px;">
-              <el-select v-model="timelineForm.status" style="width: 100%">
-                <el-option value="pending" label="待开始" />
-                <el-option value="inProgress" label="进行中" />
-                <el-option value="completed" label="已完成" />
-              </el-select>
-            </el-form-item>
-          </el-space>
 
           <div style="margin-top: 16px;">
             <el-space>
