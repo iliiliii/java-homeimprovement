@@ -8,6 +8,9 @@
       :on-error="handleUploadError"
       :accept="acceptType"
       :disabled="disabled"
+      :action="uploadUrl"
+      :headers="headers"
+      :data="uploadData"
     >
       <img
         v-if="imageUrl"
@@ -33,6 +36,11 @@
 <script setup>
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { getToken } from '@/utils/auth'
+import { getCurrentInstance } from 'vue'
+
+const { proxy } = getCurrentInstance()
+const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/system/user/profile/avatar')
 
 const props = defineProps({
   // 头像URL或Base64
@@ -76,6 +84,18 @@ const acceptType = computed(() => {
 
 const imageUrl = computed(() => props.modelValue)
 
+// 请求头（包含认证 token）
+const headers = computed(() => {
+  return {
+    Authorization: "Bearer " + getToken()
+  }
+})
+
+// 上传时的数据
+const uploadData = ref({
+  // 这里可以添加其他上传参数
+})
+
 // 上传前校检
 function handleBeforeUpload(file) {
   // 校检文件类型
@@ -94,49 +114,34 @@ function handleBeforeUpload(file) {
     return false
   }
 
-  // 返回 Promise 用于转换为 Base64
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      // 将 Base64 结果传给 on-success 处理器
-      resolve({
-        ...file,
-        base64: e.target.result
-      })
-    }
-    reader.onerror = () => {
-      reject(new Error('文件读取失败'))
-    }
-    reader.readAsDataURL(file)
-  })
+  // 显示加载中
+  proxy.$modal.loading("正在上传头像，请稍候...")
+
+  return true
 }
 
 // 上传成功回调
-function handleUploadSuccess(response, file) {
-  let base64Data
-  if (file.base64) {
-    // 使用转换后的 Base64 数据
-    base64Data = file.base64
-  } else {
-    // 如果没有 base64，则重新读取文件
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target.result
-      emit('update:modelValue', result)
-      emit('upload-success', result)
-      ElMessage.success('头像上传成功')
-    }
-    reader.readAsDataURL(file.raw || file)
-    return
-  }
+function handleUploadSuccess(response) {
+  proxy.$modal.closeLoading()
 
-  emit('update:modelValue', base64Data)
-  emit('upload-success', base64Data)
-  ElMessage.success('头像上传成功')
+  if (response.code === 200) {
+    // 上传成功，使用返回的头像URL
+    const avatarUrl = response.imgUrl || response.data?.imgUrl
+    if (avatarUrl) {
+      emit('update:modelValue', avatarUrl)
+      emit('upload-success', avatarUrl)
+      ElMessage.success('头像上传成功')
+    } else {
+      ElMessage.error('头像上传成功但未返回URL')
+    }
+  } else {
+    ElMessage.error(response.msg || '头像上传失败')
+  }
 }
 
 // 上传失败回调
 function handleUploadError() {
+  proxy.$modal.closeLoading()
   ElMessage.error('头像上传失败')
 }
 </script>
