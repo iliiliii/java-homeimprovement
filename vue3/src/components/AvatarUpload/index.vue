@@ -11,6 +11,7 @@
       :action="uploadUrl"
       :headers="headers"
       :data="uploadData"
+      name="avatarfile"
     >
       <img
         v-if="imageUrl"
@@ -43,7 +44,7 @@ const { proxy } = getCurrentInstance()
 const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/system/user/profile/avatar')
 
 const props = defineProps({
-  // 头像URL或Base64
+  // 头像URL（相对路径或完整URL）
   modelValue: {
     type: String,
     default: ''
@@ -77,12 +78,23 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'upload-success'])
 
-// 计算属性
+// 计算属性 - 获取文件类型限制字符串
 const acceptType = computed(() => {
   return props.fileType.map(type => `image/${type}`).join(',')
 })
 
-const imageUrl = computed(() => props.modelValue)
+// 计算属性 - 获取完整的头像URL用于显示
+const imageUrl = computed(() => {
+  if (!props.modelValue) return ''
+
+  // 如果���经是完整URL（以http开头），直接返回
+  if (props.modelValue.startsWith('http')) {
+    return props.modelValue
+  }
+
+  // 如果是相对路径，添加基础URL前缀用于显示
+  return import.meta.env.VITE_APP_BASE_API + props.modelValue
+})
 
 // 请求头（包含认证 token）
 const headers = computed(() => {
@@ -125,9 +137,11 @@ function handleUploadSuccess(response) {
   proxy.$modal.closeLoading()
 
   if (response.code === 200) {
-    // 上传成功，使用返回的头像URL
+    // 上传成功，使用返回的头像URL（相对路径）
     const avatarUrl = response.imgUrl || response.data?.imgUrl
     if (avatarUrl) {
+      // 注意：这里直接返回相对路径，不拼接完整URL
+      // imageUrl computed 会自动将相对路径转换为完整URL用于显示
       emit('update:modelValue', avatarUrl)
       emit('upload-success', avatarUrl)
       ElMessage.success('头像上传成功')
