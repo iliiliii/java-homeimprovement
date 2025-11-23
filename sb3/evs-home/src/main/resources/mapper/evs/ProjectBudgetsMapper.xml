@@ -22,7 +22,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectProjectBudgetsList" parameterType="ProjectBudgets" resultMap="ProjectBudgetsResult">
         <include refid="selectProjectBudgetsVo"/>
-        <where>  
+        <where>
+            <if test="projectId != null and projectId != ''"> and project_id = #{projectId}</if>
             <if test="category != null  and category != ''"> and category = #{category}</if>
             <if test="plannedAmount != null "> and planned_amount = #{plannedAmount}</if>
         </where>
