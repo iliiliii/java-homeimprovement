@@ -104,7 +104,7 @@
 
 <script setup name="FileUploads">
 import FileUpload from "@/components/FileUpload/index.vue"
-import { listFileUploads, delFileUploads } from "@/api/evs/fileUploads"
+import { listFileUploads, delFileUploads, addFileUploads } from "@/api/evs/fileUploads"
 
 const { proxy } = getCurrentInstance()
 
@@ -150,23 +150,58 @@ function handleFileChange(value) {
 }
 
 /** 提交 */
-function handleSubmit() {
+async function handleSubmit() {
   if (!fileList.value || fileList.value.length === 0) {
     proxy.$modal.msgError("请先选择要上传的文件")
     return
   }
 
   uploading.value = true
-  // 这里需要将上传的文件信息保存到后端
-  // 由于FileUpload组件已经处理了文件上传到/common/upload，
-  // 我们只需要将文件元数据保存到数据库即可
-  // 暂时使用延时模拟提交过程
-  setTimeout(() => {
+  try {
+    // 由于FileUpload组件已经将文件上传到/common/upload，
+    // 现在需要将文件元数据保存到数据库
+    // FileUpload组件返回的文件格式: { name: fileName, url: fileName }
+
+    const fileUploads = fileList.value.map(file => {
+      // 从file.name或file.url中提取原始文件名（去掉路径）
+      const originalName = file.name || file.url || ''
+      const fileName = file.url || file.name || ''
+
+      // 从原始文件名中提取扩展名作为类型
+      const extension = originalName.split('.').pop()?.toLowerCase() || ''
+      const mimeType = getMimeTypeByExtension(extension)
+
+      return {
+        fileName: fileName,
+        originalName: originalName,
+        mimeType: mimeType,
+        size: null, // FileUpload组件不暴露文件大小，需要修改组件才能获取
+        path: fileName,
+        url: import.meta.env.VITE_APP_BASE_API + fileName,
+        type: extension,
+        category: form.category,
+        remarks: form.remarks
+      }
+    })
+
+    // 批量插入文件记录
+    for (const fileData of fileUploads) {
+      await addFileUploads(fileData)
+    }
+
     proxy.$modal.msgSuccess(`成功上传 ${fileList.value.length} 个文件`)
     uploading.value = false
+
+    // 重置表单
+    handleReset()
+
     // 刷新列表
     getList()
-  }, 1000)
+  } catch (error) {
+    console.error('保存文件信息失败:', error)
+    proxy.$modal.msgError('保存文件信息失败')
+    uploading.value = false
+  }
 }
 
 /** 重置 */
@@ -228,6 +263,28 @@ function getCategoryType(category) {
     other: ''
   }
   return map[category] || ''
+}
+
+/** 根据文件扩展名获取MIME类型 */
+function getMimeTypeByExtension(extension) {
+  const mimeTypes = {
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'txt': 'text/plain',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'zip': 'application/zip',
+    'rar': 'application/x-rar-compressed',
+    '7z': 'application/x-7z-compressed'
+  }
+  return mimeTypes[extension] || 'application/octet-stream'
 }
 
 getList()
