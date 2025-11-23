@@ -58,4 +58,12 @@ public interface IFileUploadsService
      * @return 结果
      */
     public int deleteFileUploadsById(String id);
+
+    /**
+     * 软删除文件上传信息
+     * 
+     * @param id 文件上传主键
+     * @return 结果
+     */
+    public int softDeleteFileUploadsById(String id);
 }

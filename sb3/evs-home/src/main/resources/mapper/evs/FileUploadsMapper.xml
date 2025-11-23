@@ -107,4 +107,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
+
+    <update id="softDeleteFileUploadsById" parameterType="String">
+        update file_uploads set deleted_at = #{deletedAt} where id = #{id}
+    </update>
 </mapper>

@@ -17,7 +17,7 @@
                 :file-size="10"
                 :file-type="['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'pdf', 'zip', 'rar', 'jpg', 'jpeg', 'png']"
                 :is-show-tip="true"
-                @change="handleFileChange"
+                @upload-success="handleFileUploadSuccess"
               />
             </el-col>
           </el-row>
@@ -104,12 +104,15 @@
 
 <script setup name="FileUploads">
 import FileUpload from "@/components/FileUpload/index.vue"
-import { listFileUploads, delFileUploads, addFileUploads } from "@/api/evs/fileUploads"
+import { listFileUploads, delFileUploads, addFileUploads, getFileUploads, updateFileUploads } from "@/api/evs/fileUploads"
+import { useRoute } from "vue-router"
 
 const { proxy } = getCurrentInstance()
+const route = useRoute()
 
 const loading = ref(false)
-const fileList = ref([])
+const fileList = ref('') // FileUpload组件返回的是字符串（逗号分隔的文件URL）
+const fileIdList = ref([]) // 存储已上传文件的ID数组
 const uploadedFilesList = ref([])
 const total = ref(0)
 
@@ -142,53 +145,123 @@ function getList() {
   })
 }
 
-/** 文件变化处理 */
-function handleFileChange(value) {
-  console.log('文件列表变化:', value)
-  fileList.value = value
+/** 文件上传成功回调 - 立即保存到数据库并获得ID */
+async function handleFileUploadSuccess(fileData) {
+  try {
+    // fileData: { name: fileName, url: fileName, originalName: string, size: number }
+    const fileName = fileData.url || fileData.name
+    const fileNameWithoutPrefix = fileName.startsWith('/') ? fileName.substring(1) : fileName
+    const urlParts = fileNameWithoutPrefix.split('/')
+    const fullFileName = urlParts[urlParts.length - 1]
+    
+    // 从文件名中提取扩展名作为类型
+    const nameParts = fullFileName.split('.')
+    const extension = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : ''
+    const mimeType = getMimeTypeByExtension(extension)
+    
+    // 根据当前路由或功能自动设置分类
+    const autoCategory = getAutoCategory()
+    
+    const fileUploadData = {
+      fileName: fileNameWithoutPrefix,
+      originalName: fileData.originalName || fullFileName,
+      mimeType: mimeType,
+      size: fileData.size || 0,
+      path: fileNameWithoutPrefix,
+      url: import.meta.env.VITE_APP_BASE_API + (fileName.startsWith('/') ? fileName : '/' + fileName),
+      type: extension,
+      category: form.category || autoCategory,
+      remarks: form.remarks || ''
+    }
+    
+    // 保存文件到数据库
+    const response = await addFileUploads(fileUploadData)
+    if (response.code === 200 && response.data) {
+      // 获取文件ID并添加到列表
+      const fileId = response.data.id
+      fileIdList.value.push(fileId)
+      proxy.$modal.msgSuccess(`文件 "${fileData.originalName}" 上传成功`)
+      
+      // 刷新列表
+      getList()
+    } else {
+      proxy.$modal.msgError('保存文件信息失败')
+    }
+  } catch (error) {
+    console.error('保存文件信息失败:', error)
+    proxy.$modal.msgError('保存文件信息失败: ' + (error.message || '未知错误'))
+  }
 }
 
-/** 提交 */
+/** 根据当前功能自动获取分类 */
+function getAutoCategory() {
+  // 可以根据路由、页面功能等自动设置分类
+  // 这里可以根据实际业务需求调整
+  const path = route.path
+  
+  // 根据路径判断分类
+  if (path.includes('project')) {
+    return 'project'
+  } else if (path.includes('contract')) {
+    return 'contract'
+  } else if (path.includes('design')) {
+    return 'design'
+  } else if (path.includes('photo')) {
+    return 'photos'
+  } else if (path.includes('report')) {
+    return 'report'
+  }
+  
+  // 默认返回 'other'
+  return 'other'
+}
+
+/** 解析文件列表字符串为数组 */
+function parseFileList(fileListStr) {
+  if (!fileListStr) return []
+  if (typeof fileListStr === 'string') {
+    return fileListStr.split(',').filter(url => url.trim())
+  }
+  if (Array.isArray(fileListStr)) {
+    return fileListStr.map(item => {
+      if (typeof item === 'string') {
+        return item
+      }
+      if (typeof item === 'object' && item.url) {
+        return item.url
+      }
+      return item
+    }).filter(url => url)
+  }
+  return []
+}
+
+/** 提交 - 现在主要用于更新已上传文件的分类和备注 */
 async function handleSubmit() {
-  if (!fileList.value || fileList.value.length === 0) {
-    proxy.$modal.msgError("请先选择要上传的文件")
+  if (fileIdList.value.length === 0) {
+    proxy.$modal.msgError("请先上传文件")
     return
   }
 
   loading.value = true
   try {
-    // 由于FileUpload组件已经将文件上传到/common/upload，
-    // 现在需要将文件元数据保存到数据库
-    // FileUpload组件返回的文件格式: { name: fileName, url: fileName }
-
-    const fileUploads = fileList.value.map(file => {
-      // 从file.name或file.url中提取原始文件名（去掉路径）
-      const originalName = file.name || file.url || ''
-      const fileName = file.url || file.name || ''
-
-      // 从原始文件名中提取扩展名作为类型
-      const extension = originalName.split('.').pop()?.toLowerCase() || ''
-      const mimeType = getMimeTypeByExtension(extension)
-
-      return {
-        fileName: fileName,
-        originalName: originalName,
-        mimeType: mimeType,
-        size: null, // FileUpload组件不暴露文件大小，需要修改组件才能获取
-        path: fileName,
-        url: import.meta.env.VITE_APP_BASE_API + fileName,
-        type: extension,
-        category: form.category,
-        remarks: form.remarks
+    // 更新已上传文件的分类和备注
+    for (const fileId of fileIdList.value) {
+      const fileInfo = await getFileUploads(fileId)
+      if (fileInfo.code === 200 && fileInfo.data) {
+        const fileData = fileInfo.data
+        // 只更新分类和备注
+        if (form.category || form.remarks) {
+          await updateFileUploads({
+            id: fileId,
+            category: form.category || fileData.category,
+            remarks: form.remarks || fileData.remarks
+          })
+        }
       }
-    })
-
-    // 批量插入文件记录
-    for (const fileData of fileUploads) {
-      await addFileUploads(fileData)
     }
 
-    proxy.$modal.msgSuccess(`成功上传 ${fileList.value.length} 个文件`)
+    proxy.$modal.msgSuccess(`成功更新 ${fileIdList.value.length} 个文件的分类和备注`)
     loading.value = false
 
     // 重置表单
@@ -197,15 +270,16 @@ async function handleSubmit() {
     // 刷新列表
     getList()
   } catch (error) {
-    console.error('保存文件信息失败:', error)
-    proxy.$modal.msgError('保存文件信息失败')
+    console.error('更新文件信息失败:', error)
+    proxy.$modal.msgError('更新文件信息失败: ' + (error.message || '未知错误'))
     loading.value = false
   }
 }
 
 /** 重置 */
 function handleReset() {
-  fileList.value = []
+  fileList.value = ''
+  fileIdList.value = []
   form.category = null
   form.remarks = ''
 }
@@ -222,9 +296,20 @@ function handleDeleteFile(row) {
 
 /** 下载文件 */
 function handleDownload(row) {
-  // 构建下载URL
-  const downloadUrl = import.meta.env.VITE_APP_BASE_API + '/common/download?fileName=' + encodeURIComponent(row.path)
-  window.open(downloadUrl, '_blank')
+  // 使用 $download 插件下载文件，自动携带认证 token
+  // 通过文件ID获取文件信息，然后下载
+  if (row.path) {
+    proxy.$download.name(row.path, false)
+  } else {
+    // 如果没有path，通过ID获取文件信息
+    getFileUploads(row.id).then(response => {
+      if (response.code === 200 && response.data && response.data.path) {
+        proxy.$download.name(response.data.path, false)
+      } else {
+        proxy.$modal.msgError('获取文件信息失败')
+      }
+    })
+  }
 }
 
 /** 格式化文件大小 */

@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.FileUploadsMapper;
 import com.ruoyi.web.domain.FileUploads;
 import com.ruoyi.web.service.IFileUploadsService;
+import com.ruoyi.common.utils.uuid.IdUtils;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 
 /**
  * 文件上传Service业务层处理
@@ -52,6 +55,16 @@ public class FileUploadsServiceImpl implements IFileUploadsService
     @Override
     public int insertFileUploads(FileUploads fileUploads)
     {
+        // 如果 id 为空，自动生成 UUID
+        if (fileUploads.getId() == null || fileUploads.getId().isEmpty()) {
+            fileUploads.setId(IdUtils.fastSimpleUUID());
+        }
+        // 如果 size 为空，设置默认值为 0
+        if (fileUploads.getSize() == null) {
+            fileUploads.setSize(0L);
+        }
+        fileUploads.setCreatedAt(DateUtils.getNowDate());
+        fileUploads.setCreatedBy(SecurityUtils.getUsername());
         return fileUploadsMapper.insertFileUploads(fileUploads);
     }
 
@@ -64,6 +77,8 @@ public class FileUploadsServiceImpl implements IFileUploadsService
     @Override
     public int updateFileUploads(FileUploads fileUploads)
     {
+        fileUploads.setUpdatedAt(DateUtils.getNowDate());
+        fileUploads.setUpdatedBy(SecurityUtils.getUsername());
         return fileUploadsMapper.updateFileUploads(fileUploads);
     }
 
@@ -88,6 +103,28 @@ public class FileUploadsServiceImpl implements IFileUploadsService
     @Override
     public int deleteFileUploadsById(String id)
     {
+        FileUploads fileUploads = fileUploadsMapper.selectFileUploadsById(id);
+        if (fileUploads == null) {
+            return 0;
+        }
+        fileUploads.setDeletedAt(DateUtils.getNowDate());
         return fileUploadsMapper.deleteFileUploadsById(id);
+    }
+
+    /**
+     * 软删除文件上传信息
+     * 
+     * @param id 文件上传主键
+     * @return 结果
+     */
+    @Override
+    public int softDeleteFileUploadsById(String id)
+    {
+        FileUploads fileUploads = fileUploadsMapper.selectFileUploadsById(id);
+        if (fileUploads == null) {
+            return 0;
+        }
+        fileUploads.setDeletedAt(DateUtils.getNowDate());
+        return fileUploadsMapper.updateFileUploads(fileUploads);
     }
 }

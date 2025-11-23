@@ -77,7 +77,12 @@ public class FileUploadsController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody FileUploads fileUploads)
     {
-        return toAjax(fileUploadsService.insertFileUploads(fileUploads));
+        int result = fileUploadsService.insertFileUploads(fileUploads);
+        if (result > 0) {
+            // 返回文件对象，包含生成的ID
+            return success(fileUploads);
+        }
+        return error("新增文件上传失败");
     }
 
     /**

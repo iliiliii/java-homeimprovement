@@ -45,24 +45,18 @@
     <!-- 顶部操作按钮 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="Plus"
-          @click="handleAdd"
-          v-hasPermi="['evs:projects:add']"
-        >新增</el-button>
+        <el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['evs:projects:add']">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="Download"
-          @click="handleExport"
-          v-hasPermi="['evs:projects:export']"
-        >导出</el-button>
+        <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate" v-hasPermi="['evs:projects:edit']">修改</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      <el-col :span="1.5">
+        <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete" v-hasPermi="['evs:projects:remove']">删除</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['evs:projects:export']">导出</el-button>
+      </el-col>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
     <!-- 项目卡片网格 -->
@@ -75,11 +69,16 @@
         :lg="8"
         style="margin-bottom: 16px;"
       >
-        <el-card shadow="hover" style="height: 100%;">
+        <el-card shadow="hover" style="height: 100%;" :body-style="{ padding: '16px' }">
+          <!-- 卡片选择框 -->
+          <div style="position: absolute; top: 12px; right: 12px; z-index: 1;">
+            <el-checkbox v-model="project.checked" @change="handleCardSelectChange(project)" />
+          </div>
+
           <!-- 卡片头部: 项目名称 + 状态标签 -->
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="flex: 1; min-width: 0;">
+              <div style="flex: 1; min-width: 0; padding-right: 40px;">
                 <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   {{ project.name }}
                 </div>
@@ -87,8 +86,7 @@
                   {{ project.address }}
                 </div>
               </div>
-              
-                <dict-tag v-if="project.status" :options="decoration_project_status" :value="project.status" />
+              <dict-tag v-if="project.status" :options="decoration_project_status" :value="project.status" />
             </div>
           </template>
 
@@ -220,63 +218,35 @@
     />
 
     <!-- 预算管理对话框 -->
-    <el-dialog
-      v-model="budgetOpen"
-      width="900px"
-      append-to-body
-      :show-close="true"
-      :close-on-click-modal="false"
-      class="project-budget-dialog"
-    >
+    <el-dialog v-model="budgetOpen" width="900px" append-to-body :show-close="true" :close-on-click-modal="false" class="project-budget-dialog">
       <template #header>
         <div style="display: flex; align-items: center; gap: 8px;">
           <el-icon style="color: #faad14; font-size: 16px;"><Wallet /></el-icon>
           <span>{{ currentBudgetProject.name }} - 预算管理</span>
         </div>
       </template>
-
       <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
-        <ProjectBudget
-          v-if="currentBudgetProject"
-          :project="currentBudgetProject"
-          @save="handleSaveBudget"
-        />
+        <ProjectBudget v-if="currentBudgetProject" :project="currentBudgetProject" @save="handleSaveBudget" />
       </div>
-
-      <!-- 预算管理对话框不需要footer，通过组件内部操作关闭 -->
     </el-dialog>
 
     <!-- 进度管理对话框 -->
-    <el-dialog
-      v-model="progressOpen"
-      width="900px"
-      append-to-body
-      :show-close="true"
-      :close-on-click-modal="false"
-      class="project-progress-dialog"
-    >
+    <el-dialog v-model="progressOpen" width="900px" append-to-body :show-close="true" :close-on-click-modal="false" class="project-progress-dialog">
       <template #header>
         <div style="display: flex; align-items: center; gap: 8px;">
           <el-icon style="color: #1677ff; font-size: 16px;"><Clock /></el-icon>
           <span>{{ currentProgressProject.name }} - 施工进度管理</span>
         </div>
       </template>
-
       <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
-        <ProjectProgress
-          v-if="currentProgressProject"
-          :project="currentProgressProject"
-          @save="handleSaveProgress"
-        />
+        <ProjectProgress v-if="currentProgressProject" :project="currentProgressProject" @save="handleSaveProgress" />
       </div>
-
-      <!-- 进度管理对话框不需要footer，通过组件内部操作关闭 -->
     </el-dialog>
   </div>
 </template>
 
 <script setup name="Projects">
-import { listProjects, updateProjects } from "@/api/evs/projects"
+import { listProjects, updateProjects, delProjects } from "@/api/evs/projects"
 import { listCustomers } from "@/api/evs/customers"
 import { useRouter } from 'vue-router'
 import ProjectProgress from './components/ProjectProgress.vue'
@@ -299,6 +269,11 @@ const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
 
+// 选择状态管理
+const ids = ref([])
+const single = ref(true)
+const multiple = ref(true)
+
 // 预算管理弹窗
 const budgetOpen = ref(false)
 const currentBudgetProject = ref({})
@@ -306,6 +281,17 @@ const currentBudgetProject = ref({})
 // 进度管理弹窗
 const progressOpen = ref(false)
 const currentProgressProject = ref({})
+
+// 列显隐信息
+const columns = ref({
+  id: { label: '项目ID', visible: true },
+  name: { label: '项目名称', visible: true },
+  customer: { label: '客户', visible: true },
+  address: { label: '地址', visible: true },
+  status: { label: '状态', visible: true },
+  budget: { label: '预算', visible: true },
+  createTime: { label: '创建时间', visible: true }
+})
 
 const data = reactive({
   queryParams: {
@@ -324,9 +310,16 @@ const { queryParams } = toRefs(data)
 function getList() {
   loading.value = true
   listProjects(queryParams.value).then(response => {
-    projectsList.value = response.rows
+    projectsList.value = response.rows.map(project => ({
+      ...project,
+      checked: false // 确保每个项目都有 checked 属性
+    }))
     total.value = response.total
     loading.value = false
+    // 重置选择状态
+    ids.value = []
+    single.value = true
+    multiple.value = true
   })
 }
 
@@ -349,7 +342,22 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-  projectEditRef.value?.handleEdit(row)
+  // 如果没有传入 row，则从选中的记录中获取
+  const project = row || projectsList.value.find(item => ids.value.includes(item.id))
+  if (project) {
+    projectEditRef.value?.handleEdit(project)
+  }
+}
+
+/** 删除按钮操作 */
+function handleDelete(row) {
+  const projectIds = row.id || ids.value
+  proxy.$modal.confirm('是否确认删除项目编号为"' + projectIds + '"的数据项？').then(function () {
+    return delProjects(projectIds)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess("删除成功")
+  }).catch(() => {})
 }
 
 /** 导出按钮操作 */
@@ -357,6 +365,13 @@ function handleExport() {
   proxy.download('evs/projects/export', {
     ...queryParams.value
   }, `projects_${new Date().getTime()}.xlsx`)
+}
+
+/** 卡片选择处理 */
+function handleCardSelectChange(project) {
+  ids.value = projectsList.value.filter(item => item.checked).map(item => item.id)
+  single.value = ids.value.length !== 1
+  multiple.value = !ids.value.length
 }
 
 /** 获取客户列表 */
@@ -445,28 +460,18 @@ getList()
 getCustomersList()
 </script>
 
-
 <style lang="scss">
-// 项目详情对话框和预算对话框中的 el-space__item 宽度设置为 100%
+// 预算对话框样式优化
 .project-budget-dialog .el-dialog__body .el-space.el-space--vertical > .el-space__item {
   width: 100% !important;
   flex-basis: 100% !important;
   max-width: 100% !important;
 }
 
-.project-detail-dialog .el-dialog__body .el-space.el-space--vertical > .el-space__item {
-  width: 100% !important;
-  flex-basis: 100% !important;
-  max-width: 100% !important;
-}
-
-// 确保预算对话框中的 table 宽度为 100%
 .project-budget-dialog .el-dialog__body .el-table {
   width: 100% !important;
 }
 
-// 确保 table 元素本身也有正确的宽度（Element Plus 会在 table 元素上设置内联样式）
-// 需要覆盖 Element Plus 可能设置的 100px 默认宽度
 .project-budget-dialog .el-dialog__body .el-table table.el-table__header,
 .project-budget-dialog .el-dialog__body .el-table table.el-table__body,
 .project-budget-dialog .el-dialog__body .el-table table {
@@ -474,26 +479,18 @@ getCustomersList()
   min-width: 100% !important;
 }
 
-// 确保 el-space__item 内的所有子元素都能正确继承宽度
 .project-budget-dialog .el-dialog__body .el-space__item > * {
   width: 100%;
   box-sizing: border-box;
 }
 
-// 特别针对 el-table 的包装器
-.project-budget-dialog .el-dialog__body .el-space__item .el-table {
-  width: 100% !important;
-  min-width: 100% !important;
-}
-
-// 进度对话框样式
+// 进度对话框样式优化
 .project-progress-dialog .el-dialog__body .el-space.el-space--vertical > .el-space__item {
   width: 100% !important;
   flex-basis: 100% !important;
   max-width: 100% !important;
 }
 
-// 确保进度对话框中的时间轴样式与 TSX 一致
 .project-progress-dialog .el-timeline {
   padding-left: 0;
 }
@@ -502,22 +499,7 @@ getCustomersList()
   padding-left: 20px;
 }
 
-// 确保进度对话框中的所有内容区域宽度为 100%
 .project-progress-dialog .el-dialog__body .el-space__item > * {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-// Dialog 滚动容器优化
-.project-budget-dialog .el-dialog__body > div[style*="overflow-y: auto"],
-.project-progress-dialog .el-dialog__body > div[style*="overflow-y: auto"] {
-  box-sizing: border-box;
-}
-
-// 确保内容在滚动容器中正确显示
-.project-budget-dialog .project-budget-container,
-.project-progress-dialog .project-progress-container {
-  padding: 8px 0;
   width: 100%;
   box-sizing: border-box;
 }

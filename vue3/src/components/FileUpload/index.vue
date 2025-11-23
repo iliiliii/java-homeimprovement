@@ -88,7 +88,7 @@ const props = defineProps({
 })
 
 const { proxy } = getCurrentInstance()
-const emit = defineEmits()
+const emit = defineEmits(['upload-success']) // 添加上传成功事件
 const number = ref(0)
 const uploadList = ref([])
 const baseUrl = import.meta.env.VITE_APP_BASE_API
@@ -98,6 +98,8 @@ const fileList = ref([])
 const showTip = computed(
   () => props.isShowTip && (props.fileType || props.fileSize)
 )
+// 存储上传中的文件信息（用于获取文件大小）
+const uploadingFiles = ref(new Map())
 
 watch(() => props.modelValue, val => {
   if (val) {
@@ -152,6 +154,11 @@ function handleBeforeUpload(file) {
       return false
     }
   }
+  // 保存文件信息，用于上传成功后获取文件大小
+  uploadingFiles.value.set(file.uid, {
+    name: file.name,
+    size: file.size
+  })
   proxy.$modal.loading("正在上传文件，请稍候...")
   number.value++
   return true
@@ -171,10 +178,21 @@ function handleUploadError(err) {
 // 上传成功回调
 function handleUploadSuccess(res, file) {
   if (res.code === 200) {
-    uploadList.value.push({ name: res.fileName, url: res.fileName })
+    // 获取上传前的文件信息
+    const fileInfo = uploadingFiles.value.get(file.uid) || { name: file.name, size: 0 }
+    const fileData = {
+      name: res.fileName,
+      url: res.fileName,
+      originalName: fileInfo.name,
+      size: fileInfo.size
+    }
+    uploadList.value.push(fileData)
+    // 触发上传成功事件，传递文件信息
+    emit('upload-success', fileData)
     uploadedSuccessfully()
   } else {
     number.value--
+    uploadingFiles.value.delete(file.uid)
     proxy.$modal.msgError(res.msg)
     proxy.$refs.fileUpload.handleRemove(file)
     uploadedSuccessfully()
@@ -193,6 +211,7 @@ function uploadedSuccessfully() {
     fileList.value = fileList.value.filter(f => f.url !== undefined).concat(uploadList.value)
     uploadList.value = []
     number.value = 0
+    uploadingFiles.value.clear()
     emit("update:modelValue", listToString(fileList.value))
   }
   // 兜底：确保一定关闭loading
