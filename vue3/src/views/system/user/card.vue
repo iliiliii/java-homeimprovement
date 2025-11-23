@@ -128,16 +128,7 @@
       <el-form :model="form" :rules="rules" ref="userRef" label-width="80px">
         <el-row>
           <el-col :span="24" style="text-align: center; margin-bottom: 20px;">
-            <el-avatar :size="100" :src="form.avatar" v-if="form.avatar">
-              <img :src="form.avatar" />
-            </el-avatar>
-            <el-avatar :size="100" v-else>
-              {{ getAvatarText(form.nickName || form.userName) }}
-            </el-avatar>
-            <div style="margin-top: 10px;">
-              <el-button size="small" type="primary" @click="handleUploadAvatar">上传头像</el-button>
-            </div>
-            <input ref="avatarInputRef" type="file" accept="image/*" style="display: none;" @change="handleAvatarChange" />
+            <AvatarUpload v-model="form.avatar" :size="100" />
           </el-col>
         </el-row>
         <el-row>
@@ -231,6 +222,7 @@
 import { listUser, delUser, getUser, updateUser, addUser, deptTreeSelect, resetUserPwd } from "@/api/system/user"
 import { listProjectMembers } from "@/api/evs/projectMembers"
 import { User, Phone, Folder, Key } from "@element-plus/icons-vue"
+import AvatarUpload from '@/components/AvatarUpload/index.vue'
 
 const { proxy } = getCurrentInstance()
 const { sys_normal_disable, sys_user_sex } = proxy.useDict("sys_normal_disable", "sys_user_sex")
@@ -246,7 +238,6 @@ const initPassword = ref(undefined)
 const postOptions = ref([])
 const roleOptions = ref([])
 const projectCountMap = ref({}) // 存储每个用户参与的项目数量
-const avatarInputRef = ref() // 头像上传 input 引用
 
 // 角色统计
 const roleStats = computed(() => {
@@ -474,37 +465,6 @@ function reset() {
 function cancel() {
   open.value = false
   reset()
-}
-
-/** 头像上传按钮 */
-function handleUploadAvatar() {
-  avatarInputRef.value?.click()
-}
-
-/** 处理头像变化 */
-function handleAvatarChange(event) {
-  const file = event.target.files[0]
-  if (!file) return
-
-  // 检查文件类型
-  if (!file.type.startsWith('image/')) {
-    proxy.$modal.msgError('请选择图片文件')
-    return
-  }
-
-  // 检查文件大小 (2MB)
-  const maxSize = 2 * 1024 * 1024
-  if (file.size > maxSize) {
-    proxy.$modal.msgError('图片大小不能超过 2MB')
-    return
-  }
-
-  // 创建 FileReader 读取文件
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    form.value.avatar = e.target.result
-  }
-  reader.readAsDataURL(file)
 }
 
 /** 重置密码按钮操作 */
