@@ -1,7 +1,18 @@
 <template>
   <div class="app-container">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">项目管理</h2>
+        <p class="page-subtitle">管理装修项目信息</p>
+      </div>
+      <el-button type="primary" icon="Plus" @click="handleAdd" v-hasPermi="['evs:projects:add']">
+        新建项目
+      </el-button>
+    </div>
+
     <!-- 搜索表单 -->
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px" class="search-form">
       <el-form-item label="项目名称" prop="name">
         <el-input
           v-model="queryParams.name"
@@ -41,23 +52,6 @@
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
-
-    <!-- 顶部操作按钮 -->
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['evs:projects:add']">新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate" v-hasPermi="['evs:projects:edit']">修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete" v-hasPermi="['evs:projects:remove']">删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['evs:projects:export']">导出</el-button>
-      </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
-    </el-row>
 
     <!-- 项目卡片网格 -->
     <el-row v-loading="loading" :gutter="16" style="margin-bottom: 16px;">
@@ -461,6 +455,38 @@ getCustomersList()
 </script>
 
 <style lang="scss">
+.app-container {
+  padding: 20px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .page-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .page-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    color: #909399;
+  }
+}
+
+.search-form {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
 // 预算对话框样式优化
 .project-budget-dialog .el-dialog__body .el-space.el-space--vertical > .el-space__item {
   width: 100% !important;

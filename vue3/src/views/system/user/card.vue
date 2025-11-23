@@ -59,6 +59,20 @@
       </el-col>
     </el-row>
 
+    <!-- 筛选表单区域 -->
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px" class="search-form">
+      <el-form-item label="用户名称" prop="userName">
+        <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable style="width: 240px" @keyup.enter="handleQuery" />
+      </el-form-item>
+      <el-form-item label="手机号码" prop="phonenumber">
+        <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号码" clearable style="width: 240px" @keyup.enter="handleQuery" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
+
     <!-- 团队成员列表 -->
     <el-card class="team-list-card">
       <el-table v-loading="loading" :data="userList" style="width: 100%">
@@ -74,7 +88,7 @@
             {{ row.nickName || row.userName }}
           </template>
         </el-table-column>
-        <el-table-column label="角色" align="center" width="120">
+        <el-table-column label="岗位" align="center" width="120">
           <template #default="{ row }">
             <el-tag :type="getPostTagType(row)" size="small">
               {{ getPostName(row) }}
@@ -165,7 +179,7 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item v-if="form.userId == undefined" label="用户名称" prop="userName">
+            <el-form-item label="用户名称" prop="userName">
               <el-input v-model="form.userName" placeholder="请输入用户名称" maxlength="30" />
             </el-form-item>
           </el-col>
@@ -230,6 +244,7 @@ const { sys_normal_disable, sys_user_sex } = proxy.useDict("sys_normal_disable",
 const userList = ref([])
 const open = ref(false)
 const loading = ref(true)
+const showSearch = ref(true)
 const ids = ref([])
 const total = ref(0)
 const title = ref("")
@@ -316,9 +331,25 @@ const data = reactive({
     ],
     nickName: [{ required: true, message: "用户昵称不能为空", trigger: "blur" }],
     password: [
-      { required: true, message: "用户密码不能为空", trigger: "blur" },
-      { min: 5, max: 20, message: "用户密码长度必须介于 5 和 20 之间", trigger: "blur" },
-      { pattern: /^[^<>"'|\\]+$/, message: "不能包含非法字符：< > \" ' \\\ |", trigger: "blur" }
+      {
+        required: () => !form.value.userId,
+        message: "用户密码不能为空",
+        trigger: "blur"
+      },
+      {
+        validator: (rule, value, callback) => {
+          if (!form.value.userId && !value) {
+            callback(new Error("用户密码不能为空"))
+          } else if (value && (value.length < 5 || value.length > 20)) {
+            callback(new Error("用户密码长度必须介于 5 和 20 之间"))
+          } else if (value && /[<>"'|\\]/.test(value)) {
+            callback(new Error("不能包含非法字符：< > \" ' \\|"))
+          } else {
+            callback()
+          }
+        },
+        trigger: "blur"
+      }
     ],
     email: [{ type: "email", message: "请输入正确的邮箱地址", trigger: ["blur", "change"] }],
     phonenumber: [
@@ -330,6 +361,9 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+// 获取查询表单引用
+const queryRef = ref()
+
 /** 查询用户列表 */
 function getList() {
   loading.value = true
@@ -337,10 +371,22 @@ function getList() {
     loading.value = false
     userList.value = res.rows
     total.value = res.total
-    
+
     // 获取每个用户参与的项目数量
     getUserProjectCounts()
   })
+}
+
+/** 搜索按钮操作 */
+function handleQuery() {
+  queryParams.value.pageNum = 1
+  getList()
+}
+
+/** 重置按钮操作 */
+function resetQuery() {
+  proxy.resetForm("queryRef")
+  handleQuery()
 }
 
 /** 获取用户参与的项目数量 */
@@ -659,6 +705,14 @@ onMounted(() => {
       }
     }
   }
+}
+
+.search-form {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .team-list-card {
