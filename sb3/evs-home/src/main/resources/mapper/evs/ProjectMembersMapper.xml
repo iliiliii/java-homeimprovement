@@ -10,23 +10,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="userId"    column="user_id"    />
         <result property="role"    column="role"    />
         <result property="isActive"    column="is_active"    />
-        <result property="addedBy"    column="added_by"    />
-        <result property="addedAt"    column="added_at"    />
-        <result property="removedBy"    column="removed_by"    />
-        <result property="removedAt"    column="removed_at"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+        <result property="createdBy"    column="created_by"    />
         <result property="updatedBy"    column="updated_by"    />
+        <!-- 用户关联字段 -->
+        <result property="userName"    column="user_name"    />
+        <result property="nickName"    column="nick_name"    />
+        <result property="postName"    column="post_name"    />
+        <result property="postCode"    column="post_code"    />
+        <result property="roleKey"    column="role_key"    />
     </resultMap>
 
     <sql id="selectProjectMembersVo">
-        select id, project_id, user_id, role, is_active, added_by, added_at, removed_by, removed_at, updated_by from project_members
+        select
+            pm.id, pm.project_id, pm.user_id, pm.role, pm.is_active,
+            pm.created_at, pm.updated_at, pm.created_by, pm.updated_by,
+            u.user_name, u.nick_name,
+            p.post_name, p.post_code,
+            r.role_key
+        from project_members pm
+        left join sys_user u on pm.user_id = u.user_id
+        left join sys_user_post up on u.user_id = up.user_id
+        left join sys_post p on up.post_id = p.post_id
+        left join sys_user_role ur on u.user_id = ur.user_id
+        left join sys_role r on ur.role_id = r.role_id
     </sql>
 
     <select id="selectProjectMembersList" parameterType="ProjectMembers" resultMap="ProjectMembersResult">
         <include refid="selectProjectMembersVo"/>
         <where>  
-            <if test="projectId != null  and projectId != ''"> and project_id = #{projectId}</if>
-            <if test="userId != null "> and user_id = #{userId}</if>
-            <if test="role != null  and role != ''"> and role = #{role}</if>
         </where>
     </select>
     
@@ -39,26 +52,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into project_members
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
-            <if test="projectId != null and projectId != ''">project_id,</if>
+            <if test="projectId != null">project_id,</if>
             <if test="userId != null">user_id,</if>
-            <if test="role != null and role != ''">role,</if>
+            <if test="role != null">role,</if>
             <if test="isActive != null">is_active,</if>
-            <if test="addedBy != null">added_by,</if>
-            <if test="addedAt != null">added_at,</if>
-            <if test="removedBy != null">removed_by,</if>
-            <if test="removedAt != null">removed_at,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+            <if test="createdBy != null">created_by,</if>
             <if test="updatedBy != null">updated_by,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
-            <if test="projectId != null and projectId != ''">#{projectId},</if>
+            <if test="projectId != null">#{projectId},</if>
             <if test="userId != null">#{userId},</if>
-            <if test="role != null and role != ''">#{role},</if>
+            <if test="role != null">#{role},</if>
             <if test="isActive != null">#{isActive},</if>
-            <if test="addedBy != null">#{addedBy},</if>
-            <if test="addedAt != null">#{addedAt},</if>
-            <if test="removedBy != null">#{removedBy},</if>
-            <if test="removedAt != null">#{removedAt},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+            <if test="createdBy != null">#{createdBy},</if>
             <if test="updatedBy != null">#{updatedBy},</if>
          </trim>
     </insert>
@@ -66,14 +77,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateProjectMembers" parameterType="ProjectMembers">
         update project_members
         <trim prefix="SET" suffixOverrides=",">
-            <if test="projectId != null and projectId != ''">project_id = #{projectId},</if>
+            <if test="projectId != null">project_id = #{projectId},</if>
             <if test="userId != null">user_id = #{userId},</if>
-            <if test="role != null and role != ''">role = #{role},</if>
+            <if test="role != null">role = #{role},</if>
             <if test="isActive != null">is_active = #{isActive},</if>
-            <if test="addedBy != null">added_by = #{addedBy},</if>
-            <if test="addedAt != null">added_at = #{addedAt},</if>
-            <if test="removedBy != null">removed_by = #{removedBy},</if>
-            <if test="removedAt != null">removed_at = #{removedAt},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="createdBy != null">created_by = #{createdBy},</if>
             <if test="updatedBy != null">updated_by = #{updatedBy},</if>
         </trim>
         where id = #{id}

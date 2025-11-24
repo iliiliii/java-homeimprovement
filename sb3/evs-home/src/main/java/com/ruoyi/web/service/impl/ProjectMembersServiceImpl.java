@@ -6,13 +6,15 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.ProjectMembersMapper;
 import com.ruoyi.web.domain.ProjectMembers;
 import com.ruoyi.web.service.IProjectMembersService;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.uuid.IdUtils;
 
 /**
  * 项目成员Service业务层处理
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-24
  */
 @Service
 public class ProjectMembersServiceImpl implements IProjectMembersService 
@@ -57,6 +59,8 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
         if (projectMembers.getId() == null || projectMembers.getId().isEmpty()) {
             projectMembers.setId(IdUtils.fastSimpleUUID());
         }
+        projectMembers.setCreatedAt(DateUtils.getNowDate());
+        projectMembers.setCreatedBy(SecurityUtils.getUsername());
         return projectMembersMapper.insertProjectMembers(projectMembers);
     }
 
@@ -69,6 +73,8 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
     @Override
     public int updateProjectMembers(ProjectMembers projectMembers)
     {
+        projectMembers.setUpdatedAt(DateUtils.getNowDate());
+        projectMembers.setUpdatedBy(SecurityUtils.getUsername());
         return projectMembersMapper.updateProjectMembers(projectMembers);
     }
 

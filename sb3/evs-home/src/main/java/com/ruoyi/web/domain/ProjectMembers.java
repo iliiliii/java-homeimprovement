@@ -11,7 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 项目成员对象 project_members
  * 
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-24
  */
 public class ProjectMembers extends BaseEntity
 {
@@ -20,41 +20,55 @@ public class ProjectMembers extends BaseEntity
     /** 成员ID */
     private String id;
 
-    /** 项目ID */
-    @Excel(name = "项目ID")
+    /** 项目ID（逻辑关联） */
+    @Excel(name = "项目ID", readConverterExp = "逻=辑关联")
     private String projectId;
 
-    /** 用户ID（关联sys_user） */
-    @Excel(name = "用户ID", readConverterExp = "关=联sys_user")
-    private Long userId;
+    /** 用户ID（逻辑关联） */
+    @Excel(name = "用户ID", readConverterExp = "逻=辑关联")
+    private String userId;
 
     /** 项目角色（DESIGNER:设计师、PM:项目经理、WORKER:工长、SUPERVISOR:监理） */
     @Excel(name = "项目角色", readConverterExp = "D=ESIGNER:设计师、PM:项目经理、WORKER:工长、SUPERVISOR:监理")
     private String role;
 
-    /** 是否启用 */
-    @Excel(name = "是否启用")
+    /** 是否启用（0:已移除，1:在职） */
     private Integer isActive;
 
-    /** 添加人 */
-    @Excel(name = "添加人")
-    private String addedBy;
+    /** 创建时间 */
+    private Date createdAt;
 
-    /** 添加时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "添加时间", width = 30, dateFormat = "yyyy-MM-dd")
-    private Date addedAt;
+    /** 更新时间 */
+    private Date updatedAt;
 
-    /** 移除人 */
-    private String removedBy;
+    /** 创建人（添加成员的人） */
+    private String createdBy;
 
-    /** 移除时间 */
-    private Date removedAt;
-
-    /** 更新人 */
+    /** 更新人（移除/修改的人） */
     private String updatedBy;
 
-    public void setId(String id) 
+    // ==================== 用户关联字段 ====================
+    /** 用户账号 */
+    @Excel(name = "用户账号")
+    private String userName;
+
+    /** 用户昵称 */
+    @Excel(name = "用户昵称")
+    private String nickName;
+
+    /** 岗位名称 */
+    @Excel(name = "岗位名称")
+    private String postName;
+
+    /** 岗位编码 */
+    @Excel(name = "岗位编码")
+    private String postCode;
+
+    /** 角色编码 */
+    @Excel(name = "角色编码")
+    private String roleKey;
+
+    public void setId(String id)
     {
         this.id = id;
     }
@@ -74,12 +88,12 @@ public class ProjectMembers extends BaseEntity
         return projectId;
     }
 
-    public void setUserId(Long userId) 
+    public void setUserId(String userId) 
     {
         this.userId = userId;
     }
 
-    public Long getUserId() 
+    public String getUserId() 
     {
         return userId;
     }
@@ -104,44 +118,34 @@ public class ProjectMembers extends BaseEntity
         return isActive;
     }
 
-    public void setAddedBy(String addedBy) 
+    public void setCreatedAt(Date createdAt) 
     {
-        this.addedBy = addedBy;
+        this.createdAt = createdAt;
     }
 
-    public String getAddedBy() 
+    public Date getCreatedAt() 
     {
-        return addedBy;
+        return createdAt;
     }
 
-    public void setAddedAt(Date addedAt) 
+    public void setUpdatedAt(Date updatedAt) 
     {
-        this.addedAt = addedAt;
+        this.updatedAt = updatedAt;
     }
 
-    public Date getAddedAt() 
+    public Date getUpdatedAt() 
     {
-        return addedAt;
+        return updatedAt;
     }
 
-    public void setRemovedBy(String removedBy) 
+    public void setCreatedBy(String createdBy) 
     {
-        this.removedBy = removedBy;
+        this.createdBy = createdBy;
     }
 
-    public String getRemovedBy() 
+    public String getCreatedBy() 
     {
-        return removedBy;
-    }
-
-    public void setRemovedAt(Date removedAt) 
-    {
-        this.removedAt = removedAt;
-    }
-
-    public Date getRemovedAt() 
-    {
-        return removedAt;
+        return createdBy;
     }
 
     public void setUpdatedBy(String updatedBy) 
@@ -149,9 +153,59 @@ public class ProjectMembers extends BaseEntity
         this.updatedBy = updatedBy;
     }
 
-    public String getUpdatedBy() 
+    public String getUpdatedBy()
     {
         return updatedBy;
+    }
+
+    public String getUserName()
+    {
+        return userName;
+    }
+
+    public void setUserName(String userName)
+    {
+        this.userName = userName;
+    }
+
+    public String getNickName()
+    {
+        return nickName;
+    }
+
+    public void setNickName(String nickName)
+    {
+        this.nickName = nickName;
+    }
+
+    public String getPostName()
+    {
+        return postName;
+    }
+
+    public void setPostName(String postName)
+    {
+        this.postName = postName;
+    }
+
+    public String getPostCode()
+    {
+        return postCode;
+    }
+
+    public void setPostCode(String postCode)
+    {
+        this.postCode = postCode;
+    }
+
+    public String getRoleKey()
+    {
+        return roleKey;
+    }
+
+    public void setRoleKey(String roleKey)
+    {
+        this.roleKey = roleKey;
     }
 
     @Override
@@ -162,11 +216,15 @@ public class ProjectMembers extends BaseEntity
             .append("userId", getUserId())
             .append("role", getRole())
             .append("isActive", getIsActive())
-            .append("addedBy", getAddedBy())
-            .append("addedAt", getAddedAt())
-            .append("removedBy", getRemovedBy())
-            .append("removedAt", getRemovedAt())
+            .append("createdAt", getCreatedAt())
+            .append("updatedAt", getUpdatedAt())
+            .append("createdBy", getCreatedBy())
             .append("updatedBy", getUpdatedBy())
+            .append("userName", getUserName())
+            .append("nickName", getNickName())
+            .append("postName", getPostName())
+            .append("postCode", getPostCode())
+            .append("roleKey", getRoleKey())
             .toString();
     }
 }

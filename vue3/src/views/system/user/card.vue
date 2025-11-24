@@ -60,7 +60,7 @@
     </el-row>
 
     <!-- 筛选表单区域 -->
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px" class="search-form">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" class="search-form">
       <el-form-item label="用户名称" prop="userName">
         <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
@@ -78,36 +78,31 @@
       <el-table v-loading="loading" :data="userList" style="width: 100%">
         <el-table-column label="头像" align="center" width="80">
           <template #default="{ row }">
-            <el-avatar :size="40" :style="{ backgroundColor: getRoleColor(row) }">
+            <el-avatar v-if="row.avatar" :size="40" :src="getAvatarUrl(row.avatar)">
+              {{ getAvatarText(row.nickName || row.userName) }}
+            </el-avatar>
+            <el-avatar v-else :size="40" :style="{ backgroundColor: getRoleColor(row) }">
               {{ getAvatarText(row.nickName || row.userName) }}
             </el-avatar>
           </template>
         </el-table-column>
-        <el-table-column label="姓名" align="center" prop="nickName" :show-overflow-tooltip="true">
+        <el-table-column label="姓名" align="center" width="180">
           <template #default="{ row }">
-            {{ row.nickName || row.userName }}
+            {{ row.userName }}（{{ row.nickName }}）
           </template>
         </el-table-column>
-        <el-table-column label="岗位" align="center" width="120">
+        <el-table-column label="部门" align="center" min-width="150">
           <template #default="{ row }">
-            <el-tag :type="getPostTagType(row)" size="small">
-              {{ getPostName(row) }}
-            </el-tag>
+            {{ row.dept?.deptName || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="联系方式" align="center" width="150">
-          <template #default="{ row }">
-            <el-icon style="margin-right: 5px"><Phone /></el-icon>
-            {{ row.phonenumber || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="参与项目" align="center" width="120">
+        <el-table-column label="参与项目" align="center">
           <template #default="{ row }">
             <el-icon style="margin-right: 5px"><Folder /></el-icon>
             {{ getProjectCount(row.userId) }}个项目
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width">
+        <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
             <el-tooltip content="修改" placement="top">
               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">
@@ -454,6 +449,19 @@ function getRoleColor(user) {
   return colorMap[roleInfo] || '#909399'
 }
 
+/** 获取头像完整URL */
+function getAvatarUrl(avatarPath) {
+  if (!avatarPath) return ''
+
+  // 如果已经是完整URL（以http开头），直接返回
+  if (avatarPath.startsWith('http')) {
+    return avatarPath
+  }
+
+  // 如果是相对路径，添加基础URL前缀
+  return import.meta.env.VITE_APP_BASE_API + avatarPath
+}
+
 /** 获取头像文字 */
 function getAvatarText(name) {
   if (!name) return 'U'
@@ -708,6 +716,9 @@ onMounted(() => {
 }
 
 .search-form {
+  display: flex;
+  justify-content: start;
+  align-items: center;
   margin-bottom: 24px;
   padding: 20px;
   background: #fff;

@@ -16,9 +16,9 @@
     </template>
 
     <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
-      <el-space direction="vertical" :size="20" style="width: 100%;" class="project-detail-space">
+      <el-space direction="vertical" :size="20" :fill="true" style="width: 100%;" class="project-detail-space">
         <!-- 项目设置操作 -->
-        <el-card size="small" shadow="never" style="background: #fff7e6; border: 1px solid #ffd591;">
+        <el-card size="small" shadow="never" style="width: 100%; background: #fff7e6; border: 1px solid #ffd591;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="flex: 1;">
               <div style="font-weight: 600; margin-bottom: 8px;">
@@ -28,6 +28,10 @@
               <div style="font-size: 14px; color: #666;">管理项目预算、施工进度和项目信息</div>
             </div>
             <div style="flex: 2; display: flex; justify-content: flex-end; align-items: center; gap: 16px;">
+              <el-button size="default" @click="handleTeamAllocation(currentProject)" style="padding: 10px 20px;">
+                <el-icon style="margin-right: 8px;"><User /></el-icon>
+                分配团队
+              </el-button>
               <el-button size="default" @click="handleBudgetManagement(currentProject)" style="padding: 10px 20px;">
                 <el-icon style="margin-right: 8px;"><Wallet /></el-icon>
                 管理预算
@@ -45,7 +49,7 @@
         </el-card>
 
         <!-- 项目基本信息 -->
-        <el-card size="small" shadow="never" style="padding: 8px;">
+        <el-card size="small" shadow="never" style="width: 100%; padding: 8px;">
           <template #header>
             <div style="display: flex; align-items: center; gap: 10px;">
               <el-icon style="color: #1677ff; font-size: 18px;"><InfoFilled /></el-icon>
@@ -95,7 +99,7 @@
         </el-card>
 
         <!-- 项目预算 -->
-        <el-card size="small" shadow="never" style="padding: 8px;">
+        <el-card size="small" shadow="never" style="width: 100%; padding: 8px;">
           <template #header>
             <div style="display: flex; align-items: center; gap: 10px;">
               <el-icon style="color: #faad14; font-size: 18px;"><Coin /></el-icon>
@@ -213,7 +217,7 @@
         </el-card>
 
         <!-- 项目进度 -->
-        <el-card size="small" shadow="never" v-if="currentProject.progress !== undefined" style="padding: 8px;">
+        <el-card size="small" shadow="never" v-if="currentProject.progress !== undefined" style="width: 100%; padding: 8px;">
           <template #header>
             <div style="display: flex; align-items: center; gap: 10px;">
               <el-icon style="color: #52c41a; font-size: 18px;"><TrendCharts /></el-icon>
@@ -303,10 +307,19 @@
       </div>
     </template>
   </el-dialog>
+
+  <!-- 团队成员分配组件 -->
+  <ProjectMember
+    v-model="teamAllocationOpen"
+    :project="currentProject"
+    @success="handleTeamAllocationSuccess"
+  />
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { User, Setting, Wallet, Clock, Edit } from '@element-plus/icons-vue'
+import ProjectMember from './ProjectMember.vue'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -321,6 +334,9 @@ const emit = defineEmits(['update', 'budget', 'progress'])
 // 响应式数据
 const detailOpen = ref(false)
 const currentProject = ref({})
+
+// 团队成员分配相关
+const teamAllocationOpen = ref(false)
 
 // 时间轴状态配置（用于详情弹窗显示）
 const timelineStatusConfig = {
@@ -420,8 +436,27 @@ function handleUpdate(project) {
   emit('update', project)
 }
 
+/** 分配团队 */
+function handleTeamAllocation(project) {
+  currentProject.value = project
+  teamAllocationOpen.value = true
+}
+
+/** 团队分配成功后的处理 */
+function handleTeamAllocationSuccess() {
+  // 这里可以添加刷新逻辑，比如触发事件通知父组件刷新项目详情
+  console.log('团队分配保存成功')
+}
+
 // 暴露方法给父组件
 defineExpose({
   handleView
 })
 </script>
+
+<style scoped>
+/* 确保 el-space 中的每个 item 都占满父容器宽度 */
+.project-detail-space .el-space__item {
+  width: 100%;
+}
+</style>

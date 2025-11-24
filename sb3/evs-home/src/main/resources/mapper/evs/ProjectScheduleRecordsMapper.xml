@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.web.mapper.ProjectScheduleRecordsMapper">
+    
+    <resultMap type="ProjectScheduleRecords" id="ProjectScheduleRecordsResult">
+        <result property="id"    column="id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="scheduleId"    column="schedule_id"    />
+        <result property="recordType"    column="record_type"    />
+        <result property="completionRate"    column="completion_rate"    />
+        <result property="description"    column="description"    />
+        <result property="images"    column="images"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+        <result property="createdBy"    column="created_by"    />
+        <result property="updatedBy"    column="updated_by"    />
+    </resultMap>
+
+    <sql id="selectProjectScheduleRecordsVo">
+        select id, project_id, schedule_id, record_type, completion_rate, description, images, created_at, updated_at, created_by, updated_by from project_schedule_records
+    </sql>
+
+    <select id="selectProjectScheduleRecordsList" parameterType="ProjectScheduleRecords" resultMap="ProjectScheduleRecordsResult">
+        <include refid="selectProjectScheduleRecordsVo"/>
+        <where>  
+        </where>
+    </select>
+    
+    <select id="selectProjectScheduleRecordsById" parameterType="String" resultMap="ProjectScheduleRecordsResult">
+        <include refid="selectProjectScheduleRecordsVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertProjectScheduleRecords" parameterType="ProjectScheduleRecords">
+        insert into project_schedule_records
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="projectId != null">project_id,</if>
+            <if test="scheduleId != null">schedule_id,</if>
+            <if test="recordType != null and recordType != ''">record_type,</if>
+            <if test="completionRate != null">completion_rate,</if>
+            <if test="description != null">description,</if>
+            <if test="images != null">images,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+            <if test="createdBy != null">created_by,</if>
+            <if test="updatedBy != null">updated_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="projectId != null">#{projectId},</if>
+            <if test="scheduleId != null">#{scheduleId},</if>
+            <if test="recordType != null and recordType != ''">#{recordType},</if>
+            <if test="completionRate != null">#{completionRate},</if>
+            <if test="description != null">#{description},</if>
+            <if test="images != null">#{images},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            <if test="updatedBy != null">#{updatedBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProjectScheduleRecords" parameterType="ProjectScheduleRecords">
+        update project_schedule_records
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="scheduleId != null">schedule_id = #{scheduleId},</if>
+            <if test="recordType != null and recordType != ''">record_type = #{recordType},</if>
+            <if test="completionRate != null">completion_rate = #{completionRate},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="createdBy != null">created_by = #{createdBy},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteProjectScheduleRecordsById" parameterType="String">
+        delete from project_schedule_records where id = #{id}
+    </delete>
+
+    <delete id="deleteProjectScheduleRecordsByIds" parameterType="String">
+        delete from project_schedule_records where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
