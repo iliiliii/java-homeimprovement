@@ -1,6 +1,6 @@
 <template>
   <div class="project-progress-container">
-    <el-space direction="vertical" :size="20" style="width: 100%;">
+    <el-space direction="vertical" :size="20" :fill="true" style="width: 100%;">
       <!-- 进度统计 -->
       <div
       style="
@@ -596,6 +596,11 @@ defineExpose({
 
 <style scoped>
 .project-progress-container {
+  width: 100%;
+}
+
+/* 确保 el-space 的子元素撑满宽度 */
+.project-progress-container :deep(.el-space__item) {
   width: 100%;
 }
 

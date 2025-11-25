@@ -38,7 +38,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="项目状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择项目状态" clearable>
+        <el-select v-model="queryParams.status" placeholder="请选择项目状态" clearable style="width: 150px">
           <el-option
             v-for="dict in decoration_project_status"
             :key="dict.value"
@@ -65,15 +65,10 @@
           style="margin-bottom: 16px;"
       >
         <el-card shadow="hover" style="height: 100%;" :body-style="{ padding: '16px' }">
-          <!-- 卡片选择框 -->
-          <div style="position: absolute; top: 12px; right: 12px; z-index: 1;">
-            <el-checkbox v-model="project.checked" @change="handleCardSelectChange(project)" />
-          </div>
-
           <!-- 卡片头部: 项目名称 + 状态标签 -->
           <template #header>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div style="flex: 1; min-width: 0; padding-right: 40px;">
+              <div style="flex: 1; min-width: 0;">
                 <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   {{ project.name }}
                 </div>
@@ -217,27 +212,27 @@
     />
 
     <!-- 预算管理对话框 -->
-    <el-dialog v-model="budgetOpen" width="900px" append-to-body :show-close="true" :close-on-click-modal="false" class="project-budget-dialog">
+    <el-dialog v-model="budgetOpen" width="1200px" append-to-body :show-close="true" :close-on-click-modal="false" class="project-budget-dialog">
       <template #header>
         <div style="display: flex; align-items: center; gap: 8px;">
           <el-icon style="color: #faad14; font-size: 16px;"><Wallet /></el-icon>
           <span>{{ currentBudgetProject.name }} - 预算管理</span>
         </div>
       </template>
-      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
+      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 20px;">
         <ProjectBudget v-if="currentBudgetProject" :project="currentBudgetProject" @save="handleSaveBudget" />
       </div>
     </el-dialog>
 
     <!-- 进度管理对话框 -->
-    <el-dialog v-model="progressOpen" width="900px" append-to-body :show-close="true" :close-on-click-modal="false" class="project-progress-dialog">
+    <el-dialog v-model="progressOpen" width="1200px" append-to-body :show-close="true" :close-on-click-modal="false" class="project-progress-dialog">
       <template #header>
         <div style="display: flex; align-items: center; gap: 8px;">
           <el-icon style="color: #1677ff; font-size: 16px;"><Clock /></el-icon>
           <span>{{ currentProgressProject.name }} - 施工进度管理</span>
         </div>
       </template>
-      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 8px;">
+      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 20px;">
         <ProjectProgress v-if="currentProgressProject" :project="currentProgressProject" @save="handleSaveProgress" />
       </div>
     </el-dialog>
@@ -267,11 +262,6 @@ const customerMap = ref(new Map())
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
-
-// 选择状态管理
-const ids = ref([])
-const single = ref(true)
-const multiple = ref(true)
 
 // 预算管理弹窗
 const budgetOpen = ref(false)
@@ -309,16 +299,9 @@ const { queryParams } = toRefs(data)
 function getList() {
   loading.value = true
   listProjects(queryParams.value).then(response => {
-    projectsList.value = response.rows.map(project => ({
-      ...project,
-      checked: false // 确保每个项目都有 checked 属性
-    }))
+    projectsList.value = response.rows
     total.value = response.total
     loading.value = false
-    // 重置选择状态
-    ids.value = []
-    single.value = true
-    multiple.value = true
   })
 }
 
@@ -341,16 +324,14 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-  // 如果没有传入 row，则从选中的记录中获取
-  const project = row || projectsList.value.find(item => ids.value.includes(item.id))
-  if (project) {
-    projectEditRef.value?.handleEdit(project)
+  if (row) {
+    projectEditRef.value?.handleEdit(row)
   }
 }
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  const projectIds = row.id || ids.value
+  const projectIds = row.id
   proxy.$modal.confirm('是否确认删除项目编号为"' + projectIds + '"的数据项？').then(function () {
     return delProjects(projectIds)
   }).then(() => {
@@ -364,13 +345,6 @@ function handleExport() {
   proxy.download('evs/projects/export', {
     ...queryParams.value
   }, `projects_${new Date().getTime()}.xlsx`)
-}
-
-/** 卡片选择处理 */
-function handleCardSelectChange(project) {
-  ids.value = projectsList.value.filter(item => item.checked).map(item => item.id)
-  single.value = ids.value.length !== 1
-  multiple.value = !ids.value.length
 }
 
 /** 获取客户列表 */
@@ -459,7 +433,7 @@ getList()
 getCustomersList()
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 .app-container {
   height: calc(100vh - 124px);
   display: flex;
@@ -491,31 +465,16 @@ getCustomersList()
 .search-form {
   display: flex;
   justify-content: start;
-  align-items: flex-start;    // ✅ 修改：从center改为flex-start，与用户页面一致（用户选择）
+  align-items: flex-start;
   margin-bottom: 12px;
   padding: 20px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 
-  // 覆盖Element Plus的表单项间距变量 - 彻底解决18px问题
-  --el-form-item-margin-bottom: 0px;
-
-  // 增强版表单项样式覆盖 - 多重保障
-  .el-form-item,
   :deep(.el-form-item) {
     margin-bottom: 0 !important;
     margin-right: 16px;
-
-    // 确保所有嵌套的表单项也被覆盖
-    &.el-form-item {
-      margin-bottom: 0 !important;
-    }
-
-    // 确保子元素也被覆盖
-    .el-form-item {
-      margin-bottom: 0 !important;
-    }
   }
 }
 
@@ -560,6 +519,10 @@ getCustomersList()
 }
 
 // 预算对话框样式优化
+.project-budget-dialog .el-dialog__body {
+  padding: 20px 16px !important;
+}
+
 .project-budget-dialog .el-dialog__body .el-space.el-space--vertical > .el-space__item {
   width: 100% !important;
   flex-basis: 100% !important;
@@ -582,7 +545,27 @@ getCustomersList()
   box-sizing: border-box;
 }
 
+/* 确保所有表单和输入元素撑满 */
+.project-budget-dialog .el-input,
+.project-budget-dialog .el-select,
+.project-budget-dialog .el-input-number,
+.project-budget-dialog .el-form-item {
+  width: 100% !important;
+}
+
+.project-budget-dialog .el-row {
+  width: 100% !important;
+}
+
+.project-budget-dialog .el-col {
+  width: 100% !important;
+}
+
 // 进度对话框样式优化
+.project-progress-dialog .el-dialog__body {
+  padding: 20px 16px !important;
+}
+
 .project-progress-dialog .el-dialog__body .el-space.el-space--vertical > .el-space__item {
   width: 100% !important;
   flex-basis: 100% !important;
@@ -591,14 +574,66 @@ getCustomersList()
 
 .project-progress-dialog .el-timeline {
   padding-left: 0;
+  width: 100% !important;
 }
 
 .project-progress-dialog .el-timeline-item__content {
   padding-left: 20px;
+  width: 100% !important;
 }
 
 .project-progress-dialog .el-dialog__body .el-space__item > * {
   width: 100%;
   box-sizing: border-box;
+}
+
+/* 确保所有表单和输入元素撑满 */
+.project-progress-dialog .el-input,
+.project-progress-dialog .el-select,
+.project-progress-dialog .el-date-editor,
+.project-progress-dialog .el-form-item {
+  width: 100% !important;
+}
+
+.project-progress-dialog .el-row {
+  width: 100% !important;
+}
+
+.project-progress-dialog .el-col {
+  width: 100% !important;
+}
+
+.project-progress-dialog .timeline-container {
+  width: 100% !important;
+}
+
+/* 通用对话框样式强化 */
+.el-dialog__body {
+  padding: 20px 16px !important;
+}
+
+.el-dialog__body .el-space {
+  width: 100% !important;
+}
+
+.el-dialog__body .el-space--vertical {
+  width: 100% !important;
+}
+
+/* 关键修复：确保所有对话框中的 el-space__item 撑满宽度 */
+.el-dialog__body .el-space__item {
+  width: 100% !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 更广泛的覆盖 - 确保所有场景下的 el-space__item */
+.project-budget-dialog .el-space__item,
+.project-progress-dialog .el-space__item {
+  width: 100% !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 </style>

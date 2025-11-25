@@ -1,6 +1,6 @@
 <template>
   <div class="project-budget-container">
-    <el-space direction="vertical" :size="20" style="width: 100%;">
+    <el-space direction="vertical" :size="20" :fill="true" style="width: 100%;">
       <!-- 预算总额显示 -->
       <div
         style="
@@ -28,22 +28,23 @@
         :show-header="true"
         empty-text="暂无预算项，请点击下方按钮添加"
         style="width: 100%"
+        table-layout="auto"
       >
-        <el-table-column prop="category" label="预算类别" width="40%" />
-        <el-table-column label="计划金额" width="25%">
+        <el-table-column prop="category" label="预算类别" min-width="200" />
+        <el-table-column label="计划金额" min-width="150">
           <template #default="scope">
             <span style="color: #faad14; font-weight: bold;">
               ¥{{ scope.row.plannedAmount?.toLocaleString() || 0 }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="备注" width="25%">
+        <el-table-column label="备注" min-width="200" show-overflow-tooltip>
           <template #default="scope">
             <span v-if="scope.row.remarks">{{ scope.row.remarks }}</span>
             <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="15%">
+        <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
             <el-space size="small">
               <el-button
@@ -88,7 +89,7 @@
         "
       >
         <el-form :model="budgetItemForm" label-position="top">
-          <el-space  direction="vertical" :size="16" style="width: 100%;">
+          <el-space direction="vertical" :size="16" :fill="true" style="width: 100%;">
             <el-row :gutter="16">
               <el-col :span="12">
                 <el-form-item label="预算类别">
@@ -366,6 +367,24 @@ watch(() => props.project, (newProject) => {
 
 <style scoped>
 .project-budget-container {
+  width: 100%;
+}
+
+/* 确保 el-space 的子元素撑满宽度 */
+.project-budget-container :deep(.el-space__item) {
+  width: 100%;
+}
+
+/* 确保表格撑满容器宽度 */
+.project-budget-container :deep(.el-table) {
+  width: 100% !important;
+}
+
+.project-budget-container :deep(.el-table__body-wrapper) {
+  width: 100%;
+}
+
+.project-budget-container :deep(.el-table__header-wrapper) {
   width: 100%;
 }
 </style>
