@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -35,14 +36,15 @@ public class CustomersController extends BaseController
     private ICustomersService customersService;
 
     /**
-     * 查询客户档案列表
+     * 查询客户档案列表（支持关联查询）
      */
     @PreAuthorize("@ss.hasPermi('evs:customers:list')")
     @GetMapping("/list")
-    public TableDataInfo list(Customers customers)
+    public TableDataInfo list(Customers customers,
+                             @RequestParam(required = false, defaultValue = "false") Boolean includeProjects)
     {
         startPage();
-        List<Customers> list = customersService.selectCustomersList(customers);
+        List<Customers> list = customersService.selectCustomersWithRelations(customers, includeProjects);
         return getDataTable(list);
     }
 
@@ -60,13 +62,15 @@ public class CustomersController extends BaseController
     }
 
     /**
-     * 获取客户档案详细信息
+     * 获取客户档案详细信息（支持关联查询）
      */
     @PreAuthorize("@ss.hasPermi('evs:customers:query')")
     @GetMapping(value = "/{id}")
-    public AjaxResult getInfo(@PathVariable("id") String id)
+    public AjaxResult getInfo(@PathVariable("id") String id,
+                             @RequestParam(required = false, defaultValue = "false") Boolean includeProjects)
     {
-        return success(customersService.selectCustomersById(id));
+        Customers customer = customersService.selectCustomersWithRelationsById(id, includeProjects);
+        return success(customer);
     }
 
     /**

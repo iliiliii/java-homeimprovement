@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -35,14 +36,34 @@ public class ProjectsController extends BaseController
     private IProjectsService projectsService;
 
     /**
-     * 查询项目信息列表
+     * 查询项目信息列表（支持关联查询）
      */
     @PreAuthorize("@ss.hasPermi('evs:projects:list')")
     @GetMapping("/list")
-    public TableDataInfo list(Projects projects)
+    public TableDataInfo list(Projects projects,
+                             @RequestParam(required = false) String includeCustomer,
+                             @RequestParam(required = false) String includeBudgetItems,
+                             @RequestParam(required = false) String includeSchedules)
     {
         startPage();
-        List<Projects> list = projectsService.selectProjectsList(projects);
+
+        // 构建关联查询参数
+        StringBuilder includeRelations = new StringBuilder();
+        if ("true".equals(includeCustomer)) {
+            includeRelations.append("customer");
+        }
+        if ("true".equals(includeBudgetItems)) {
+            if (includeRelations.length() > 0) includeRelations.append(",");
+            includeRelations.append("budgetItems");
+        }
+        if ("true".equals(includeSchedules)) {
+            if (includeRelations.length() > 0) includeRelations.append(",");
+            includeRelations.append("schedules");
+        }
+
+        List<Projects> list = projectsService.selectProjectsWithRelations(
+            projects, includeRelations.toString());
+
         return getDataTable(list);
     }
 
@@ -60,13 +81,31 @@ public class ProjectsController extends BaseController
     }
 
     /**
-     * 获取项目信息详细信息
+     * 获取项目信息详细信息（支持关联查询）
      */
     @PreAuthorize("@ss.hasPermi('evs:projects:query')")
     @GetMapping(value = "/{id}")
-    public AjaxResult getInfo(@PathVariable("id") String id)
+    public AjaxResult getInfo(@PathVariable("id") String id,
+                             @RequestParam(required = false) String includeCustomer,
+                             @RequestParam(required = false) String includeBudgetItems,
+                             @RequestParam(required = false) String includeSchedules)
     {
-        return success(projectsService.selectProjectsById(id));
+        // 构建关联查询参数
+        StringBuilder includeRelations = new StringBuilder();
+        if (includeCustomer != null) includeRelations.append("customer");
+        if (includeBudgetItems != null) {
+            if (includeRelations.length() > 0) includeRelations.append(",");
+            includeRelations.append("budgetItems");
+        }
+        if (includeSchedules != null) {
+            if (includeRelations.length() > 0) includeRelations.append(",");
+            includeRelations.append("schedules");
+        }
+
+        Projects project = projectsService.selectProjectsWithRelationsById(
+            id, includeRelations.toString());
+
+        return success(project);
     }
 
     /**
