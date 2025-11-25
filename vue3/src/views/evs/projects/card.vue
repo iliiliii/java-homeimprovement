@@ -21,23 +21,7 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="客户" prop="customerId">
-        <el-select
-          v-model="queryParams.customerId"
-          placeholder="请选择客户"
-          clearable
-          filterable
-          style="width: 200px"
-        >
-          <el-option
-            v-for="customer in customersList"
-            :key="customer.id"
-            :label="`${customer.name} (${customer.phone})`"
-            :value="customer.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="项目状态" prop="status">
+        <el-form-item label="项目状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择项目状态" clearable style="width: 150px">
           <el-option
             v-for="dict in decoration_project_status"
@@ -87,15 +71,15 @@
               <el-icon style="margin-right: 6px;"><User /></el-icon>
               <span>客户：</span>
               <el-link
-                v-if="getCustomerName(project.customerId)"
+                v-if="project.customerId && getCustomerName(project) !== '未关联客户'"
                 type="primary"
                 :underline="false"
                 @click="goToCustomer(project.customerId)"
                 style="margin-left: 4px; font-size: 13px;"
               >
-                {{ getCustomerName(project.customerId) }}
+                {{ getCustomerName(project) }}
               </el-link>
-              <span v-else style="margin-left: 4px;">{{ project.customerId }}</span>
+              <span v-else style="margin-left: 4px;">{{ getCustomerName(project) }}</span>
             </div>
 
             <!-- 日期范围 -->
@@ -240,8 +224,7 @@
 </template>
 
 <script setup name="Projects">
-import { listProjects, updateProjects, delProjects } from "@/api/evs/projects"
-import { listCustomers } from "@/api/evs/customers"
+import { listProjects, updateProjects, delProjects, listProjectsWithCustomer } from "@/api/evs/projects"
 import { useRouter } from 'vue-router'
 import ProjectProgress from './components/ProjectProgress.vue'
 import ProjectBudget from './components/ProjectBudget.vue'
@@ -257,8 +240,6 @@ const projectDetailRef = ref()
 const projectEditRef = ref()
 
 const projectsList = ref([])
-const customersList = ref([])
-const customerMap = ref(new Map())
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
@@ -287,7 +268,6 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     name: null,
-    customerId: null,
     address: null,
     status: null,
   }
@@ -295,10 +275,10 @@ const data = reactive({
 
 const { queryParams } = toRefs(data)
 
-/** 查询项目信息列表 */
+/** 查询项目信息列表（使用关联查询获取客户信息） */
 function getList() {
   loading.value = true
-  listProjects(queryParams.value).then(response => {
+  listProjectsWithCustomer(queryParams.value).then(response => {
     projectsList.value = response.rows
     total.value = response.total
     loading.value = false
@@ -347,22 +327,14 @@ function handleExport() {
   }, `projects_${new Date().getTime()}.xlsx`)
 }
 
-/** 获取客户列表 */
-function getCustomersList() {
-  listCustomers({ pageNum: 1, pageSize: 1000 }).then(response => {
-    customersList.value = response.rows || []
-    // 构建客户映射，用于快速查找客户名称
-    const map = new Map()
-    customersList.value.forEach(customer => {
-      map.set(customer.id, customer.name)
-    })
-    customerMap.value = map
-  })
-}
-
 /** 获取客户名称 */
-function getCustomerName(customerId) {
-  return customerMap.value.get(customerId) || ''
+function getCustomerName(project) {
+  // 直接从关联的客户信息中获取名称
+  if (project.customer && project.customer.name) {
+    return project.customer.name
+  }
+  // 如果没有关联的客户信息，返回客户ID或默认值
+  return project.customerId || '未关联客户'
 }
 
 /** 跳转到客户详情页 */
@@ -430,7 +402,6 @@ function handleSaveProgress(updateData) {
 
 // 初始化
 getList()
-getCustomersList()
 </script>
 
 <style scoped lang="scss">
