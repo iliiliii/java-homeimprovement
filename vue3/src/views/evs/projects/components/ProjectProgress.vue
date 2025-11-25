@@ -60,7 +60,8 @@
               <div style="flex: 1;">
                 <div style="margin-bottom: 8px;">
                   <span style="font-size: 15px; font-weight: bold; margin-right: 8px;">
-                    {{ project_schedule.find(dict => dict.value === item.title)?.label || item.title }}
+                    {{ decoration_construction_stage.find(dict => dict.value === item.title)?.label || item.title }}
+                    <!-- <dict-tag :options="decoration_construction_stage" :value="item.title" /> -->
                   </span>
                   <el-tag :color="getTimelineStatusConfig(item.status).color" size="small">
                     {{ getTimelineStatusConfig(item.status).label }}
@@ -218,13 +219,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useDict } from '@/utils/dict'
 import { listProjectSchedules, addProjectSchedules, updateProjectSchedules, delProjectSchedules } from '@/api/evs/projectSchedules'
 import { Plus, Calendar, Edit, Delete } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
-const { project_schedule } = useDict('project_schedule')
+const { decoration_construction_stage } = useDict('decoration_construction_stage')
 
 // Props
 const props = defineProps({
@@ -262,11 +263,11 @@ const inProgressCount = computed(() => {
 // 计算可选的施工阶段（过滤掉已选择的，但编辑时保留当前项）
 const availableStages = computed(() => {
   const selectedStages = timelineItems.value.map(item => item.title)
-  let available = project_schedule.value.filter(dict => !selectedStages.includes(dict.value))
+  let available = decoration_construction_stage.value.filter(dict => !selectedStages.includes(dict.value))
 
   // 编辑模式：如果当前编辑的阶段已被过滤掉，则添加回来
   if (editingTimelineItem.value) {
-    const currentStage = project_schedule.value.find(dict => dict.value === editingTimelineItem.value.title)
+    const currentStage = decoration_construction_stage.value.find(dict => dict.value === editingTimelineItem.value.title)
     if (currentStage && !available.some(dict => dict.value === currentStage.value)) {
       available.push(currentStage)
     }
@@ -453,7 +454,7 @@ function handleSaveTimelineItem() {
     item.id !== (isEdit ? editingTimelineItem.value.id : '')
   )
   if (isDuplicate) {
-    const stageLabel = project_schedule.value.find(dict => dict.value === timelineForm.value.title)?.label || timelineForm.value.title
+    const stageLabel = decoration_construction_stage.value.find(dict => dict.value === timelineForm.value.title)?.label || timelineForm.value.title
     proxy.$modal.msgError(`施工阶段"${stageLabel}"已存在，请选择其他阶段`)
     return
   }
@@ -474,7 +475,7 @@ function handleSaveTimelineItem() {
       // 新增成功后检查是否还有可选的施工阶段
       if (!isEdit) {
         setTimeout(() => {
-          const remainingStages = project_schedule.value.filter(dict =>
+          const remainingStages = decoration_construction_stage.value.filter(dict =>
             !timelineItems.value.some(item => item.title === dict.value)
           )
           if (remainingStages.length === 0) {
@@ -577,13 +578,6 @@ watch(() => props.project, (newProject) => {
     loadProjectSchedules()
   }
 }, { immediate: true, deep: true })
-
-// 组件挂载时加载数据
-onMounted(() => {
-  if (props.project && props.project.id) {
-    loadProjectSchedules()
-  }
-})
 
 // 暴露方法给父组件
 defineExpose({
