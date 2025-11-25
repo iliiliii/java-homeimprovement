@@ -397,8 +397,16 @@ function calculateDaysRemaining(endDate, actualEndDate) {
 
 /** 获取客户名称 */
 function getCustomerName(customerId) {
-  // 从父组件传入或通过其他方式获取
-  return proxy?.getCustomerName?.(customerId) || ''
+  // 优先从当前项目数据中获取客户信息
+  if (currentProject.value.customer && currentProject.value.customer.name) {
+    return currentProject.value.customer.name
+  }
+  // 如果有客户ID但没有客户信息，返回客户ID
+  if (customerId) {
+    return `客户ID: ${customerId}`
+  }
+  // 默认返回值
+  return '未关联客户'
 }
 
 /** 跳转到客户详情页 */
