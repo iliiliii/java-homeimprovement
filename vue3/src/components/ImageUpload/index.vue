@@ -18,6 +18,7 @@
       :file-list="fileList"
       :on-preview="handlePictureCardPreview"
       :class="{ hide: fileList.length >= limit }"
+      :http-request="handleHttpRequest"
     >
       <el-icon class="avatar-uploader-icon"><plus /></el-icon>
     </el-upload>
@@ -30,7 +31,13 @@
       <template v-if="fileType">
         格式为 <b style="color: #f56c6c">{{ fileType.join("/") }}</b>
       </template>
-      的文件
+      <template v-if="compress">
+        的文件
+        <span style="color: #52c41a; margin-left: 8px;">
+          <el-icon><Picture /></el-icon>
+          图片将自动压缩 (质量: {{ Math.round(compressQuality * 100) }}%, 最大: {{ compressMaxSize }}MB)
+        </span>
+      </template>
     </div>
 
     <el-dialog
@@ -51,6 +58,10 @@
 import { getToken } from "@/utils/auth"
 import { isExternal } from "@/utils/validate"
 import Sortable from 'sortablejs'
+import { Picture } from '@element-plus/icons-vue'
+import { useImageCompress } from '@/composables/useImageCompress'
+
+const { compressImage, isImageFile } = useImageCompress()
 
 const props = defineProps({
   modelValue: [String, Object, Array],
@@ -92,6 +103,26 @@ const props = defineProps({
   drag: {
     type: Boolean,
     default: true
+  },
+  // 是否启用图片压缩
+  compress: {
+    type: Boolean,
+    default: true
+  },
+  // 压缩质量 (0.0-1.0, 越小文件越小)
+  compressQuality: {
+    type: Number,
+    default: 0.7
+  },
+  // 压缩后最大文件大小 (MB)
+  compressMaxSize: {
+    type: Number,
+    default: 1
+  },
+  // 压缩最大宽度或高度
+  compressMaxWidthOrHeight: {
+    type: Number,
+    default: 1920
   }
 })
 
@@ -108,6 +139,8 @@ const fileList = ref([])
 const showTip = computed(
   () => props.isShowTip && (props.fileType || props.fileSize)
 )
+// 保存压缩后的文件
+const compressedFiles = ref(new Map())
 
 watch(() => props.modelValue, val => {
   if (val) {
@@ -140,7 +173,7 @@ watch(() => props.modelValue, val => {
 },{ deep: true, immediate: true })
 
 // 上传前loading加载
-function handleBeforeUpload(file) {
+async function handleBeforeUpload(file) {
   let isImg = false
   if (props.fileType.length) {
     let fileExtension = ""
@@ -170,6 +203,37 @@ function handleBeforeUpload(file) {
       return false
     }
   }
+
+  // 🆕 图片压缩处理 (平衡压缩)
+  if (props.compress && isImageFile(file)) {
+    try {
+      proxy.$modal.loading("正在压缩图片，请稍候...")
+
+      const compressResult = await compressImage(file, {
+        maxSizeMB: props.compressMaxSize,
+        maxWidthOrHeight: props.compressMaxWidthOrHeight,
+        initialQuality: props.compressQuality,
+        enableSmartCompression: true
+      })
+
+      if (compressResult.success) {
+        // ✅ 修复：浏览器image-compression返回Blob，需转换为File
+        const compressedBlob = compressResult.file
+        const newFile = new File([compressedBlob], file.name, {
+          type: compressedBlob.type || file.type,
+          lastModified: Date.now()
+        })
+        // 保存压缩后的文件到Map中，http-request中会使用
+        compressedFiles.value.set(file.uid, newFile)
+        proxy.$modal.msgSuccess(`图片压缩成功：${compressResult.compressionRatio}%`)
+      }
+    } catch (error) {
+      proxy.$modal.closeLoading()
+      proxy.$modal.msgError('图片压缩失败: ' + error.message)
+      return false
+    }
+  }
+
   proxy.$modal.loading("正在上传图片，请稍候...")
   number.value++
 }
@@ -210,6 +274,51 @@ function uploadedSuccessfully() {
     uploadList.value = []
     number.value = 0
     emit("update:modelValue", listToString(fileList.value))
+    proxy.$modal.closeLoading()
+  }
+}
+
+// ✅ 核心修复：自定义上传函数
+async function handleHttpRequest(options) {
+  try {
+    proxy.$modal.loading("正在上传图片，请稍候...")
+
+    // 创建FormData
+    const formData = new FormData()
+    // 使用压缩后的文件或原始文件
+    formData.append('file', compressedFiles.value.get(options.file.uid) || options.file)
+
+    // 添加其他数据
+    Object.keys(props.data || {}).forEach(key => {
+      formData.append(key, props.data[key])
+    })
+
+    // 发起请求
+    const response = await fetch(options.action, {
+      method: 'POST',
+      headers: {
+        Authorization: headers.value.Authorization
+      },
+      body: formData
+    })
+
+    const data = await response.json()
+
+    if (data.code === 200) {
+      uploadList.value.push({ name: data.fileName, url: data.fileName })
+      // 清空该文件的压缩缓存
+      compressedFiles.value.delete(options.file.uid)
+      // 调用el-upload的成功回调
+      options.onSuccess(data, options.file)
+      uploadedSuccessfully()
+    } else {
+      throw new Error(data.msg || '上传失败')
+    }
+  } catch (error) {
+    ElMessage.error('上传失败: ' + error.message)
+    options.onError(error)
+    number.value--
+    compressedFiles.value.delete(options.file.uid)
     proxy.$modal.closeLoading()
   }
 }

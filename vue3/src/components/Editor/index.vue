@@ -10,6 +10,7 @@
       :headers="headers"
       class="editor-img-uploader"
       v-if="type == 'url'"
+      :http-request="handleHttpRequest"
     >
       <i ref="uploadRef" class="editor-img-uploader"></i>
     </el-upload>
@@ -31,6 +32,9 @@ import axios from 'axios'
 import { QuillEditor } from "@vueup/vue-quill"
 import "@vueup/vue-quill/dist/vue-quill.snow.css"
 import { getToken } from "@/utils/auth"
+import { useImageCompress } from '@/composables/useImageCompress'
+
+const { compressImage, isImageFile } = useImageCompress()
 
 const { proxy } = getCurrentInstance()
 
@@ -39,6 +43,8 @@ const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + "/common/upload") // �
 const headers = ref({
   Authorization: "Bearer " + getToken()
 })
+// 保存压缩后的文件
+const compressedFiles = ref(new Map())
 
 const props = defineProps({
   /* 编辑器的内容 */
@@ -68,7 +74,12 @@ const props = defineProps({
   /* 类型（base64格式、url格式） */
   type: {
     type: String,
-    default: "url",
+    default: "url"
+  },
+  /* 是否启用图片压缩 */
+  compress: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -130,7 +141,7 @@ onMounted(() => {
 })
 
 // 上传前校检格式和大小
-function handleBeforeUpload(file) {
+async function handleBeforeUpload(file) {
   const type = ["image/jpeg", "image/jpg", "image/png", "image/svg"]
   const isJPG = type.includes(file.type)
   //检验文件格式
@@ -146,6 +157,37 @@ function handleBeforeUpload(file) {
       return false
     }
   }
+
+  // 🆕 编辑器图片压缩 (适当压缩)
+  if (props.compress && isImageFile(file)) {
+    try {
+      proxy.$modal.loading("正在压缩图片，请稍候...")
+
+      const compressResult = await compressImage(file, {
+        maxSizeMB: 1,                   // 编辑器图片压缩后最大 1MB
+        maxWidthOrHeight: 1280,         // 编辑器图片最大边长 1280px
+        initialQuality: 0.6,            // 60% 质量（适当压缩）
+        enableSmartCompression: true
+      })
+
+      if (compressResult.success) {
+        // ✅ 修复：浏览器image-compression返回Blob，需转换为File
+        const compressedBlob = compressResult.file
+        const newFile = new File([compressedBlob], file.name, {
+          type: compressedBlob.type || file.type,
+          lastModified: Date.now()
+        })
+        // 保存压缩后的文件到Map中，http-request中会使用
+        compressedFiles.value.set(file.uid, newFile)
+        proxy.$modal.msgSuccess(`图片压缩成功：${compressResult.compressionRatio}%`)
+      }
+    } catch (error) {
+      proxy.$modal.closeLoading()
+      proxy.$modal.msgError('图片压缩失败: ' + error.message)
+      return false
+    }
+  }
+
   return true
 }
 
@@ -188,10 +230,59 @@ function handlePasteCapture(e) {
 
 function insertImage(file) {
   const formData = new FormData()
-  formData.append("file", file)
+  // 检查是否有压缩后的文件
+  const compressed = compressedFiles.value.get(file.uid)
+  formData.append("file", compressed || file)
   axios.post(uploadUrl.value, formData, { headers: { "Content-Type": "multipart/form-data", Authorization: headers.value.Authorization } }).then(res => {
     handleUploadSuccess(res.data)
+  }).catch(err => {
+    proxy.$modal.msgError("图片插入失败")
+  }).finally(() => {
+    // 清空压缩缓存
+    compressedFiles.value.delete(file.uid)
   })
+}
+
+// ✅ 核心修复：自定义上传函数
+async function handleHttpRequest(options) {
+  try {
+    proxy.$modal.loading("正在上传图片，请稍候...")
+
+    // 创建FormData
+    const formData = new FormData()
+    // 使用压缩后的文件或原始文件
+    formData.append('file', compressedFiles.value.get(options.file.uid) || options.file)
+
+    // 发起请求
+    const response = await fetch(options.action, {
+      method: 'POST',
+      headers: {
+        Authorization: headers.value.Authorization
+      },
+      body: formData
+    })
+
+    const data = await response.json()
+
+    if (data.code === 200) {
+      // 插入图片到编辑器
+      let quill = toRaw(quillEditorRef.value).getQuill()
+      let length = quill.selection.savedRange.index
+      quill.insertEmbed(length, "image", import.meta.env.VITE_APP_BASE_API + data.fileName)
+      quill.setSelection(length + 1)
+      // 清空该文件的压缩缓存
+      compressedFiles.value.delete(options.file.uid)
+      // 调用el-upload的成功回调
+      options.onSuccess(data, options.file)
+    } else {
+      throw new Error(data.msg || '上传失败')
+    }
+  } catch (error) {
+    proxy.$modal.msgError("图片插入失败")
+    options.onError(error)
+  } finally {
+    proxy.$modal.closeLoading()
+  }
 }
 </script>
 
