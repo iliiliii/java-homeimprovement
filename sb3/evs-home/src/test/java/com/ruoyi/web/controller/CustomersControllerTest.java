@@ -1,184 +1,209 @@
 package com.ruoyi.web.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ruoyi.web.domain.Customers;
 import com.ruoyi.web.service.ICustomersService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 客户档案Controller 单元测试类
- * 使用纯Mockito测试，不依赖Spring上下文
+ * 客户档案Controller测试类
  *
  * @author evs
- * @date 2025-11-18
+ * @date 2025-11-23
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("客户档案控制器单元测试")
+@WebMvcTest(CustomersController.class)
 class CustomersControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private ICustomersService customersService;
 
-    @InjectMocks
-    private CustomersController customersController;
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
+    private ObjectMapper objectMapper;
 
     private Customers testCustomer;
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
+
+        objectMapper = new ObjectMapper();
+
+        // 创建测试数据
         testCustomer = new Customers();
-        testCustomer.setId("1234567890");
+        testCustomer.setId("customer-001");
         testCustomer.setName("测试客户");
         testCustomer.setPhone("13800138000");
         testCustomer.setEmail("test@example.com");
         testCustomer.setAddress("测试地址");
         testCustomer.setLevel("VIP");
-        testCustomer.setSource("官网");
+        testCustomer.setSource("REFERRAL");
+        testCustomer.setRemarks("测试备注");
+        testCustomer.setIsActive(1);
+        testCustomer.setCreatedAt(new Date());
+        testCustomer.setCreatedBy("admin");
     }
 
     @Test
-    @DisplayName("测试检查手机号存在 - 手机号存在")
-    void testCheckPhoneExists_WhenPhoneExists_ShouldReturnTrue() {
-        // Given
-        String phone = "13800138000";
-        when(customersService.checkPhoneExists(eq(phone), isNull())).thenReturn(true);
+    @WithMockUser(username = "admin", authorities = {"evs:customers:list"})
+    void testListCustomersWithProjects() throws Exception {
+        // 准备测试数据
+        List<Customers> customerList = new ArrayList<>();
+        customerList.add(testCustomer);
+        testCustomer.setProjectCount(3); // 设置项目数量
 
-        // When - 直接调用Controller方法（实际中会调用Service）
-        boolean result = customersService.checkPhoneExists(phone, null);
+        // 模拟service调用
+        when(customersService.selectCustomersWithRelations(any(Customers.class), eq(true)))
+                .thenReturn(customerList);
 
-        // Then
-        assertTrue(result, "手机号存在时应返回true");
-        verify(customersService, times(1)).checkPhoneExists(eq(phone), isNull());
+        // 执行请求并验证结果
+        mockMvc.perform(get("/evs/customers/list")
+                        .param("includeProjects", "true")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.rows").isArray())
+                .andExpect(jsonPath("$.rows[0].id").value("customer-001"))
+                .andExpect(jsonPath("$.rows[0].name").value("测试客户"))
+                .andExpect(jsonPath("$.rows[0].phone").value("13800138000"))
+                .andExpect(jsonPath("$.rows[0].projectCount").value(3))
+                .andExpect(jsonPath("$.total").value(1));
     }
 
     @Test
-    @DisplayName("测试检查手机号存在 - 手机号不存在")
-    void testCheckPhoneExists_WhenPhoneNotExists_ShouldReturnFalse() {
-        // Given
-        String phone = "13900139000";
-        when(customersService.checkPhoneExists(eq(phone), isNull())).thenReturn(false);
+    @WithMockUser(username = "admin", authorities = {"evs:customers:list"})
+    void testListCustomersWithoutProjects() throws Exception {
+        // 准备测试数据
+        List<Customers> customerList = new ArrayList<>();
+        customerList.add(testCustomer);
 
-        // When
-        boolean result = customersService.checkPhoneExists(phone, null);
+        // 模拟service调用
+        when(customersService.selectCustomersWithRelations(any(Customers.class), eq(false)))
+                .thenReturn(customerList);
 
-        // Then
-        assertFalse(result, "手机号不存在时应返回false");
-        verify(customersService, times(1)).checkPhoneExists(eq(phone), isNull());
+        // 执行请求并验证结果
+        mockMvc.perform(get("/evs/customers/list")
+                        .param("includeProjects", "false")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.rows").isArray())
+                .andExpect(jsonPath("$.rows[0].id").value("customer-001"))
+                .andExpect(jsonPath("$.rows[0].name").value("测试客户"))
+                .andExpect(jsonPath("$.rows[0].projectCount").doesNotExist());
     }
 
     @Test
-    @DisplayName("测试检查手机号存在 - 排除指定ID")
-    void testCheckPhoneExists_WithExcludeId_ShouldCallServiceWithExcludeId() {
-        // Given
-        String phone = "13800138000";
-        String excludeId = "1234567890";
-        when(customersService.checkPhoneExists(eq(phone), eq(excludeId))).thenReturn(false);
+    @WithMockUser(username = "admin", authorities = {"evs:customers:query"})
+    void testGetCustomerWithProjects() throws Exception {
+        // 设置项目数量
+        testCustomer.setProjectCount(5);
 
-        // When
-        boolean result = customersService.checkPhoneExists(phone, excludeId);
+        // 模拟service调用
+        when(customersService.selectCustomersWithRelationsById(eq("customer-001"), eq(true)))
+                .thenReturn(testCustomer);
 
-        // Then
-        assertFalse(result, "排除指定ID时应返回false");
-        verify(customersService, times(1)).checkPhoneExists(eq(phone), eq(excludeId));
+        // 执行请求并验证结果
+        mockMvc.perform(get("/evs/customers/customer-001")
+                        .param("includeProjects", "true")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.id").value("customer-001"))
+                .andExpect(jsonPath("$.data.name").value("测试客户"))
+                .andExpect(jsonPath("$.data.phone").value("13800138000"))
+                .andExpect(jsonPath("$.data.email").value("test@example.com"))
+                .andExpect(jsonPath("$.data.projectCount").value(5));
     }
 
     @Test
-    @DisplayName("测试检查手机号存在 - 空手机号")
-    void testCheckPhoneExists_WithEmptyPhone_ShouldHandleEmptyPhone() {
-        // Given
-        String phone = "";
-        when(customersService.checkPhoneExists(eq(phone), isNull())).thenReturn(false);
+    @WithMockUser(username = "admin", authorities = {"evs:customers:list"})
+    void testCheckPhoneExists() throws Exception {
+        // 模拟service调用 - 手机号存在
+        when(customersService.checkPhoneExists(eq("13800138000"), eq(null)))
+                .thenReturn(true);
 
-        // When
-        boolean result = customersService.checkPhoneExists(phone, null);
-
-        // Then
-        assertFalse(result, "空手机号应返回false");
-        verify(customersService, times(1)).checkPhoneExists(eq(phone), isNull());
+        // 执行请求并验证结果
+        mockMvc.perform(get("/evs/customers/checkPhone/13800138000")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(true));
     }
 
     @Test
-    @DisplayName("测试检查手机号存在 - 服务层异常")
-    void testCheckPhoneExists_WhenServiceThrowsException_ShouldThrowException() {
-        // Given
-        String phone = "13800138000";
-        when(customersService.checkPhoneExists(anyString(), any()))
-                .thenThrow(new RuntimeException("数据库连接异常"));
+    @WithMockUser(username = "admin", authorities = {"evs:customers:add"})
+    void testAddCustomer() throws Exception {
+        // 准备测试数据
+        Customers newCustomer = new Customers();
+        newCustomer.setName("新客户");
+        newCustomer.setPhone("13900139000");
+        newCustomer.setEmail("new@example.com");
 
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> customersService.checkPhoneExists(phone, null));
-        assertEquals("数据库连接异常", exception.getMessage());
-        verify(customersService, times(1)).checkPhoneExists(eq(phone), isNull());
+        // 模拟service调用
+        when(customersService.insertCustomers(any(Customers.class)))
+                .thenReturn(1);
+
+        // 执行请求并验证结果
+        mockMvc.perform(post("/evs/customers")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newCustomer)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.msg").value("操作成功"));
     }
 
     @Test
-    @DisplayName("测试获取客户详情")
-    void testGetInfo_WithValidId_ShouldReturnCustomer() {
-        // Given
-        String customerId = "1234567890";
-        when(customersService.selectCustomersById(customerId)).thenReturn(testCustomer);
-
-        // When
-        Customers result = customersService.selectCustomersById(customerId);
-
-        // Then
-        assertNotNull(result, "应该能找到客户");
-        assertEquals(customerId, result.getId());
-        assertEquals("测试客户", result.getName());
-        assertEquals("13800138000", result.getPhone());
-        verify(customersService, times(1)).selectCustomersById(customerId);
+    @WithMockUser(username = "user", authorities = {"evs:customers:query"})
+    void testUnauthorizedAccess() throws Exception {
+        // 测试没有list权限的用户无法访问列表接口
+        mockMvc.perform(get("/evs/customers/list")
+                        .param("includeProjects", "true")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @DisplayName("测试新增客户")
-    void testAdd_WithValidCustomer_ShouldReturnSuccess() {
-        // Given
-        when(customersService.insertCustomers(any(Customers.class))).thenReturn(1);
-
-        // When
-        int result = customersService.insertCustomers(testCustomer);
-
-        // Then
-        assertEquals(1, result, "新增客户应该成功");
-        verify(customersService, times(1)).insertCustomers(any(Customers.class));
-    }
-
-    @Test
-    @DisplayName("测试修改客户")
-    void testEdit_WithValidCustomer_ShouldReturnSuccess() {
-        // Given
-        when(customersService.updateCustomers(any(Customers.class))).thenReturn(1);
-
-        // When
-        int result = customersService.updateCustomers(testCustomer);
-
-        // Then
-        assertEquals(1, result, "修改客户应该成功");
-        verify(customersService, times(1)).updateCustomers(any(Customers.class));
-    }
-
-    @Test
-    @DisplayName("测试删除客户")
-    void testRemove_WithValidIds_ShouldReturnSuccess() {
-        // Given
-        String[] ids = {"1234567890", "0987654321"};
-        when(customersService.deleteCustomersByIds(ids)).thenReturn(2);
-
-        // When
-        int result = customersService.deleteCustomersByIds(ids);
-
-        // Then
-        assertEquals(2, result, "删除客户应该成功");
-        verify(customersService, times(1)).deleteCustomersByIds(ids);
+    void testUnauthenticatedAccess() throws Exception {
+        // 测试未认证用户无法访问接口
+        mockMvc.perform(get("/evs/customers/list")
+                        .param("includeProjects", "true")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
     }
 }

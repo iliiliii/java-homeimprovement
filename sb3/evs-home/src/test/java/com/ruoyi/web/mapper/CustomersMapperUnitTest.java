@@ -171,6 +171,79 @@ class CustomersMapperUnitTest {
                 String sql = "DELETE FROM customers WHERE id IN (" + placeholders + ")";
                 return jdbcTemplate.update(sql, (Object[]) ids);
             }
+
+            @Override
+            public List<Customers> selectCustomersWithProjectCount(Customers customers) {
+                StringBuilder sql = new StringBuilder(
+                    "SELECT c.id, c.name, c.phone, c.email, c.address, c.level, c.source, c.remarks, c.is_active, " +
+                    "c.created_at, c.updated_at, COUNT(p.id) as project_count " +
+                    "FROM customers c LEFT JOIN projects p ON c.id = p.customer_id WHERE 1=1"
+                );
+
+                if (customers != null) {
+                    if (customers.getName() != null && !customers.getName().isEmpty()) {
+                        sql.append(" AND c.name LIKE '%").append(customers.getName()).append("%'");
+                    }
+                    if (customers.getPhone() != null && !customers.getPhone().isEmpty()) {
+                        sql.append(" AND c.phone = '").append(customers.getPhone()).append("'");
+                    }
+                    if (customers.getLevel() != null && !customers.getLevel().isEmpty()) {
+                        sql.append(" AND c.level = '").append(customers.getLevel()).append("'");
+                    }
+                }
+
+                sql.append(" GROUP BY c.id, c.name, c.phone, c.email, c.address, c.level, c.source, " +
+                          "c.remarks, c.is_active, c.created_at, c.updated_at ORDER BY c.created_at DESC");
+
+                return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
+                    Customers customer = new Customers();
+                    customer.setId(rs.getString("id"));
+                    customer.setName(rs.getString("name"));
+                    customer.setPhone(rs.getString("phone"));
+                    customer.setEmail(rs.getString("email"));
+                    customer.setAddress(rs.getString("address"));
+                    customer.setLevel(rs.getString("level"));
+                    customer.setSource(rs.getString("source"));
+                    customer.setRemarks(rs.getString("remarks"));
+                    customer.setIsActive(rs.getInt("is_active"));
+                    customer.setCreatedAt(rs.getDate("created_at"));
+                    customer.setUpdatedAt(rs.getDate("updated_at"));
+                    customer.setProjectCount(rs.getInt("project_count"));
+                    return customer;
+                });
+            }
+
+            @Override
+            public Customers selectCustomersWithProjectCountById(String id) {
+                String sql =
+                    "SELECT c.id, c.name, c.phone, c.email, c.address, c.level, c.source, c.remarks, c.is_active, " +
+                    "c.created_at, c.updated_at, COUNT(p.id) as project_count " +
+                    "FROM customers c LEFT JOIN projects p ON c.id = p.customer_id " +
+                    "WHERE c.id = ? " +
+                    "GROUP BY c.id, c.name, c.phone, c.email, c.address, c.level, c.source, " +
+                    "c.remarks, c.is_active, c.created_at, c.updated_at";
+
+                try {
+                    return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                        Customers customer = new Customers();
+                        customer.setId(rs.getString("id"));
+                        customer.setName(rs.getString("name"));
+                        customer.setPhone(rs.getString("phone"));
+                        customer.setEmail(rs.getString("email"));
+                        customer.setAddress(rs.getString("address"));
+                        customer.setLevel(rs.getString("level"));
+                        customer.setSource(rs.getString("source"));
+                        customer.setRemarks(rs.getString("remarks"));
+                        customer.setIsActive(rs.getInt("is_active"));
+                        customer.setCreatedAt(rs.getDate("created_at"));
+                        customer.setUpdatedAt(rs.getDate("updated_at"));
+                        customer.setProjectCount(rs.getInt("project_count"));
+                        return customer;
+                    }, id);
+                } catch (Exception e) {
+                    return null;
+                }
+            }
         };
 
         // 创建测试数据表
@@ -192,7 +265,7 @@ class CustomersMapperUnitTest {
     }
 
     private void createTestTables() {
-        String createTableSql = """
+        String createCustomersTableSql = """
             CREATE TABLE customers (
                 id VARCHAR(50) PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
@@ -207,7 +280,19 @@ class CustomersMapperUnitTest {
                 updated_at DATE
             )
         """;
-        jdbcTemplate.execute(createTableSql);
+
+        String createProjectsTableSql = """
+            CREATE TABLE projects (
+                id VARCHAR(50) PRIMARY KEY,
+                name VARCHAR(100),
+                customer_id VARCHAR(50),
+                created_at DATE,
+                updated_at DATE
+            )
+        """;
+
+        jdbcTemplate.execute(createCustomersTableSql);
+        jdbcTemplate.execute(createProjectsTableSql);
     }
 
     @AfterEach
