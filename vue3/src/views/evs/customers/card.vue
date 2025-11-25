@@ -46,17 +46,18 @@
     </el-form>
 
     <!-- 客户卡片展示 -->
-    <el-row :gutter="20" v-loading="loading" style="margin-bottom: 16px;">
-      <el-col
-        v-for="customer in customersList"
-        :key="customer.id"
-        :xs="24"
-        :sm="12"
-        :md="8"
-        :lg="6"
-        :xl="4"
-        style="margin-bottom: 20px;"
-      >
+    <div class="customer-container" v-loading="loading">
+      <el-row :gutter="20">
+        <el-col
+          v-for="customer in customersList"
+          :key="customer.id"
+          :xs="24"
+          :sm="12"
+          :md="8"
+          :lg="6"
+          :xl="4"
+          style="margin-bottom: 20px;"
+        >
         <el-card class="customer-card" shadow="hover">
           <template #header>
             <div class="card-header">
@@ -110,7 +111,9 @@
 
     <!-- 空状态 -->
     <el-empty v-if="!loading && customersList.length === 0" description="暂无客户数据" />
+    </div>
 
+    <!-- 分页 -->
     <pagination
       v-show="total>0"
       :total="total"
@@ -436,7 +439,7 @@ function handleEditFromDetail() {
 /** 从详情对话框删除 */
 function handleDeleteFromDetail() {
   detailOpen.value = false
-  handleDelete({ id: currentCustomer.value.id })
+  handleDelete({ id: currentCustomer.value.id, name: currentCustomer.value.name, phone: currentCustomer.value.phone })
 }
 
 /** 新增按钮操作 */
@@ -481,7 +484,7 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _id = row.id
-  proxy.$modal.confirm('是否确认删除客户档案编号为"' + _id + '"的数据项？').then(function() {
+  proxy.$modal.confirm(`是否确认删除客户 ${row.name}(${row.phone}) 的数据项？`).then(function() {
     return delCustomers(_id)
   }).then(() => {
     getList()
@@ -522,14 +525,18 @@ getList()
 
 <style lang="scss" scoped>
 .app-container {
+  height: calc(100vh - 124px);
+  display: flex;
+  flex-direction: column;
   padding: 20px;
+  overflow: hidden;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 
   .page-title {
     margin: 0;
@@ -546,11 +553,27 @@ getList()
 }
 
 .search-form {
-  margin-bottom: 24px;
+  display: flex;
+  justify-content: start;
+  align-items: flex-start;
+  margin-bottom: 12px;
   padding: 20px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+  :deep(.el-form-item) {
+    margin-bottom: 0 !important;
+    margin-right: 16px;
+  }
+}
+
+/* 客户容器 - 独立滚动 */
+.customer-container {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  padding: 2px;
 }
 
 /* 卡片样式 */

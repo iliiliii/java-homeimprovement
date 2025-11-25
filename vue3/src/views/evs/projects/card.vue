@@ -54,14 +54,15 @@
     </el-form>
 
     <!-- 项目卡片网格 -->
-    <el-row v-loading="loading" :gutter="16" style="margin-bottom: 16px;">
-      <el-col
-        v-for="project in projectsList"
-        :key="project.id"
-        :xs="24"
-        :sm="12"
-        :lg="8"
-        style="margin-bottom: 16px;"
+    <div class="projects-container" v-loading="loading">
+      <el-row :gutter="16">
+        <el-col
+          v-for="project in projectsList"
+          :key="project.id"
+          :xs="24"
+          :sm="12"
+          :lg="8"
+          style="margin-bottom: 16px;"
       >
         <el-card shadow="hover" style="height: 100%;" :body-style="{ padding: '16px' }">
           <!-- 卡片选择框 -->
@@ -187,6 +188,10 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 空状态 -->
+    <el-empty v-if="!loading && projectsList.length === 0" description="暂无项目数据" :image-size="200" />
+    </div>
 
     <pagination
       v-show="total>0"
@@ -456,14 +461,18 @@ getCustomersList()
 
 <style lang="scss">
 .app-container {
+  height: calc(100vh - 124px);
+  display: flex;
+  flex-direction: column;
   padding: 20px;
+  overflow: hidden;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 
   .page-title {
     margin: 0;
@@ -480,11 +489,74 @@ getCustomersList()
 }
 
 .search-form {
-  margin-bottom: 24px;
+  display: flex;
+  justify-content: start;
+  align-items: flex-start;    // ✅ 修改：从center改为flex-start，与用户页面一致（用户选择）
+  margin-bottom: 12px;
   padding: 20px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+  // 覆盖Element Plus的表单项间距变量 - 彻底解决18px问题
+  --el-form-item-margin-bottom: 0px;
+
+  // 增强版表单项样式覆盖 - 多重保障
+  .el-form-item,
+  :deep(.el-form-item) {
+    margin-bottom: 0 !important;
+    margin-right: 16px;
+
+    // 确保所有嵌套的表单项也被覆盖
+    &.el-form-item {
+      margin-bottom: 0 !important;
+    }
+
+    // 确保子元素也被覆盖
+    .el-form-item {
+      margin-bottom: 0 !important;
+    }
+  }
+}
+
+/* 项目容器 - 独立滚动 */
+.projects-container {
+  flex: 1;
+  overflow-y: auto;  // 只允许垂直滚动
+  overflow-x: hidden; // 禁止水平滚动（取消底部滚动条）
+  margin-bottom: 12px;
+  padding: 2px;
+
+  // 优化滚动条样式
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+
+  .el-col {
+    margin-bottom: 16px;
+
+    @media (min-width: 1200px) {
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      margin-bottom: 12px;
+    }
+  }
 }
 
 // 预算对话框样式优化

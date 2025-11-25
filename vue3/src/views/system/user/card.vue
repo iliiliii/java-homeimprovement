@@ -609,22 +609,26 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .app-container {
+  height: calc(100vh - 90px);
+  display: flex;
+  flex-direction: column;
   padding: 20px;
+  overflow: hidden;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  
+  margin-bottom: 12px;
+
   .page-title {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
     color: #303133;
   }
-  
+
   .page-subtitle {
     margin: 4px 0 0 0;
     font-size: 14px;
@@ -633,8 +637,8 @@ onMounted(() => {
 }
 
 .role-stats {
-  margin-bottom: 24px;
-  
+  margin-bottom: 12px;
+
   .stat-card {
     display: flex;
     align-items: center;
@@ -718,27 +722,59 @@ onMounted(() => {
 .search-form {
   display: flex;
   justify-content: start;
-  align-items: center;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  margin-bottom: 12px;
   padding: 20px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+  :deep(.el-form-item) {
+    margin-bottom: 0 !important;
+    margin-right: 16px;
+  }
 }
 
 .team-list-card {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;  // 自动占据剩余空间
+  min-height: 200px;  // 最小高度保障
+
   :deep(.el-card__body) {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
-}
 
-:deep(.el-table) {
-  .el-table__cell {
-    padding: 12px 0;
+  :deep(.el-table-wrapper) {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  :deep(.el-table) {
+    .el-table__cell {
+      padding: 12px 0;
+    }
+
+    .el-table__header-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #fff;
+    }
+  }
+
+  :deep(.el-pagination) {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
   }
 }
 </style>

@@ -710,12 +710,19 @@ getList()
 }
 
 .search-form {
-  margin-bottom: 16px;
-  padding: 16px 20px;
+  display: flex;              // ✅ 新增：Flexbox布局
+  justify-content: start;     // ✅ 新增：水平左对齐
+  align-items: flex-start;    // ✅ 新增：垂直顶部对齐（与用户页面一致）
+  margin-bottom: 12px;        // ✅ 修改：统一为12px
+  padding: 20px;             // ✅ 修改：统一为20px
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
+
+  :deep(.el-form-item) {      // ✅ 新增：表单项样式控制
+    margin-bottom: 0 !important;
+    margin-right: 16px;
+  }
 }
 
 .main-content-row {

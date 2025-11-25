@@ -332,7 +332,11 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value
-  proxy.$modal.confirm('是否确认删除客户档案编号为"' + _ids + '"的数据项？').then(function() {
+  // 单个删除时显示客户姓名和电话，批量删除时保持原有格式
+  const confirmMsg = Array.isArray(_ids)
+    ? `是否确认删除客户档案编号为"${_ids.join(', ')}"的数据项？`
+    : `是否确认删除客户"${row.name}"（电话：${row.phone}）的数据项？`
+  proxy.$modal.confirm(confirmMsg).then(function() {
     return delCustomers(_ids)
   }).then(() => {
     getList()
