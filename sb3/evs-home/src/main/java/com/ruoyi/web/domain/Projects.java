@@ -2,6 +2,7 @@ package com.ruoyi.web.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -95,7 +96,16 @@ public class Projects extends BaseEntity
     /** 更新人 */
     private String updatedBy;
 
-    public void setId(String id) 
+    /** 关联的客户信息 */
+    private Customers customer;
+
+    /** 预算明细列表 */
+    private List<Object> budgetItems;
+
+    /** 进度计划列表 */
+    private List<Object> schedules;
+
+    public void setId(String id)
     {
         this.id = id;
     }
@@ -310,9 +320,39 @@ public class Projects extends BaseEntity
         this.updatedBy = updatedBy;
     }
 
-    public String getUpdatedBy() 
+    public String getUpdatedBy()
     {
         return updatedBy;
+    }
+
+    public void setCustomer(Customers customer)
+    {
+        this.customer = customer;
+    }
+
+    public Customers getCustomer()
+    {
+        return customer;
+    }
+
+    public void setBudgetItems(List<Object> budgetItems)
+    {
+        this.budgetItems = budgetItems;
+    }
+
+    public List<Object> getBudgetItems()
+    {
+        return budgetItems;
+    }
+
+    public void setSchedules(List<Object> schedules)
+    {
+        this.schedules = schedules;
+    }
+
+    public List<Object> getSchedules()
+    {
+        return schedules;
     }
 
     @Override

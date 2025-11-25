@@ -1,6 +1,7 @@
 package com.ruoyi.web.service;
 
 import java.util.List;
+import java.util.Set;
 import com.ruoyi.web.domain.Projects;
 
 /**
@@ -61,9 +62,27 @@ public interface IProjectsService
 
     /**
      * 软删除项目信息信息
-     * 
+     *
      * @param id 项目信息主键
      * @return 结果
      */
     public int softDeleteProjectsById(String id);
+
+    /**
+     * 查询项目信息列表（支持关联查询）
+     *
+     * @param projects 项目信息查询条件
+     * @param includeRelations 需要包含的关联关系，用逗号分隔（如：customer,budgetItems,schedules）
+     * @return 项目信息集合
+     */
+    public List<Projects> selectProjectsWithRelations(Projects projects, String includeRelations);
+
+    /**
+     * 查询项目信息（支持关联查询）
+     *
+     * @param id 项目信息主键
+     * @param includeRelations 需要包含的关联关系，用逗号分隔（如：customer,budgetItems,schedules）
+     * @return 项目信息
+     */
+    public Projects selectProjectsWithRelationsById(String id, String includeRelations);
 }

@@ -3,6 +3,7 @@ package com.ruoyi.web.service.impl;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectsService;
@@ -101,5 +102,41 @@ public class ProjectsServiceImpl implements IProjectsService
         }
         projects.setDeletedAt(DateUtils.getNowDate());
         return projectsMapper.updateProjects(projects);
+    }
+
+    @Override
+    public List<Projects> selectProjectsWithRelations(Projects projects, String includeRelations)
+    {
+        if (!StringUtils.hasText(includeRelations)) {
+            return selectProjectsList(projects);
+        }
+
+        List<Projects> projectList;
+
+        if (includeRelations.contains("customer")) {
+            projectList = projectsMapper.selectProjectsWithCustomer(projects);
+        } else {
+            projectList = selectProjectsList(projects);
+        }
+
+        return projectList;
+    }
+
+    @Override
+    public Projects selectProjectsWithRelationsById(String id, String includeRelations)
+    {
+        if (!StringUtils.hasText(includeRelations)) {
+            return selectProjectsById(id);
+        }
+
+        Projects project;
+
+        if (includeRelations.contains("customer")) {
+            project = projectsMapper.selectProjectsWithCustomerById(id);
+        } else {
+            project = selectProjectsById(id);
+        }
+
+        return project;
     }
 }

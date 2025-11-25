@@ -29,6 +29,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updatedBy"    column="updated_by"    />
     </resultMap>
 
+    <resultMap type="Projects" id="ProjectsWithCustomerResult" extends="ProjectsResult">
+        <association property="customer" javaType="Customers">
+            <id property="id" column="customer_id"/>
+            <result property="name" column="customer_name"/>
+            <result property="phone" column="customer_phone"/>
+            <result property="email" column="customer_email"/>
+            <result property="address" column="customer_address"/>
+            <result property="level" column="customer_level"/>
+            <result property="source" column="customer_source"/>
+            <result property="isActive" column="customer_is_active"/>
+        </association>
+    </resultMap>
+
     <sql id="selectProjectsVo">
         select id, project_type, name, customer_id, description, address, area, budget, actual_cost, start_date, end_date, actual_end_date, status, priority, progress, budgets_url, contracts_url, created_at, updated_at, deleted_at, created_by, updated_by from projects
     </sql>
@@ -133,9 +146,41 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteProjectsByIds" parameterType="String">
-        delete from projects where id in 
+        delete from projects where id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>
     </delete>
+
+    <!-- 关联查询项目信息（包含客户信息） -->
+    <sql id="selectProjectsWithCustomerVo">
+        SELECT
+            p.id, p.project_type, p.name, p.customer_id, p.description, p.address,
+            p.area, p.budget, p.actual_cost, p.start_date, p.end_date,
+            p.actual_end_date, p.status, p.priority, p.progress,
+            p.budgets_url, p.contracts_url, p.created_at, p.updated_at,
+            p.deleted_at, p.created_by, p.updated_by,
+            c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
+            c.address as customer_address, c.level as customer_level,
+            c.source as customer_source, c.is_active as customer_is_active
+        FROM projects p
+        LEFT JOIN customers c ON p.customer_id = c.id
+    </sql>
+
+    <select id="selectProjectsWithCustomer" parameterType="Projects" resultMap="ProjectsWithCustomerResult">
+        <include refid="selectProjectsWithCustomerVo"/>
+        <where>
+            <if test="projectType != null and projectType != ''"> and p.project_type = #{projectType}</if>
+            <if test="name != null and name != ''"> and p.name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''"> and p.status = #{status}</if>
+            <if test="priority != null and priority != ''"> and p.priority = #{priority}</if>
+            <if test="customerId != null and customerId != ''"> and p.customer_id = #{customerId}</if>
+        </where>
+        ORDER BY p.created_at DESC
+    </select>
+
+    <select id="selectProjectsWithCustomerById" parameterType="String" resultMap="ProjectsWithCustomerResult">
+        <include refid="selectProjectsWithCustomerVo"/>
+        WHERE p.id = #{id}
+    </select>
 </mapper>
