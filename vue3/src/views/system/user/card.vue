@@ -91,7 +91,7 @@
             {{ row.userName }}（{{ row.nickName }}）
           </template>
         </el-table-column>
-        <el-table-column label="部门" align="center" min-width="150">
+        <el-table-column label="部门" align="center" min-width="100">
           <template #default="{ row }">
             {{ row.dept?.deptName || '-' }}
           </template>
@@ -102,7 +102,7 @@
             {{ getProjectCount(row.userId) }}个项目
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+        <el-table-column label="操作" align="center" class-name="small-padding fixed-width"  min-width="100">
           <template #default="scope">
             <el-tooltip content="修改" placement="top">
               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">
@@ -137,7 +137,7 @@
       <el-form :model="form" :rules="rules" ref="userRef" label-width="80px">
         <el-row>
           <el-col :span="24" style="text-align: center; margin-bottom: 20px;">
-            <AvatarUpload v-model="form.avatar" :size="100" />
+            <AvatarUpload v-model="form.avatar" :size="100" :userId="form.userId" />
           </el-col>
         </el-row>
         <el-row>

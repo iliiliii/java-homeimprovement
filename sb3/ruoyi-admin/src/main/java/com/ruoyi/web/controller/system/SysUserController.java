@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysDept;
@@ -26,6 +28,9 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.file.FileUploadUtils;
+import com.ruoyi.common.utils.file.FileUtils;
+import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.service.ISysDeptService;
 import com.ruoyi.system.service.ISysPostService;
@@ -252,5 +257,56 @@ public class SysUserController extends BaseController
     public AjaxResult deptTree(SysDept dept)
     {
         return success(deptService.selectDeptTreeList(dept));
+    }
+
+    /**
+     * 🔧 修复：管理员给其他用户上传头像
+     *
+     * 问题：之前的逻辑是在SysProfileController中，它获取的是当前登录用户
+     * 当管理员给其他用户上传头像时，会：
+     * 1. 覆盖管理员的头像
+     * 2. 删除管理员的旧头像
+     * 3. 目标用户没��头像
+     *
+     * 解决方案：在此处添加专门的接口，接收userId参数
+     */
+    @Log(title = "用户头像", businessType = BusinessType.UPDATE)
+    @PreAuthorize("@ss.hasPermi('system:user:edit')")
+    @PostMapping("/avatar/{userId}")
+    public AjaxResult uploadAvatar(@PathVariable("userId") Long userId, @RequestParam("avatarfile") MultipartFile file) throws Exception
+    {
+        if (!file.isEmpty())
+        {
+            // 权限检查：只能给有权限的用户上传头像
+            userService.checkUserDataScope(userId);
+
+            // 获取目标用户（不是当前登录用户）
+            SysUser targetUser = userService.selectUserById(userId);
+            if (targetUser == null)
+            {
+                return error("用户不存在");
+            }
+
+            // 上传新头像文件
+            String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION, true);
+
+            // 更新目标用户的头像
+            if (userService.updateUserAvatar(userId, avatar))
+            {
+                // 删除目标用户的旧头像文件
+                String oldAvatar = targetUser.getAvatar();
+                if (StringUtils.isNotEmpty(oldAvatar))
+                {
+                    FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
+                }
+
+                AjaxResult ajax = AjaxResult.success();
+                ajax.put("imgUrl", avatar);
+                ajax.put("userId", userId);
+                ajax.put("userName", targetUser.getUserName());
+                return ajax;
+            }
+        }
+        return error("上传图片异常，请联系管理员");
     }
 }

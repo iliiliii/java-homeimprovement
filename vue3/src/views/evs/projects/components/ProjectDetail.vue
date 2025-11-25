@@ -63,10 +63,7 @@
             <el-descriptions-item label="项目状态">
               <dict-tag :options="decoration_project_status" :value="currentProject.status" />
             </el-descriptions-item>
-            <el-descriptions-item label="项目编号">
-              {{ currentProject.projectCode || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="工地面积">
+                      <el-descriptions-item label="工地面积" :span="2">
               {{ currentProject.area ? currentProject.area + '㎡' : '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="关联客户">
@@ -78,7 +75,7 @@
               >
                 {{ getCustomerName(currentProject.customerId) }}
               </el-link>
-              <span v-else>{{ currentProject.customerId }}</span>
+              <span v-else style="color: #999;">未关联客户</span>
             </el-descriptions-item>
             <el-descriptions-item label="工地地址" :span="3">
               {{ currentProject.address || '-' }}
@@ -238,8 +235,8 @@
             <el-col :span="6">
               <el-card size="small" shadow="never" style="text-align: center; background: #f6ffed; height: 100%;">
                 <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 16px 8px;">
-                  <div style="font-size: 20px; font-weight: bold; color: #52c41a; margin-bottom: 8px;">
-                    <dict-tag :options="decoration_project_status" :value="currentProject.status" />
+                  <div style="font-size: 16px; font-weight: bold; color: #52c41a; margin-bottom: 8px;">
+                    {{ decoration_project_status.find(item => item.value === currentProject.status).label }}
                   </div>
                   <div style="font-size: 13px; color: #666;">当前状态</div>
                 </div>

@@ -64,7 +64,16 @@ import { useImageCompress } from '@/composables/useImageCompress'
 const { compressImage, isImageFile } = useImageCompress()
 
 const { proxy } = getCurrentInstance()
-const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/system/user/profile/avatar')
+const uploadUrl = computed(() => {
+  // 🔧 根据是否有userId决定使用哪个接口
+  if (props.userId) {
+    // 管理员给其他用户上传头像
+    return import.meta.env.VITE_APP_BASE_API + `/system/user/avatar/${props.userId}`
+  } else {
+    // 用户修改自己的头像
+    return import.meta.env.VITE_APP_BASE_API + '/system/user/profile/avatar'
+  }
+})
 
 const props = defineProps({
   // 头像URL（相对路径或完整URL）
@@ -101,6 +110,11 @@ const props = defineProps({
   compress: {
     type: Boolean,
     default: true
+  },
+  // 🔧 新增：目标用户ID（管理员给其他用户上传头像时使用）
+  userId: {
+    type: [String, Number],
+    default: undefined
   }
 })
 
@@ -184,7 +198,7 @@ async function handleBeforeUpload(file) {
   // 🆕 头像压缩处理 (高质量压缩)
   if (props.compress && isImageFile(file)) {
     try {
-      proxy.$modal.loading("正在压缩头像，请稍候...")
+      proxy.$modal.loading("正在上传头像，请稍候...")
 
       const compressResult = await compressImage(file, {
         maxSizeMB: 0.5,              // 头像压缩后最大 0.5MB
