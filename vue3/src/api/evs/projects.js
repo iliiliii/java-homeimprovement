@@ -9,6 +9,29 @@ export function listProjects(query) {
   })
 }
 
+// 查询项目信息列表（包含客户信息）
+export function listProjectsWithCustomer(query) {
+  return request({
+    url: '/evs/projects/list',
+    method: 'get',
+    params: {
+      ...query,
+      includeCustomer: true
+    }
+  })
+}
+
+// 查询项目详细信息（包含客户信息）
+export function getProjectWithCustomer(id) {
+  return request({
+    url: `/evs/projects/${id}`,
+    method: 'get',
+    params: {
+      includeCustomer: true
+    }
+  })
+}
+
 // 查询项目信息详细
 export function getProjects(id) {
   return request({
