@@ -66,4 +66,20 @@ public interface CustomersMapper
      * @return 客户档案
      */
     public Customers selectCustomersByPhone(String phone);
+
+    /**
+     * 查询客户档案列表（包含项目数量）
+     *
+     * @param customers 客户档案查询条件
+     * @return 客户档案集合
+     */
+    public List<Customers> selectCustomersWithProjectCount(Customers customers);
+
+    /**
+     * 查询客户档案（包含项目数量）
+     *
+     * @param id 客户档案主键
+     * @return 客户档案
+     */
+    public Customers selectCustomersWithProjectCountById(String id);
 }

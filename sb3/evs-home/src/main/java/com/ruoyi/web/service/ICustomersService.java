@@ -70,9 +70,27 @@ public interface ICustomersService
 
     /**
      * 软删除客户档案信息
-     * 
+     *
      * @param id 客户档案主键
      * @return 结果
      */
     public int softDeleteCustomersById(String id);
+
+    /**
+     * 查询客户档案列表（支持关联查询）
+     *
+     * @param customers 客户档案查询条件
+     * @param includeProjects 是否包含项目信息
+     * @return 客户档案集合
+     */
+    public List<Customers> selectCustomersWithRelations(Customers customers, boolean includeProjects);
+
+    /**
+     * 查询客户档案（支持关联查询）
+     *
+     * @param id 客户档案主键
+     * @param includeProjects 是否包含项目信息
+     * @return 客户档案
+     */
+    public Customers selectCustomersWithRelationsById(String id, boolean includeProjects);
 }

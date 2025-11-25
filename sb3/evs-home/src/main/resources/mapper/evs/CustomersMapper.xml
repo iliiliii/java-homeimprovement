@@ -22,6 +22,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updatedBy"    column="updated_by"    />
     </resultMap>
 
+    <resultMap type="Customers" id="CustomersWithProjectCountResult" extends="CustomersResult">
+        <result property="projectCount" column="project_count"/>
+    </resultMap>
+
     <sql id="selectCustomersVo">
         select id, name, phone, email, address, level, source, remarks, avatar, is_active, created_at, updated_at, deleted_at, created_by, updated_by from customers
     </sql>
@@ -110,9 +114,41 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteCustomersByIds" parameterType="String">
-        delete from customers where id in 
+        delete from customers where id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>
     </delete>
+
+    <!-- 关联查询客户信息（包含项目数量） -->
+    <sql id="selectCustomersWithProjectCountVo">
+        SELECT
+            c.id, c.name, c.phone, c.email, c.address, c.level, c.source,
+            c.remarks, c.avatar, c.is_active, c.created_at, c.updated_at,
+            c.deleted_at, c.created_by, c.updated_by,
+            COUNT(p.id) as project_count
+        FROM customers c
+        LEFT JOIN projects p ON c.id = p.customer_id AND p.deleted_at IS NULL
+    </sql>
+
+    <select id="selectCustomersWithProjectCount" parameterType="Customers" resultMap="CustomersWithProjectCountResult">
+        <include refid="selectCustomersWithProjectCountVo"/>
+        <where>
+            <if test="name != null and name != ''"> and c.name like concat('%', #{name}, '%')</if>
+            <if test="phone != null and phone != ''"> and c.phone like concat('%', #{phone}, '%')</if>
+            <if test="source != null and source != ''"> and c.source = #{source}</if>
+        </where>
+        GROUP BY c.id, c.name, c.phone, c.email, c.address, c.level, c.source,
+                 c.remarks, c.avatar, c.is_active, c.created_at, c.updated_at,
+                 c.deleted_at, c.created_by, c.updated_by
+        ORDER BY c.created_at DESC
+    </select>
+
+    <select id="selectCustomersWithProjectCountById" parameterType="String" resultMap="CustomersWithProjectCountResult">
+        <include refid="selectCustomersWithProjectCountVo"/>
+        WHERE c.id = #{id}
+        GROUP BY c.id, c.name, c.phone, c.email, c.address, c.level, c.source,
+                 c.remarks, c.avatar, c.is_active, c.created_at, c.updated_at,
+                 c.deleted_at, c.created_by, c.updated_by
+    </select>
 </mapper>

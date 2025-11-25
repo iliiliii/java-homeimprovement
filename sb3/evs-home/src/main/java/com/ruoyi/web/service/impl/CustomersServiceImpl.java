@@ -136,4 +136,24 @@ public class CustomersServiceImpl implements ICustomersService
 
         return true;
     }
+
+    @Override
+    public List<Customers> selectCustomersWithRelations(Customers customers, boolean includeProjects)
+    {
+        if (includeProjects) {
+            return customersMapper.selectCustomersWithProjectCount(customers);
+        } else {
+            return selectCustomersList(customers);
+        }
+    }
+
+    @Override
+    public Customers selectCustomersWithRelationsById(String id, boolean includeProjects)
+    {
+        if (includeProjects) {
+            return customersMapper.selectCustomersWithProjectCountById(id);
+        } else {
+            return selectCustomersById(id);
+        }
+    }
 }

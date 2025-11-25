@@ -1,6 +1,7 @@
 package com.ruoyi.web.domain;
 
 import java.util.Date;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -69,7 +70,13 @@ public class Customers extends BaseEntity
     /** 更新人 */
     private String updatedBy;
 
-    public void setId(String id) 
+    /** 关联的项目列表 */
+    private List<Projects> projects;
+
+    /** 项目数量统计 */
+    private Integer projectCount;
+
+    public void setId(String id)
     {
         this.id = id;
     }
@@ -214,9 +221,29 @@ public class Customers extends BaseEntity
         this.updatedBy = updatedBy;
     }
 
-    public String getUpdatedBy() 
+    public String getUpdatedBy()
     {
         return updatedBy;
+    }
+
+    public void setProjects(List<Projects> projects)
+    {
+        this.projects = projects;
+    }
+
+    public List<Projects> getProjects()
+    {
+        return projects;
+    }
+
+    public void setProjectCount(Integer projectCount)
+    {
+        this.projectCount = projectCount;
+    }
+
+    public Integer getProjectCount()
+    {
+        return projectCount;
     }
 
     @Override
