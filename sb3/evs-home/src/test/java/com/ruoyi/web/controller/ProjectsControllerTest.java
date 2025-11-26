@@ -96,7 +96,7 @@ class ProjectsControllerTest {
         tableDataInfo.setTotal(1);
 
         // 模拟service调用
-        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq("customer")))
+        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq("customer"), anyString(), eq(true)))
                 .thenReturn(projectList);
 
         // 执行请求并验证结果
@@ -120,7 +120,7 @@ class ProjectsControllerTest {
         projectList.add(testProject);
 
         // 模拟service调用
-        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq("budgetItems")))
+        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq("budgetItems"), anyString(), eq(true)))
                 .thenReturn(projectList);
 
         // 执行请求并验证结果
@@ -142,7 +142,7 @@ class ProjectsControllerTest {
         projectList.add(testProject);
 
         // 模拟service调用
-        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq("customer,budgetItems,schedules")))
+        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq("customer,budgetItems,schedules"), anyString(), eq(true)))
                 .thenReturn(projectList);
 
         // 执行请求并验证结果
@@ -166,7 +166,7 @@ class ProjectsControllerTest {
         projectList.add(testProject);
 
         // 模拟service调用（不包含关联参数时应该调用原有的selectProjectsList方法）
-        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq("")))
+        when(projectsService.selectProjectsWithRelations(any(Projects.class), eq(""), anyString(), eq(true)))
                 .thenReturn(projectList);
 
         // 执行请求并验证结果
