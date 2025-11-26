@@ -39,7 +39,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectProjectMembersList" parameterType="ProjectMembers" resultMap="ProjectMembersResult">
         <include refid="selectProjectMembersVo"/>
-        <where>  
+        <where>
+            <if test="projectId != null and projectId != ''"> and pm.project_id = #{projectId}</if>
+            <if test="userId != null and userId != ''"> and pm.user_id = #{userId}</if>
+            <if test="role != null and role != ''"> and pm.role = #{role}</if>
+            <if test="isActive != null"> and pm.is_active = #{isActive}</if>
         </where>
     </select>
     
