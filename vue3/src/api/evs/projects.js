@@ -21,6 +21,18 @@ export function listProjectsWithCustomer(query) {
   })
 }
 
+// 通过项目成员关联查询项目列表（支持管理员权限筛选）
+export function listProjectsWithMembers(query) {
+  return request({
+    url: '/evs/projects/list',
+    method: 'get',
+    params: {
+      ...query,
+      includeProjectMembers: true
+    }
+  })
+}
+
 // 查询项目详细信息（包含客户信息）
 export function getProjectWithCustomer(id) {
   return request({

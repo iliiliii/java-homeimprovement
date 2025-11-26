@@ -31,6 +31,23 @@
           />
         </el-select>
       </el-form-item>
+      <!-- 管理员特有筛选条件 -->
+      <el-form-item v-if="isAdmin" label="关联客户" prop="customerId">
+        <el-input
+          v-model="queryParams.customerId"
+          placeholder="请输入客户ID"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item v-if="isAdmin" label="关联团队" prop="memberUserId">
+        <el-input
+          v-model="queryParams.memberUserId"
+          placeholder="请输入团队成员用户ID"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -224,8 +241,9 @@
 </template>
 
 <script setup name="Projects">
-import { listProjects, updateProjects, delProjects, listProjectsWithCustomer } from "@/api/evs/projects"
+import { listProjects, updateProjects, delProjects, listProjectsWithCustomer, listProjectsWithMembers } from "@/api/evs/projects"
 import { useRouter } from 'vue-router'
+import userStore from '@/store/modules/user'
 import ProjectProgress from './components/ProjectProgress.vue'
 import ProjectBudget from './components/ProjectBudget.vue'
 import ProjectDetail from './components/ProjectDetail.vue'
@@ -234,6 +252,11 @@ import ProjectEdit from './components/ProjectEdit.vue'
 const router = useRouter()
 const { proxy } = getCurrentInstance()
 const { decoration_project_status } = proxy.useDict('decoration_project_status')
+
+// 判断是否为管理员
+const isAdmin = computed(() => {
+  return userStore.roles && userStore.roles.includes('admin')
+})
 
 // 组件引用
 const projectDetailRef = ref()
@@ -270,15 +293,19 @@ const data = reactive({
     name: null,
     address: null,
     status: null,
+    // 管理员特有筛选条件
+    customerId: null,      // 关联客户ID
+    memberUserId: null,    // 关联团队成员用户ID
   }
 })
 
 const { queryParams } = toRefs(data)
 
-/** 查询项目信息列表（使用关联查询获取客户信息） */
+/** 查询项目信息列表（使用关联查询支持权限过滤） */
 function getList() {
   loading.value = true
-  listProjectsWithCustomer(queryParams.value).then(response => {
+  // 所有用户都使用关联查询，管理员查看所有，非管理员通过后端过滤
+  listProjectsWithMembers(queryParams.value).then(response => {
     projectsList.value = response.rows
     total.value = response.total
     loading.value = false
