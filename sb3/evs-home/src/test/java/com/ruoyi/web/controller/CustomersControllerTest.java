@@ -9,12 +9,15 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import com.ruoyi.framework.config.SecurityConfig;
+import com.ruoyi.web.controller.TestSecurityConfig;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @date 2025-11-23
  */
 @WebMvcTest(CustomersController.class)
+@Import(TestSecurityConfig.class)
 class CustomersControllerTest {
 
     @Autowired

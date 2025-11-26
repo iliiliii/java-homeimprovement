@@ -105,7 +105,12 @@ public class ProjectsController extends BaseController
         Projects project = projectsService.selectProjectsWithRelationsById(
             id, includeRelations.toString());
 
-        return success(project);
+        // 即使项目不存在也返回data字段，确保响应结构一致
+        AjaxResult result = new AjaxResult();
+        result.put("code", 200);
+        result.put("msg", "操作成功");
+        result.put("data", project);
+        return result;
     }
 
     /**

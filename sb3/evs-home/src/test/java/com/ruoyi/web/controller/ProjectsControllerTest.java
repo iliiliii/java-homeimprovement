@@ -11,12 +11,15 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import com.ruoyi.framework.config.SecurityConfig;
+import com.ruoyi.web.controller.TestSecurityConfig;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -37,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @date 2025-11-23
  */
 @WebMvcTest(ProjectsController.class)
+@Import(TestSecurityConfig.class)
 class ProjectsControllerTest {
 
     @Autowired
@@ -273,8 +277,8 @@ class ProjectsControllerTest {
     @Test
     @WithMockUser(username = "admin", authorities = {"evs:projects:remove"})
     void testDeleteProject() throws Exception {
-        // 模拟service调用
-        when(projectsService.deleteProjectsById(any(String.class)))
+        // 模拟service调用 - 匹配控制器的 deleteProjectsByIds 方法
+        when(projectsService.deleteProjectsByIds(any(String[].class)))
                 .thenReturn(1);
 
         // 执行请求并验证结果
