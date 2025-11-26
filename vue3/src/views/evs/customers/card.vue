@@ -441,7 +441,12 @@ function handleEditFromDetail() {
 /** 从详情对话框删除 */
 function handleDeleteFromDetail() {
   detailOpen.value = false
-  handleDelete({ id: currentCustomer.value.id, name: currentCustomer.value.name, phone: currentCustomer.value.phone })
+  handleDelete({
+    id: currentCustomer.value.id,
+    name: currentCustomer.value.name,
+    phone: currentCustomer.value.phone,
+    projectCount: currentCustomer.value.projectCount || customersList.value.find(c => c.id === currentCustomer.value.id)?.projectCount || 0
+  })
 }
 
 /** 新增按钮操作 */
@@ -485,6 +490,15 @@ function submitForm() {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
+  const projectCount = row.projectCount || 0
+
+  // 检查是否有关联项目
+  if (projectCount > 0) {
+    proxy.$modal.msgWarning(`无法删除客户 ${row.name}(${row.phone})，该客户已关联 ${projectCount} 个项目`)
+    return
+  }
+
+  // 关联项目小于等于0个，弹出确认框
   const _id = row.id
   proxy.$modal.confirm(`是否确认删除客户 ${row.name}(${row.phone}) 的数据项？`).then(function() {
     return delCustomers(_id)
@@ -711,6 +725,7 @@ getList()
   justify-content: space-around;
   align-items: center;
   padding: 8px 0 0;
+  gap: 16px;
 }
 
 /* 响应式调整 */

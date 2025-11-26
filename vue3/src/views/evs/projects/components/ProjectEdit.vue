@@ -53,7 +53,7 @@
       </el-form-item>
 
       <el-form-item label="项目描述" prop="description">
-        <el-input v-model="form.description" type="textarea" :rows="3" placeholder="���简要描述项目需求和特点" />
+        <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请简要描述项目需求和特点" />
       </el-form-item>
 
       <!-- 编辑模式专属字段 -->
