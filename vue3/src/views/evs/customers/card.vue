@@ -89,9 +89,7 @@
               <el-icon class="detail-icon"><FolderOpened /></el-icon>
               <span class="detail-label">关联项目</span>
               <span class="project-count">{{ customer.projectCount || 0 }}</span>
-              <span class="project-status" v-if="customer.projectCount > 0">
-                {{ customer.projectCount }}个项目进行中
-              </span>
+             
             </div>
           </div>
 
@@ -340,7 +338,11 @@ const { queryParams, form, rules } = toRefs(data)
 /** 查询客户档案列表 */
 function getList() {
   loading.value = true
-  listCustomers(queryParams.value).then(response => {
+  const params = {
+    ...queryParams.value,
+    includeProjects: true
+  }
+  listCustomers(params).then(response => {
     customersList.value = response.rows
     total.value = response.total
     loading.value = false
