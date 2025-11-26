@@ -21,6 +21,7 @@ import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectsService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.utils.SecurityUtils;
 
 /**
  * 项目信息Controller
@@ -36,14 +37,15 @@ public class ProjectsController extends BaseController
     private IProjectsService projectsService;
 
     /**
-     * 查询项目信息列表（支持关联查询）
+     * 查询项目信息列表（支持关联查询和权限过滤）
      */
     @PreAuthorize("@ss.hasPermi('evs:projects:list')")
     @GetMapping("/list")
     public TableDataInfo list(Projects projects,
                              @RequestParam(required = false) String includeCustomer,
                              @RequestParam(required = false) String includeBudgetItems,
-                             @RequestParam(required = false) String includeSchedules)
+                             @RequestParam(required = false) String includeSchedules,
+                             @RequestParam(required = false) String includeProjectMembers)
     {
         startPage();
 
@@ -60,9 +62,18 @@ public class ProjectsController extends BaseController
             if (includeRelations.length() > 0) includeRelations.append(",");
             includeRelations.append("schedules");
         }
+        if ("true".equals(includeProjectMembers)) {
+            if (includeRelations.length() > 0) includeRelations.append(",");
+            includeRelations.append("projectMembers");
+        }
 
+        // 获取当前用户ID和权限信息（自动获取，不依赖前端传递）
+        Long currentUserId = SecurityUtils.getUserId();
+        boolean isAdmin = SecurityUtils.hasRole("admin");
+
+        // 传递查询参数和权限信息到Service层
         List<Projects> list = projectsService.selectProjectsWithRelations(
-            projects, includeRelations.toString());
+            projects, includeRelations.toString(), currentUserId.toString(), isAdmin);
 
         return getDataTable(list);
     }

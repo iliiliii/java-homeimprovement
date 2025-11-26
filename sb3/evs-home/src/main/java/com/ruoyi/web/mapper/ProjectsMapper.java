@@ -1,6 +1,7 @@
 package com.ruoyi.web.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.web.domain.Projects;
 
 /**
@@ -74,4 +75,16 @@ public interface ProjectsMapper
      * @return 项目信息
      */
     public Projects selectProjectsWithCustomerById(String id);
+
+    /**
+     * 通过项目成员关联查询项目列表（支持权限过滤）
+     *
+     * @param projects 项目信息
+     * @param memberUserId 团队成员用户ID（用于筛选）
+     * @param isAdmin 是否管理员
+     * @return 项目信息集合
+     */
+    public List<Projects> selectProjectsWithMembers(@Param("projects") Projects projects,
+                                                    @Param("memberUserId") String memberUserId,
+                                                    @Param("isAdmin") boolean isAdmin);
 }

@@ -73,9 +73,11 @@ public interface IProjectsService
      *
      * @param projects 项目信息查询条件
      * @param includeRelations 需要包含的关联关系，用逗号分隔（如：customer,budgetItems,schedules）
+     * @param memberUserId 团队成员用户ID（用于筛选）
+     * @param isAdmin 是否管理员
      * @return 项目信息集合
      */
-    public List<Projects> selectProjectsWithRelations(Projects projects, String includeRelations);
+    public List<Projects> selectProjectsWithRelations(Projects projects, String includeRelations, String memberUserId, boolean isAdmin);
 
     /**
      * 查询项目信息（支持关联查询）

@@ -105,7 +105,7 @@ public class ProjectsServiceImpl implements IProjectsService
     }
 
     @Override
-    public List<Projects> selectProjectsWithRelations(Projects projects, String includeRelations)
+    public List<Projects> selectProjectsWithRelations(Projects projects, String includeRelations, String memberUserId, boolean isAdmin)
     {
         if (!StringUtils.hasText(includeRelations)) {
             return selectProjectsList(projects);
@@ -115,6 +115,9 @@ public class ProjectsServiceImpl implements IProjectsService
 
         if (includeRelations.contains("customer")) {
             projectList = projectsMapper.selectProjectsWithCustomer(projects);
+        } else if (includeRelations.contains("projectMembers")) {
+            // 通过 projectMembers 关联查询
+            projectList = projectsMapper.selectProjectsWithMembers(projects, memberUserId, isAdmin);
         } else {
             projectList = selectProjectsList(projects);
         }
