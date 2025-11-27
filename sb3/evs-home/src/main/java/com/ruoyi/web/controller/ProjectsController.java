@@ -45,7 +45,8 @@ public class ProjectsController extends BaseController
                              @RequestParam(required = false) String includeCustomer,
                              @RequestParam(required = false) String includeBudgetItems,
                              @RequestParam(required = false) String includeSchedules,
-                             @RequestParam(required = false) String includeProjectMembers)
+                             @RequestParam(required = false) String includeProjectMembers,
+                             @RequestParam(required = false) String includeScheduleInfo)
     {
         startPage();
 
@@ -72,8 +73,15 @@ public class ProjectsController extends BaseController
         boolean isAdmin = SecurityUtils.hasRole("admin");
 
         // 传递查询参数和权限信息到Service层
-        List<Projects> list = projectsService.selectProjectsWithRelations(
-            projects, includeRelations.toString(), currentUserId.toString(), isAdmin);
+        List<Projects> list;
+        if ("true".equals(includeScheduleInfo)) {
+            // ✅ 传参 includeScheduleInfo=true 时，返回项目列表及进度统计
+            list = projectsService.selectProjectsListWithScheduleInfo(projects);
+        } else {
+            // ✅ 传参 includeScheduleInfo=false 或未传参时，保持原有逻辑
+            list = projectsService.selectProjectsWithRelations(
+                projects, includeRelations.toString(), currentUserId.toString(), isAdmin);
+        }
 
         return getDataTable(list);
     }

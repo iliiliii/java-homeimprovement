@@ -355,6 +355,58 @@ public class Projects extends BaseEntity
         return schedules;
     }
 
+    /** 进度总数 */
+    private Long totalSchedules;
+
+    /** 已完成数量 */
+    private Long completedSchedules;
+
+    /** 进行中数量 */
+    private Long inProgressSchedules;
+
+    /** 完成率 */
+    private Integer progressRate;
+
+    public void setTotalSchedules(Long totalSchedules)
+    {
+        this.totalSchedules = totalSchedules;
+    }
+
+    public Long getTotalSchedules()
+    {
+        return totalSchedules;
+    }
+
+    public void setCompletedSchedules(Long completedSchedules)
+    {
+        this.completedSchedules = completedSchedules;
+    }
+
+    public Long getCompletedSchedules()
+    {
+        return completedSchedules;
+    }
+
+    public void setInProgressSchedules(Long inProgressSchedules)
+    {
+        this.inProgressSchedules = inProgressSchedules;
+    }
+
+    public Long getInProgressSchedules()
+    {
+        return inProgressSchedules;
+    }
+
+    public void setProgressRate(Integer progressRate)
+    {
+        this.progressRate = progressRate;
+    }
+
+    public Integer getProgressRate()
+    {
+        return progressRate;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)

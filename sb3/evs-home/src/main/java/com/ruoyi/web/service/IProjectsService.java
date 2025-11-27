@@ -87,4 +87,12 @@ public interface IProjectsService
      * @return 项目信息
      */
     public Projects selectProjectsWithRelationsById(String id, String includeRelations);
+
+    /**
+     * 查询项目列表及进度统计信息
+     *
+     * @param projects 项目查询条件
+     * @return 项目列表（包含进度统计字段）
+     */
+    public List<Projects> selectProjectsListWithScheduleInfo(Projects projects);
 }

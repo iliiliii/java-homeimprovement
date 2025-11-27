@@ -1,6 +1,8 @@
 package com.ruoyi.web.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -8,6 +10,8 @@ import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectsService;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.projectScheduleStats.ProjectScheduleStats;
+import com.ruoyi.mapper.evs.ProjectScheduleStatsMapper;
 
 /**
  * 项目信息Service业务层处理
@@ -16,10 +20,13 @@ import com.ruoyi.common.utils.DateUtils;
  * @date 2025-11-23
  */
 @Service
-public class ProjectsServiceImpl implements IProjectsService 
+public class ProjectsServiceImpl implements IProjectsService
 {
     @Autowired
     private ProjectsMapper projectsMapper;
+
+    @Autowired
+    private ProjectScheduleStatsMapper projectScheduleStatsMapper;
 
     /**
      * 查询项目信息
@@ -141,5 +148,45 @@ public class ProjectsServiceImpl implements IProjectsService
         }
 
         return project;
+    }
+
+    @Override
+    public List<Projects> selectProjectsListWithScheduleInfo(Projects projects)
+    {
+        // 1. 查询项目列表
+        List<Projects> projectsList = selectProjectsList(projects);
+
+        // 2. 如果无项目，直接返回
+        if (projectsList.isEmpty()) {
+            return projectsList;
+        }
+
+        // 3. 获取所有项目ID（保持String类型）
+        List<String> projectIds = projectsList.stream()
+                .map(Projects::getId)
+                .collect(Collectors.toList());
+
+        // 4. 批量查询进度统计
+        Map<String, ProjectScheduleStats> statsMap =
+            projectScheduleStatsMapper.selectScheduleStatsMap(projectIds);
+
+        // 5. 为每个项目设置统计信息
+        for (Projects p : projectsList) {
+            ProjectScheduleStats stats = statsMap.get(p.getId());
+            if (stats != null) {
+                p.setTotalSchedules(stats.getTotalCount());
+                p.setCompletedSchedules(stats.getCompletedCount());
+                p.setInProgressSchedules(stats.getInProgressCount());
+                p.setProgressRate(stats.getProgressRate());
+            } else {
+                // 如果没有进度数据，初始化为0
+                p.setTotalSchedules(0L);
+                p.setCompletedSchedules(0L);
+                p.setInProgressSchedules(0L);
+                p.setProgressRate(0);
+            }
+        }
+
+        return projectsList;
     }
 }
