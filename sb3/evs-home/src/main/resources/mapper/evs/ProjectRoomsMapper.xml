@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.web.mapper.ProjectRoomsMapper">
+    
+    <resultMap type="ProjectRooms" id="ProjectRoomsResult">
+        <result property="id"    column="id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="roomName"    column="room_name"    />
+        <result property="roomType"    column="room_type"    />
+        <result property="area"    column="area"    />
+        <result property="description"    column="description"    />
+        <result property="floor"    column="floor"    />
+        <result property="orientation"    column="orientation"    />
+        <result property="fileIds"    column="file_ids"    />
+        <result property="designUrls"    column="design_urls"    />
+        <result property="constructionUrls"    column="construction_urls"    />
+        <result property="effectUrls"    column="effect_urls"    />
+        <result property="otherUrls"    column="other_urls"    />
+        <result property="sortOrder"    column="sort_order"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+        <result property="deletedAt"    column="deleted_at"    />
+        <result property="createdBy"    column="created_by"    />
+        <result property="updatedBy"    column="updated_by"    />
+    </resultMap>
+
+    <sql id="selectProjectRoomsVo">
+        select id, project_id, room_name, room_type, area, description, floor, orientation, file_ids, design_urls, construction_urls, effect_urls, other_urls, sort_order, created_at, updated_at, deleted_at, created_by, updated_by from project_rooms
+    </sql>
+
+    <select id="selectProjectRoomsList" parameterType="ProjectRooms" resultMap="ProjectRoomsResult">
+        <include refid="selectProjectRoomsVo"/>
+        <where>  
+            <if test="roomName != null  and roomName != ''"> and room_name like concat('%', #{roomName}, '%')</if>
+            <if test="roomType != null  and roomType != ''"> and room_type = #{roomType}</if>
+        </where>
+    </select>
+    
+    <select id="selectProjectRoomsById" parameterType="String" resultMap="ProjectRoomsResult">
+        <include refid="selectProjectRoomsVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertProjectRooms" parameterType="ProjectRooms">
+        insert into project_rooms
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="projectId != null and projectId != ''">project_id,</if>
+            <if test="roomName != null and roomName != ''">room_name,</if>
+            <if test="roomType != null and roomType != ''">room_type,</if>
+            <if test="area != null">area,</if>
+            <if test="description != null">description,</if>
+            <if test="floor != null">floor,</if>
+            <if test="orientation != null">orientation,</if>
+            <if test="fileIds != null">file_ids,</if>
+            <if test="designUrls != null">design_urls,</if>
+            <if test="constructionUrls != null">construction_urls,</if>
+            <if test="effectUrls != null">effect_urls,</if>
+            <if test="otherUrls != null">other_urls,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+            <if test="deletedAt != null">deleted_at,</if>
+            <if test="createdBy != null">created_by,</if>
+            <if test="updatedBy != null">updated_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="projectId != null and projectId != ''">#{projectId},</if>
+            <if test="roomName != null and roomName != ''">#{roomName},</if>
+            <if test="roomType != null and roomType != ''">#{roomType},</if>
+            <if test="area != null">#{area},</if>
+            <if test="description != null">#{description},</if>
+            <if test="floor != null">#{floor},</if>
+            <if test="orientation != null">#{orientation},</if>
+            <if test="fileIds != null">#{fileIds},</if>
+            <if test="designUrls != null">#{designUrls},</if>
+            <if test="constructionUrls != null">#{constructionUrls},</if>
+            <if test="effectUrls != null">#{effectUrls},</if>
+            <if test="otherUrls != null">#{otherUrls},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+            <if test="deletedAt != null">#{deletedAt},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            <if test="updatedBy != null">#{updatedBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProjectRooms" parameterType="ProjectRooms">
+        update project_rooms
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectId != null and projectId != ''">project_id = #{projectId},</if>
+            <if test="roomName != null and roomName != ''">room_name = #{roomName},</if>
+            <if test="roomType != null and roomType != ''">room_type = #{roomType},</if>
+            <if test="area != null">area = #{area},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="floor != null">floor = #{floor},</if>
+            <if test="orientation != null">orientation = #{orientation},</if>
+            <if test="fileIds != null">file_ids = #{fileIds},</if>
+            <if test="designUrls != null">design_urls = #{designUrls},</if>
+            <if test="constructionUrls != null">construction_urls = #{constructionUrls},</if>
+            <if test="effectUrls != null">effect_urls = #{effectUrls},</if>
+            <if test="otherUrls != null">other_urls = #{otherUrls},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="deletedAt != null">deleted_at = #{deletedAt},</if>
+            <if test="createdBy != null">created_by = #{createdBy},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteProjectRoomsById" parameterType="String">
+        delete from project_rooms where id = #{id}
+    </delete>
+
+    <delete id="deleteProjectRoomsByIds" parameterType="String">
+        delete from project_rooms where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
