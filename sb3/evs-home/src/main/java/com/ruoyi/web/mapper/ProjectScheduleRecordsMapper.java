@@ -6,8 +6,8 @@ import com.ruoyi.web.domain.ProjectScheduleRecords;
 /**
  * 进度记录Mapper接口
  * 
- * @author eve
- * @date 2025-11-24
+ * @author evs
+ * @date 2025-11-27
  */
 public interface ProjectScheduleRecordsMapper 
 {

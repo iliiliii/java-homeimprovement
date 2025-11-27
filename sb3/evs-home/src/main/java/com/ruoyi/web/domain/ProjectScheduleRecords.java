@@ -11,8 +11,8 @@ import com.ruoyi.common.core.domain.BaseEntity;
 /**
  * 进度记录对象 project_schedule_records
  * 
- * @author eve
- * @date 2025-11-24
+ * @author evs
+ * @date 2025-11-27
  */
 public class ProjectScheduleRecords extends BaseEntity
 {

@@ -7,11 +7,14 @@ import com.ruoyi.web.mapper.ProjectScheduleRecordsMapper;
 import com.ruoyi.web.domain.ProjectScheduleRecords;
 import com.ruoyi.web.service.IProjectScheduleRecordsService;
 
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.uuid.IdUtils;
 /**
  * 进度记录Service业务层处理
  * 
- * @author eve
- * @date 2025-11-24
+ * @author evs
+ * @date 2025-11-27
  */
 @Service
 public class ProjectScheduleRecordsServiceImpl implements IProjectScheduleRecordsService 
@@ -52,6 +55,12 @@ public class ProjectScheduleRecordsServiceImpl implements IProjectScheduleRecord
     @Override
     public int insertProjectScheduleRecords(ProjectScheduleRecords projectScheduleRecords)
     {
+        // 如果 id 为空，自动生成 UUID
+        if (projectScheduleRecords.getId() == null || projectScheduleRecords.getId().isEmpty()) {
+            projectScheduleRecords.setId(IdUtils.fastSimpleUUID());
+        }
+        projectScheduleRecords.setCreatedAt(DateUtils.getNowDate());
+        projectScheduleRecords.setCreatedBy(SecurityUtils.getUsername());
         return projectScheduleRecordsMapper.insertProjectScheduleRecords(projectScheduleRecords);
     }
 
@@ -64,6 +73,8 @@ public class ProjectScheduleRecordsServiceImpl implements IProjectScheduleRecord
     @Override
     public int updateProjectScheduleRecords(ProjectScheduleRecords projectScheduleRecords)
     {
+        projectScheduleRecords.setUpdatedAt(DateUtils.getNowDate());
+        projectScheduleRecords.setUpdatedBy(SecurityUtils.getUsername());
         return projectScheduleRecordsMapper.updateProjectScheduleRecords(projectScheduleRecords);
     }
 
