@@ -40,6 +40,10 @@
                 <el-icon style="margin-right: 8px;"><Clock /></el-icon>
                 管理进度
               </el-button>
+              <el-button size="default" @click="handleDesignDrafts(currentProject)" style="padding: 10px 20px;">
+                <el-icon style="margin-right: 8px;"><Picture /></el-icon>
+                上传设计稿
+              </el-button>
               <el-button size="default" type="primary" @click="handleUpdate(currentProject)" style="padding: 10px 24px;">
                 <el-icon style="margin-right: 8px;"><Edit /></el-icon>
                 编辑项目
@@ -311,12 +315,20 @@
     :project="currentProject"
     @success="handleTeamAllocationSuccess"
   />
+
+  <!-- 设计稿管理组件 -->
+  <ProjectDesignDrafts
+    v-model="designDraftsOpen"
+    :project="currentProject"
+    @success="handleDesignDraftsSuccess"
+  />
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { User, Setting, Wallet, Clock, Edit } from '@element-plus/icons-vue'
+import { User, Setting, Wallet, Clock, Edit, Picture } from '@element-plus/icons-vue'
 import ProjectMember from './ProjectMember.vue'
+import ProjectDesignDrafts from './ProjectDesignDrafts.vue'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -334,6 +346,9 @@ const currentProject = ref({})
 
 // 团队成员分配相关
 const teamAllocationOpen = ref(false)
+
+// 设计稿管理相关
+const designDraftsOpen = ref(false)
 
 // 时间轴状态配置（用于详情弹窗显示）
 const timelineStatusConfig = {
@@ -451,6 +466,18 @@ function handleTeamAllocation(project) {
 function handleTeamAllocationSuccess() {
   // 这里可以添加刷新逻辑，比如触发事件通知父组件刷新项目详情
   console.log('团队分配保存成功')
+}
+
+/** 设计稿管理 */
+function handleDesignDrafts(project) {
+  currentProject.value = project
+  designDraftsOpen.value = true
+}
+
+/** 设计稿管理成功后的处理 */
+function handleDesignDraftsSuccess() {
+  // 这里可以添加刷新逻辑，比如触发事件通知父组件刷新项目详情
+  console.log('设计稿管理保存成功')
 }
 
 // 暴露方法给父组件
