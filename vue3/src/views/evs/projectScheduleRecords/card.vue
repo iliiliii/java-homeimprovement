@@ -64,14 +64,15 @@
               </div>
               <div class="project-progress-info">
                 <el-progress
-                  :percentage="getProjectProgress(project)"
+                  :percentage="project.progressRate || 0"  <!-- 直接使用后端数据 -->
                   :stroke-width="8"
                   :show-text="true"
                   :format="(percentage) => `${percentage}%`"
-                />
+                >
                 <div class="progress-summary">
-                  已完成 {{ getCompletedCount(project) }}/{{ getTotalCount(project) }} · 进行中 {{ getInProgressCount(project) }}
+                  已完成 {{ project.completedSchedules || 0 }}/{{ project.totalSchedules || 0 }} · 进行中 {{ project.inProgressSchedules || 0 }}
                 </div>
+                </el-progress>
               </div>
             </div>
             <el-empty v-if="inProgressProjects.length === 0" description="暂无进行中的项目" :image-size="100" />
@@ -359,23 +360,30 @@ const { queryParams } = toRefs(data)
 /** 查询项目列表 */
 function getList() {
   loading.value = true
-  listProjects(queryParams.value).then(response => {
+
+  // ✅ 传递 includeScheduleInfo=true 参数
+  listProjects({
+    ...queryParams.value,
+    includeScheduleInfo: true  // 新增：要求返回进度统计信息
+  }).then(response => {
     // 筛选进行中的项目
     inProgressProjects.value = (response.rows || []).filter(project => {
       return project.status === 'IN_PROGRESS' || project.status === 'PLANNED'
     })
     loading.value = false
-    
+
     // 如果当前选中的项目不在列表中，清空选择
     if (selectedProject.value && !inProgressProjects.value.find(p => p.id === selectedProject.value.id)) {
       selectedProject.value = null
       scheduleItems.value = []
     }
-    
-    // 为每个项目加载进度数据
-    inProgressProjects.value.forEach(project => {
-      loadProjectProgressForList(project.id)
-    })
+
+    // 只为第一个项目加载进度
+    if (inProgressProjects.value.length > 0) {
+      const firstProject = inProgressProjects.value[0]
+      selectedProject.value = firstProject
+      loadProjectSchedules(firstProject.id)
+    }
   })
 }
 
