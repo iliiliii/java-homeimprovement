@@ -63,8 +63,9 @@
                 <span>{{ project.address || '未设置地址' }}</span>
               </div>
               <div class="project-progress-info">
+                <!-- 直接使用后端数据 -->
                 <el-progress
-                  :percentage="project.progressRate || 0"  <!-- 直接使用后端数据 -->
+                  :percentage="project.progressRate || 0"  
                   :stroke-width="8"
                   :show-text="true"
                   :format="(percentage) => `${percentage}%`"
@@ -298,7 +299,7 @@ import { Calendar, Location, CircleCheck, Plus } from "@element-plus/icons-vue"
 import { getToken } from "@/utils/auth"
 
 const { proxy } = getCurrentInstance()
-const { decoration_project_status, project_schedule } = proxy.useDict('decoration_project_status', 'project_schedule')
+const { decoration_project_status, decoration_construction_stage } = proxy.useDict('decoration_project_status', 'decoration_construction_stage')
 
 // 图片上传配置
 const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/common/upload')
@@ -507,7 +508,7 @@ function getTimelineStatusLabel(status) {
 
 /** 获取施工阶段名称 */
 function getScheduleStageName(stage) {
-  const stageDict = project_schedule.value.find(dict => dict.value === stage)
+  const stageDict = decoration_construction_stage.value.find(dict => dict.value === stage)
   return stageDict?.label || stage
 }
 
