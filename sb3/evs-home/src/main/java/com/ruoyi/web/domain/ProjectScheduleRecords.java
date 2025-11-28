@@ -117,17 +117,17 @@ public class ProjectScheduleRecords extends BaseEntity
         return description;
     }
 
-    public void setImages(String images) 
+    public void setImages(String images)
     {
         this.images = images;
     }
 
-    public String getImages() 
+    public String getImages()
     {
         return images;
     }
 
-    public void setCreatedAt(Date createdAt) 
+    public void setCreatedAt(Date createdAt)
     {
         this.createdAt = createdAt;
     }
