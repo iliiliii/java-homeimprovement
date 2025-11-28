@@ -10,8 +10,6 @@ import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectsService;
 import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.projectScheduleStats.ProjectScheduleStats;
-import com.ruoyi.mapper.evs.ProjectScheduleStatsMapper;
 
 /**
  * 项目信息Service业务层处理
@@ -25,9 +23,7 @@ public class ProjectsServiceImpl implements IProjectsService
     @Autowired
     private ProjectsMapper projectsMapper;
 
-    @Autowired
-    private ProjectScheduleStatsMapper projectScheduleStatsMapper;
-
+  
     /**
      * 查询项目信息
      * 
@@ -167,23 +163,22 @@ public class ProjectsServiceImpl implements IProjectsService
                 .collect(Collectors.toList());
 
         // 4. 批量查询进度统计
-        Map<String, ProjectScheduleStats> statsMap =
-            projectScheduleStatsMapper.selectScheduleStatsMap(projectIds);
+        Map<String, Map<String, Object>> statsMap = projectsMapper.selectScheduleStatsMap(projectIds);
 
         // 5. 为每个项目设置统计信息
-        for (Projects p : projectsList) {
-            ProjectScheduleStats stats = statsMap.get(p.getId());
+        for (Projects project : projectsList) {
+            Map<String, Object> stats = statsMap.get(project.getId());
             if (stats != null) {
-                p.setTotalSchedules(stats.getTotalCount());
-                p.setCompletedSchedules(stats.getCompletedCount());
-                p.setInProgressSchedules(stats.getInProgressCount());
-                p.setProgressRate(stats.getProgressRate());
+                project.setTotalSchedules(((Number) stats.get("total_count")).longValue());
+                project.setCompletedSchedules(((Number) stats.get("completed_count")).longValue());
+                project.setInProgressSchedules(((Number) stats.get("in_progress_count")).longValue());
+                project.setProgressRate(((Number) stats.get("progress_rate")).intValue());
             } else {
                 // 如果没有进度数据，初始化为0
-                p.setTotalSchedules(0L);
-                p.setCompletedSchedules(0L);
-                p.setInProgressSchedules(0L);
-                p.setProgressRate(0);
+                project.setTotalSchedules(0L);
+                project.setCompletedSchedules(0L);
+                project.setInProgressSchedules(0L);
+                project.setProgressRate(0);
             }
         }
 

@@ -1,6 +1,8 @@
 package com.ruoyi.web.mapper;
 
 import java.util.List;
+import java.util.Map;
+import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.web.domain.Projects;
 
@@ -87,4 +89,13 @@ public interface ProjectsMapper
     public List<Projects> selectProjectsWithMembers(@Param("projects") Projects projects,
                                                     @Param("memberUserId") String memberUserId,
                                                     @Param("isAdmin") boolean isAdmin);
+
+    /**
+     * 批量查询项目进度统计信息
+     *
+     * @param projectIds 项目ID列表
+     * @return 统计信息Map，key为项目ID，value为统计数据
+     */
+    @MapKey("project_id")
+    Map<String, Map<String, Object>> selectScheduleStatsMap(@Param("projectIds") List<String> projectIds);
 }
