@@ -46,6 +46,7 @@
 
     <!-- 验收上报对话框 -->
     <AcceptanceReportDialog
+      ref="acceptanceDialogRef"
       :visible="acceptanceDialogOpen"
       :project="selectedProject"
       :schedule-item="currentScheduleItem"
@@ -88,6 +89,7 @@ const currentScheduleItem = ref(null)
 
 // 子组件引用
 const scheduleDetailRef = ref(null)
+const acceptanceDialogRef = ref(null)
 
 const data = reactive({
   queryParams: {
@@ -164,7 +166,10 @@ function handleSubmitAcceptance(recordData) {
       loadProjectSchedules(selectedProject.value.id)
     }
   }).catch(error => {
+    console.error('验收上报失败:', error)
     proxy.$modal.msgError('验收上报失败：' + (error.msg || error.message))
+    // ✅ 失败时重置loading状态，允许用户重试
+    acceptanceDialogRef.value?.setSaving(false)
   })
 }
 

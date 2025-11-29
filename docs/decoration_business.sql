@@ -155,24 +155,31 @@ CREATE TABLE `project_schedules` (
 -- ----------------------------
 -- 6、进度记录表
 -- ----------------------------
-DROP TABLE IF EXISTS `project_schedule_records`;
+
+DROP TABLE IF EXISTS project_schedule_records;
 CREATE TABLE `project_schedule_records` (
-  `id` VARCHAR(32) NOT NULL COMMENT '记录ID',
-  `project_id` VARCHAR(32) COMMENT '项目ID',
-  `schedule_id` VARCHAR(32) COMMENT '进度ID（逻辑关联）',
-  `record_type` VARCHAR(20) NOT NULL COMMENT '记录类型（START:开始、PROGRESS:进度更新、COMPLETE:完成、ISSUE:问题）',
-  `completion_rate` DECIMAL(5,2) COMMENT '完成度百分比',
-  `description` TEXT COMMENT '记录描述',
-  `images` TEXT COMMENT '现场图片JSON',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `created_by` VARCHAR(64) COMMENT '创建人',
-  `updated_by` VARCHAR(64) COMMENT '更新人',
-  PRIMARY KEY (`id`),
-  KEY `idx_project_id` (`project_id`),
-  KEY `idx_schedule_id` (`schedule_id`),
-  KEY `idx_record_type` (`record_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='进度记录表';
+    `id` VARCHAR(64) NOT NULL COMMENT '主键ID',
+    `project_id` VARCHAR(64) NOT NULL COMMENT '项目ID（关联projects表）',
+    `schedule_id` VARCHAR(64) NOT NULL COMMENT '进度ID（关联project_schedules表）',
+    `record_type` VARCHAR(20) NOT NULL DEFAULT 'PROGRESS' COMMENT '记录类型（START:开始、PROGRESS:进度更新、COMPLETE:完成、ISSUE:问题、ACCEPTANCE:验收）',
+    `images` JSON DEFAULT NULL COMMENT '现场图片JSON数组格式（如：["img1.jpg","img2.jpg"]）',
+    `acceptance_title` VARCHAR(200) DEFAULT NULL COMMENT '验收标题',
+    `acceptance_content` TEXT DEFAULT NULL COMMENT '验收内容',
+    `acceptance_result` VARCHAR(20) DEFAULT NULL COMMENT '验收结果（QUALIFIED:合格、UNQUALIFIED:不合格）',
+    `acceptance_time` DATETIME DEFAULT NULL COMMENT '验收时间（实际验收发生时间）',
+    `acceptor` VARCHAR(50) DEFAULT NULL COMMENT '验收人（实际验收人员姓名）',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间（系统自动）',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间（系统自动）',
+    `created_by` VARCHAR(64) NOT NULL COMMENT '记录创建人（系统自动，存储用户ID）',
+    `updated_by` VARCHAR(64) NOT NULL COMMENT '记录更新人（系统自动，存储用户ID）',
+    PRIMARY KEY (`id`),
+    KEY `idx_project` (`project_id`),
+    KEY `idx_schedule` (`schedule_id`),
+    KEY `idx_record_type` (`record_type`),
+    KEY `idx_acceptance_title` (`acceptance_title`),
+    KEY `idx_acceptance_time` (`acceptance_time`),
+    KEY `idx_acceptor` (`acceptor`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='项目进度记录表（包含验收功能）';
 
 -- ----------------------------
 -- 7、质检表

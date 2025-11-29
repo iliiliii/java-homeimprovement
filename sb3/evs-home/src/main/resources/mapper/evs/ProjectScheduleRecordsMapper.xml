@@ -9,22 +9,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="projectId"    column="project_id"    />
         <result property="scheduleId"    column="schedule_id"    />
         <result property="recordType"    column="record_type"    />
-        <result property="completionRate"    column="completion_rate"    />
-        <result property="description"    column="description"    />
         <result property="images"    column="images"    />
-        <result property="createdAt"    column="created_at"    />
-        <result property="updatedAt"    column="updated_at"    />
-        <result property="createdBy"    column="created_by"    />
-        <result property="updatedBy"    column="updated_by"    />
+        <result property="acceptanceTitle"    column="acceptance_title"    />
+        <result property="acceptanceContent"    column="acceptance_content"    />
+        <result property="acceptanceResult"    column="acceptance_result"    />
+        <result property="acceptanceTime"    column="acceptance_time"    />
+        <result property="acceptor"    column="acceptor"    />
+        <!-- ✅ 审计字段：使用BaseEntity中的属性名 -->
+        <result property="createTime"    column="created_at"    />
+        <result property="updateTime"    column="updated_at"    />
+        <result property="createBy"    column="created_by"    />
+        <result property="updateBy"    column="updated_by"    />
     </resultMap>
 
     <sql id="selectProjectScheduleRecordsVo">
-        select id, project_id, schedule_id, record_type, completion_rate, description, images, created_at, updated_at, created_by, updated_by from project_schedule_records
+        select id, project_id, schedule_id, record_type, images, acceptance_title, acceptance_content, acceptance_result, acceptance_time, acceptor, created_at, updated_at, created_by, updated_by from project_schedule_records
     </sql>
 
     <select id="selectProjectScheduleRecordsList" parameterType="ProjectScheduleRecords" resultMap="ProjectScheduleRecordsResult">
         <include refid="selectProjectScheduleRecordsVo"/>
         <where>  
+            <if test="recordType != null  and recordType != ''"> and record_type = #{recordType}</if>
+            <if test="acceptanceTitle != null  and acceptanceTitle != ''"> and acceptance_title = #{acceptanceTitle}</if>
+            <if test="acceptanceResult != null  and acceptanceResult != ''"> and acceptance_result = #{acceptanceResult}</if>
+            <if test="acceptanceTime != null "> and acceptance_time = #{acceptanceTime}</if>
+            <if test="acceptor != null  and acceptor != ''"> and acceptor = #{acceptor}</if>
         </where>
     </select>
     
@@ -40,26 +49,34 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectId != null">project_id,</if>
             <if test="scheduleId != null">schedule_id,</if>
             <if test="recordType != null and recordType != ''">record_type,</if>
-            <if test="completionRate != null">completion_rate,</if>
-            <if test="description != null">description,</if>
             <if test="images != null">images,</if>
-            <if test="createdAt != null">created_at,</if>
-            <if test="updatedAt != null">updated_at,</if>
-            <if test="createdBy != null">created_by,</if>
-            <if test="updatedBy != null">updated_by,</if>
+            <if test="acceptanceTitle != null">acceptance_title,</if>
+            <if test="acceptanceContent != null">acceptance_content,</if>
+            <if test="acceptanceResult != null">acceptance_result,</if>
+            <if test="acceptanceTime != null">acceptance_time,</if>
+            <if test="acceptor != null">acceptor,</if>
+            <!-- ✅ 审计字段：使用BaseEntity中的属性名 -->
+            <if test="createTime != null">created_at,</if>
+            <if test="updateTime != null">updated_at,</if>
+            <if test="createBy != null">created_by,</if>
+            <if test="updateBy != null">updated_by,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
             <if test="projectId != null">#{projectId},</if>
             <if test="scheduleId != null">#{scheduleId},</if>
             <if test="recordType != null and recordType != ''">#{recordType},</if>
-            <if test="completionRate != null">#{completionRate},</if>
-            <if test="description != null">#{description},</if>
             <if test="images != null">#{images},</if>
-            <if test="createdAt != null">#{createdAt},</if>
-            <if test="updatedAt != null">#{updatedAt},</if>
-            <if test="createdBy != null">#{createdBy},</if>
-            <if test="updatedBy != null">#{updatedBy},</if>
+            <if test="acceptanceTitle != null">#{acceptanceTitle},</if>
+            <if test="acceptanceContent != null">#{acceptanceContent},</if>
+            <if test="acceptanceResult != null">#{acceptanceResult},</if>
+            <if test="acceptanceTime != null">#{acceptanceTime},</if>
+            <if test="acceptor != null">#{acceptor},</if>
+            <!-- ✅ 审计字段：使用BaseEntity中的属性名 -->
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="updateBy != null">#{updateBy},</if>
          </trim>
     </insert>
 
@@ -69,13 +86,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectId != null">project_id = #{projectId},</if>
             <if test="scheduleId != null">schedule_id = #{scheduleId},</if>
             <if test="recordType != null and recordType != ''">record_type = #{recordType},</if>
-            <if test="completionRate != null">completion_rate = #{completionRate},</if>
-            <if test="description != null">description = #{description},</if>
             <if test="images != null">images = #{images},</if>
-            <if test="createdAt != null">created_at = #{createdAt},</if>
-            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
-            <if test="createdBy != null">created_by = #{createdBy},</if>
-            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            <if test="acceptanceTitle != null">acceptance_title = #{acceptanceTitle},</if>
+            <if test="acceptanceContent != null">acceptance_content = #{acceptanceContent},</if>
+            <if test="acceptanceResult != null">acceptance_result = #{acceptanceResult},</if>
+            <if test="acceptanceTime != null">acceptance_time = #{acceptanceTime},</if>
+            <if test="acceptor != null">acceptor = #{acceptor},</if>
+            <!-- ✅ 审计字段：使用BaseEntity中的属性名 -->
+            <if test="createTime != null">created_at = #{createTime},</if>
+            <if test="updateTime != null">updated_at = #{updateTime},</if>
+            <if test="createBy != null">created_by = #{createBy},</if>
+            <if test="updateBy != null">updated_by = #{updateBy},</if>
         </trim>
         where id = #{id}
     </update>

@@ -1,6 +1,38 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="验收标题" prop="acceptanceTitle">
+        <el-input
+          v-model="queryParams.acceptanceTitle"
+          placeholder="请输入验收标题"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="验收结果" prop="acceptanceResult">
+        <el-input
+          v-model="queryParams.acceptanceResult"
+          placeholder="请输入验收结果"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="验收时间" prop="acceptanceTime">
+        <el-date-picker clearable
+          v-model="queryParams.acceptanceTime"
+          type="date"
+          value-format="YYYY-MM-DD"
+          placeholder="请选择验收时间">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item label="验收人" prop="acceptor">
+        <el-input
+          v-model="queryParams.acceptor"
+          placeholder="请输入验收人"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -51,13 +83,16 @@
 
     <el-table v-loading="loading" :data="projectScheduleRecordsList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="记录ID" align="center" prop="id" />
-      <el-table-column label="项目ID" align="center" prop="projectId" />
-      <el-table-column label="进度ID" align="center" prop="scheduleId" />
+      <el-table-column label="主键ID" align="center" prop="id" />
       <el-table-column label="记录类型" align="center" prop="recordType" />
-      <el-table-column label="完成度百分比" align="center" prop="completionRate" />
-      <el-table-column label="记录描述" align="center" prop="description" />
-      <el-table-column label="现场图片JSON" align="center" prop="images" />
+      <el-table-column label="验收标题" align="center" prop="acceptanceTitle" />
+      <el-table-column label="验收结果" align="center" prop="acceptanceResult" />
+      <el-table-column label="验收时间" align="center" prop="acceptanceTime" width="180">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.acceptanceTime, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="验收人" align="center" prop="acceptor" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['evs:projectScheduleRecords:edit']">修改</el-button>
@@ -83,14 +118,28 @@
         <el-form-item label="进度ID" prop="scheduleId">
           <el-input v-model="form.scheduleId" placeholder="请输入进度ID" />
         </el-form-item>
-        <el-form-item label="完成度百分比" prop="completionRate">
-          <el-input v-model="form.completionRate" placeholder="请输入完成度百分比" />
-        </el-form-item>
-        <el-form-item label="记录描述" prop="description">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="现场图片JSON" prop="images">
+        <el-form-item label="现场图片JSON数组格式" prop="images">
           <el-input v-model="form.images" type="textarea" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="验收标题" prop="acceptanceTitle">
+          <el-input v-model="form.acceptanceTitle" placeholder="请输入验收标题" />
+        </el-form-item>
+        <el-form-item label="验收内容">
+          <editor v-model="form.acceptanceContent" :min-height="192"/>
+        </el-form-item>
+        <el-form-item label="验收结果" prop="acceptanceResult">
+          <el-input v-model="form.acceptanceResult" placeholder="请输入验收结果" />
+        </el-form-item>
+        <el-form-item label="验收时间" prop="acceptanceTime">
+          <el-date-picker clearable
+            v-model="form.acceptanceTime"
+            type="date"
+            value-format="YYYY-MM-DD"
+            placeholder="请选择验收时间">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="验收人" prop="acceptor">
+          <el-input v-model="form.acceptor" placeholder="请输入验收人" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -123,6 +172,11 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
+    recordType: null,
+    acceptanceTitle: null,
+    acceptanceResult: null,
+    acceptanceTime: null,
+    acceptor: null,
   },
   rules: {
     recordType: [
@@ -156,9 +210,12 @@ function reset() {
     projectId: null,
     scheduleId: null,
     recordType: null,
-    completionRate: null,
-    description: null,
     images: null,
+    acceptanceTitle: null,
+    acceptanceContent: null,
+    acceptanceResult: null,
+    acceptanceTime: null,
+    acceptor: null,
     createdAt: null,
     updatedAt: null,
     createdBy: null,

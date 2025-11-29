@@ -10,11 +10,14 @@ import com.ruoyi.web.service.IProjectScheduleRecordsService;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.uuid.IdUtils;
+
+
+
 /**
  * 进度记录Service业务层处理
  * 
  * @author evs
- * @date 2025-11-27
+ * @date 2025-11-29
  */
 @Service
 public class ProjectScheduleRecordsServiceImpl implements IProjectScheduleRecordsService 
@@ -59,8 +62,8 @@ public class ProjectScheduleRecordsServiceImpl implements IProjectScheduleRecord
         if (projectScheduleRecords.getId() == null || projectScheduleRecords.getId().isEmpty()) {
             projectScheduleRecords.setId(IdUtils.fastSimpleUUID());
         }
-        projectScheduleRecords.setCreatedAt(DateUtils.getNowDate());
-        projectScheduleRecords.setCreatedBy(SecurityUtils.getUsername());
+        projectScheduleRecords.setCreateTime(DateUtils.getNowDate());  // ✅ 使用BaseEntity中的方法名
+        projectScheduleRecords.setCreateBy(SecurityUtils.getUsername());  // ✅ 使用BaseEntity中的方法名
         return projectScheduleRecordsMapper.insertProjectScheduleRecords(projectScheduleRecords);
     }
 
@@ -73,8 +76,8 @@ public class ProjectScheduleRecordsServiceImpl implements IProjectScheduleRecord
     @Override
     public int updateProjectScheduleRecords(ProjectScheduleRecords projectScheduleRecords)
     {
-        projectScheduleRecords.setUpdatedAt(DateUtils.getNowDate());
-        projectScheduleRecords.setUpdatedBy(SecurityUtils.getUsername());
+        projectScheduleRecords.setUpdateTime(DateUtils.getNowDate());  // ✅ 使用BaseEntity中的方法名
+        projectScheduleRecords.setUpdateBy(SecurityUtils.getUsername());  // ✅ 使用BaseEntity中的方法名
         return projectScheduleRecordsMapper.updateProjectScheduleRecords(projectScheduleRecords);
     }
 
