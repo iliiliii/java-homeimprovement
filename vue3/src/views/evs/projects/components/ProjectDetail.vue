@@ -318,9 +318,12 @@
 
   <!-- 设计稿管理组件 -->
   <ProjectDesignDrafts
+    :key="`project-design-drafts-${currentProject?.id || 'default'}`"
     v-model="designDraftsOpen"
     :project="currentProject"
     @success="handleDesignDraftsSuccess"
+    @rooms-updated="handleRoomsUpdated"
+    @designs-updated="handleDesignsUpdated"
   />
 </template>
 
@@ -338,7 +341,7 @@ const props = defineProps({
   // 无需接收 props，对外暴露方法
 })
 
-const emit = defineEmits(['update', 'budget', 'progress'])
+const emit = defineEmits(['update', 'budget', 'progress', 'design-drafts-updated'])
 
 // 响应式数据
 const detailOpen = ref(false)
@@ -470,14 +473,30 @@ function handleTeamAllocationSuccess() {
 
 /** 设计稿管理 */
 function handleDesignDrafts(project) {
+  console.log(`[ProjectDetail] 打开项目 ${project?.id} (${project?.name}) 的设计稿管理`)
   currentProject.value = project
   designDraftsOpen.value = true
 }
 
 /** 设计稿管理成功后的处理 */
-function handleDesignDraftsSuccess() {
-  // 这里可以添加刷新逻辑，比如触发事件通知父组件刷新项目详情
-  console.log('设计稿管理保存成功')
+function handleDesignDraftsSuccess(result) {
+  console.log('设计稿管理操作成功:', result)
+}
+
+/** 房间更新处理 */
+function handleRoomsUpdated(data) {
+  console.log('房间列表已更新:', data)
+  // 这里可以添加项目统计信息的更新逻辑
+}
+
+/** 设计稿更新处理 */
+function handleDesignsUpdated(data) {
+  console.log('设计稿已更新:', data)
+  // 通知父组件设计稿更新
+  emit('design-drafts-updated', {
+    projectId: currentProject.value.id,
+    ...data
+  })
 }
 
 // 暴露方法给父组件

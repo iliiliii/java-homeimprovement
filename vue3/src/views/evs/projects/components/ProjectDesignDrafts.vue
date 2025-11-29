@@ -28,13 +28,44 @@
       </div>
 
       <!-- 房间列表 -->
-      <div v-if="rooms.length === 0" style="text-align: center; padding: 60px 0; color: #999;">
-        <el-icon style="font-size: 48px; margin-bottom: 16px;"><FolderOpened /></el-icon>
-        <div>暂无房间，请点击"添加房间"开始管理设计稿</div>
-      </div>
+      <div v-loading="loading" element-loading-text="正在加载房间列表...">
+        <!-- 改进的空状态显示 -->
+        <div v-if="rooms.length === 0 && !loading" class="room-list-empty">
+          <!-- 加载错误状态 -->
+          <div v-if="loadError" class="error-state">
+            <el-result
+              icon="warning"
+              :title="emptyDescription"
+              :sub-title="lastError?.message || '网络连接异常，请稍后重试'"
+            >
+              <template #extra>
+                <el-button type="primary" @click="loadRooms" v-if="showRetryButton">
+                  <el-icon><Refresh /></el-icon>
+                  重新加载
+                </el-button>
+              </template>
+            </el-result>
+          </div>
 
-      <!-- 房间卡片 -->
-      <div v-else>
+          <!-- 正常空状态 -->
+          <div v-else class="empty-state">
+            <el-empty
+              :description="emptyDescription"
+              :image-size="120"
+            >
+              <template #image>
+                <el-icon style="font-size: 64px; color: #c0c4cc;"><House /></el-icon>
+              </template>
+              <template #description>
+                <p class="empty-description">{{ emptyDescription }}</p>
+                <p class="empty-tip">{{ emptyTip }}</p>
+              </template>
+            </el-empty>
+
+          </div>
+        </div>
+        <!-- 房间卡片 -->
+        <div v-else-if="!loading">
         <div
           v-for="room in rooms"
           :key="room.id"
@@ -65,7 +96,7 @@
             <el-row :gutter="16">
               <el-col :span="6" v-if="room.roomType">
                 <span style="color: #999;">房间类型：</span>
-                <dict-tag :options="decoration_room_type" :value="room.roomType" />
+                <span>{{ getRoomTypeText(room.roomType) }}</span>
               </el-col>
               <el-col :span="6" v-if="room.area">
                 <span style="color: #999;">面积：</span>
@@ -77,7 +108,7 @@
               </el-col>
               <el-col :span="6" v-if="room.orientation">
                 <span style="color: #999;">朝向：</span>
-                <span>{{ room.orientation }}</span>
+                <dict-tag :options="decoration_orientation" :value="room.orientation" />
               </el-col>
             </el-row>
             <div v-if="room.description" style="margin-top: 8px; color: #666;">
@@ -86,35 +117,30 @@
             </div>
           </div>
 
-          <!-- 设计稿上传区域 -->
-          <div>
-            <div v-if="getRoomImageCount(room) === 0" style="text-align: center; padding: 40px 0; border: 1px dashed #d9d9d9; border-radius: 4px; background: #fafafa;">
-              <el-icon style="font-size: 48px; color: #d9d9d9; margin-bottom: 12px;"><Picture /></el-icon>
-              <div style="color: #999; margin-bottom: 16px;">暂无{{ room.roomName }}的设计图</div>
-              <ImageUpload
-                :model-value="getRoomFileIds(room)"
-                @update:model-value="(val) => handleImageUpload(room, val)"
-                :limit="20"
-                :compress="true"
-                :compress-quality="0.6"
-                :compress-max-size="2"
-                :compress-max-width-or-height="1920"
-                action="/common/upload"
-              />
-            </div>
-            <div v-else>
-              <ImageUpload
-                :model-value="getRoomFileIds(room)"
-                @update:model-value="(val) => handleImageUpload(room, val)"
-                :limit="20"
-                :compress="true"
-                :compress-quality="0.6"
-                :compress-max-size="2"
-                :compress-max-width-or-height="1920"
-                action="/common/upload"
+          <!-- 设计稿展示区域 -->
+          <div v-loading="uploadingRoomId === room.id" element-loading-text="正在保存设计稿...">
+            <!-- 图片上传展示区域 -->
+            <div style="margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span style="font-size: 14px; color: #666;">设计图管理 ({{ getRoomImageCount(room) }}/20)</span>
+              </div>
+
+              <!-- 图片卡片式上传 -->
+              <ImageUploadCard
+                :ref="el => setUploadRef(el, room.id)"
+                v-model="room.fileList"
+                :upload-url="uploadUrl"
+                :upload-headers="{
+                  Authorization: 'Bearer ' + userStore.token
+                }"
+                :disabled="uploadingRoomId === room.id"
+                @success="(data) => handleUploadSuccess(data, room)"
+                @remove="(data) => handleRemove(data, room)"
+                @error="handleUploadError"
               />
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -192,14 +218,12 @@
             placeholder="请选择朝向"
             style="width: 100%"
           >
-            <el-option label="北" value="N" />
-            <el-option label="南" value="S" />
-            <el-option label="东" value="E" />
-            <el-option label="西" value="W" />
-            <el-option label="东北" value="NE" />
-            <el-option label="西北" value="NW" />
-            <el-option label="东南" value="SE" />
-            <el-option label="西南" value="SW" />
+            <el-option
+              v-for="item in decoration_orientation"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
 
@@ -230,12 +254,32 @@
 </template>
 
 <script setup>
-import { Picture, Plus, Delete, Folder, FolderOpened, InfoFilled } from '@element-plus/icons-vue'
+import { Picture, Plus, Delete, Folder, FolderOpened, InfoFilled, Loading, House, Refresh } from '@element-plus/icons-vue'
 import { listProjectRooms, addProjectRooms, updateProjectRooms, delProjectRooms } from '@/api/evs/projectRooms'
-import ImageUpload from '@/components/ImageUpload/index.vue'
+import useUserStore from '@/store/modules/user'
+import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
+import { onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
+
+// 简单的重试机制，替代 requestHelper.js 中的复杂实现
+const retryRequest = async (requestFn, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await requestFn()
+    } catch (error) {
+      if (attempt === maxRetries) throw error
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+    }
+  }
+}
 
 const { proxy } = getCurrentInstance()
-const { decoration_room_type } = proxy.useDict('decoration_room_type')
+const { decoration_room_type, decoration_orientation } = proxy.useDict('decoration_room_type', 'decoration_orientation')
+
+const userStore = useUserStore()
+
+// 上传相关配置
+const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/common/upload')
 
 const props = defineProps({
   modelValue: {
@@ -248,7 +292,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'success'])
+const emit = defineEmits(['update:modelValue', 'success', 'rooms-updated', 'designs-updated'])
 
 // 响应式数据
 const dialogVisible = computed({
@@ -258,9 +302,23 @@ const dialogVisible = computed({
 
 const rooms = ref([])
 const loading = ref(false)
+const uploadingRoomId = ref(null) // 正在上传的房间ID
 const addingRoom = ref(false)
 const addRoomDialogVisible = ref(false)
 const addRoomFormRef = ref(null)
+const uploadRef = ref(null) // ImageUploadCard 组件引用
+
+// 新增：错误处理和状态管理
+const loadError = ref(false)
+const lastError = ref(null)
+
+// 用于取消请求的控制器
+let currentRequestController = null
+let currentProjectId = null
+
+// 防竞态机制：上传队列管理
+const roomUploadQueues = ref(new Map()) // 每个房间的上传队列
+const roomUploadTimers = ref(new Map()) // 每个房间的延迟保存定时器
 
 // 添加房间表单
 const addRoomForm = ref({
@@ -282,6 +340,35 @@ const addRoomRules = {
   ]
 }
 
+// 智能空状态描述
+const emptyDescription = computed(() => {
+  if (!props.project?.id) {
+    return '请先选择项目'
+  }
+  if (loadError.value) {
+    return '加载房间数据失败'
+  }
+  return '当前项目暂无房间'
+})
+
+const emptyTip = computed(() => {
+  if (!props.project?.id) {
+    return '请在项目详情页面查看房间信息'
+  }
+  if (loadError.value) {
+    return '请检查网络连接或稍后重试'
+  }
+  return '点击上方按钮添加项目房间'
+})
+
+const showAddButton = computed(() => {
+  return props.project?.id && !loadError.value
+})
+
+const showRetryButton = computed(() => {
+  return loadError.value && !loading.value
+})
+
 // 生成房间名称
 function generateRoomName(roomType) {
   if (!roomType) return ''
@@ -300,87 +387,314 @@ function handleRoomTypeChange() {
   }
 }
 
+// 获取房间文件ID数组（统一JSON解析逻辑）
+function getRoomFileIds(room) {
+  if (!room.fileIds) return []
+  try {
+    return Array.isArray(room.fileIds) ? room.fileIds : JSON.parse(room.fileIds)
+  } catch {
+    return room.fileIds.split(',').filter(Boolean)
+  }
+}
+
 // 获取房间图片数量
 function getRoomImageCount(room) {
-  if (!room.fileIds) return 0
-  try {
-    const ids = typeof room.fileIds === 'string' ? JSON.parse(room.fileIds) : room.fileIds
-    return Array.isArray(ids) ? ids.length : 0
-  } catch {
-    return 0
+  return getRoomFileIds(room).length
+}
+
+// 获取房间类型中文文本
+function getRoomTypeText(roomType) {
+  if (!roomType) return ''
+
+  const typeItem = decoration_room_type.value.find(item => item.value === roomType)
+  return typeItem ? typeItem.label : roomType
+}
+
+// 设置房间上传组件引用
+function setUploadRef(el, roomId) {
+  if (el) {
+    // 存储每个房间的上传组件引用
+    if (!uploadRef.value) {
+      uploadRef.value = {}
+    }
+    uploadRef.value[roomId] = el
   }
 }
 
-// 获取房间文件ID列表（用于ImageUpload组件）
-function getRoomFileIds(room) {
-  if (!room.fileIds) return ''
-  try {
-    const ids = typeof room.fileIds === 'string' ? JSON.parse(room.fileIds) : room.fileIds
-    if (Array.isArray(ids) && ids.length > 0) {
-      const baseUrl = import.meta.env.VITE_APP_BASE_API
-      // ImageUpload组件期望的是逗号分隔的URL字符串
-      return ids.map(id => {
-        // 如果id已经是完整URL，直接返回；否则拼接baseUrl
-        if (id.startsWith('http://') || id.startsWith('https://')) {
-          return id
-        }
-        // 如果id以/开头，直接拼接；否则添加/
-        return baseUrl + (id.startsWith('/') ? id : '/' + id)
-      }).join(',')
+// 清理上传队列和定时器
+function cleanupUploadQueues() {
+  console.log('[设计稿管理] 清理上传队列和定时器')
+
+  // 清理所有定时器
+  roomUploadTimers.value.forEach((timer, roomId) => {
+    clearTimeout(timer)
+    console.log(`[设计稿管理] 清理房间 ${roomId} 的上传定时器`)
+  })
+  roomUploadTimers.value.clear()
+
+  // 执行剩余的上传队列
+  roomUploadQueues.value.forEach((queue, roomId) => {
+    if (queue.size > 0) {
+      console.log(`[设计稿管理] 执行房间 ${roomId} 剩余 ${queue.size} 张图片的上传`)
+      const room = rooms.value.find(r => r.id === roomId)
+      if (room) {
+        executeRoomFileIdsUpdate(room)
+      }
     }
-  } catch (e) {
-    console.error('解析文件ID失败:', e)
-  }
-  return ''
+  })
+  roomUploadQueues.value.clear()
 }
 
-// 处理图片上传
-async function handleImageUpload(room, fileIdsString) {
-  try {
-    // ImageUpload组件返回的是逗号分隔的文件路径字符串（可能包含baseUrl）
-    const baseUrl = import.meta.env.VITE_APP_BASE_API
-    let fileIds = []
-    
-    if (fileIdsString) {
-      const urls = fileIdsString.split(',').map(url => url.trim()).filter(url => url)
-      fileIds = urls.map(url => {
-        // 移除baseUrl前缀，只保留文件路径（以/开头）
-        if (url.startsWith(baseUrl)) {
-          const path = url.substring(baseUrl.length)
-          return path.startsWith('/') ? path : '/' + path
-        }
-        // 如果已经是相对路径，确保以/开头
-        if (url.startsWith('/')) {
-          return url
-        }
-        // 否则添加/
-        return '/' + url
-      }).filter(id => id)
+// 工具函数：解析房间fileIds为el-upload的fileList格式
+function parseFileIdsToListForRoom(room) {
+  const fileIdsArray = getRoomFileIds(room)
+  const baseUrl = import.meta.env.VITE_APP_BASE_API
+
+  return fileIdsArray.map((fileId, index) => {
+    let fullUrl = fileId
+
+    if (fileId.startsWith('http')) {
+      // 完整URL直接使用
+      fullUrl = fileId
+    } else if (fileId.startsWith(baseUrl)) {
+      // 已包含baseUrl的路径直接使用
+      fullUrl = fileId
+    } else {
+      // 纯粹的相对路径需要拼接baseUrl
+      let path = fileId
+      if (!path.startsWith('/')) {
+        path = '/' + path
+      }
+      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+      fullUrl = cleanBaseUrl + path
     }
 
-    // 更新房间的fileIds字段（JSON格式）
+    return {
+      uid: `existing-${index}`,
+      name: `design-image-${index}.jpg`,
+      url: fullUrl,
+      status: 'success'
+    }
+  })
+}
+
+// 上传相关函数 - 防竞态版本
+/** 上传成功回调 - 使用队列机制防止竞态条件 */
+function handleUploadSuccess({ response, imageUrl }, room) {
+  if (response.code === 200) {
+    console.log(`[设计稿上传] 房间 ${room.id} 上传成功:`, imageUrl)
+
+    // 获取或创建该房间的上传队列
+    if (!roomUploadQueues.value.has(room.id)) {
+      roomUploadQueues.value.set(room.id, new Set())
+    }
+
+    // 处理URL格式
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      // 移除开头的斜杠，与后端存储格式一致
+      const normalizedImageId = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl
+      roomUploadQueues.value.get(room.id).add(normalizedImageId)
+    }
+
+    // 延迟保存，防止单个上传触发多次数据库操作
+    scheduleRoomFileIdsUpdate(room)
+  }
+}
+
+/** 延迟保存房间文件ID，批量处理上传结果 */
+function scheduleRoomFileIdsUpdate(room) {
+  const roomId = room.id
+
+  // 清除之前的定时器
+  if (roomUploadTimers.value.has(roomId)) {
+    clearTimeout(roomUploadTimers.value.get(roomId))
+  }
+
+  // 设置新的延迟定时器
+  const timer = setTimeout(() => {
+    executeRoomFileIdsUpdate(room)
+    roomUploadTimers.value.delete(roomId)
+  }, 500) // 延迟500ms，批量处理连续的上传操作
+
+  roomUploadTimers.value.set(roomId, timer)
+}
+
+/** 执行房间文件ID更新 */
+async function executeRoomFileIdsUpdate(room) {
+  const roomId = room.id
+  const uploadQueue = roomUploadQueues.value.get(roomId)
+
+  if (!uploadQueue || uploadQueue.size === 0) {
+    console.log(`[设计稿上传] 房间 ${roomId} 没有待处理的图片，跳过更新`)
+    return
+  }
+
+  try {
+    console.log(`[设计稿上传] 开始批量更新房间 ${roomId} 的 ${uploadQueue.size} 张图片`)
+
+    // 获取当前房间的现有文件ID
+    const existingFileIds = getRoomFileIds(room)
+
+    // 合并现有文件ID和新上传的文件ID
+    const newFileIds = Array.from(existingFileIds)
+    uploadQueue.forEach(imageId => {
+      if (!newFileIds.includes(imageId)) {
+        newFileIds.push(imageId)
+      }
+    })
+
+    // 清空该房间的上传队列
+    uploadQueue.clear()
+
+    // 更新数据库
+    await updateRoomFileIds(room, newFileIds)
+
+    console.log(`[设计稿上传] 房间 ${roomId} 批量更新完成，当前图片数量: ${newFileIds.length}`)
+
+  } catch (error) {
+    console.error(`[设计稿上传] 房间 ${roomId} 批量更新失败:`, error)
+    proxy.$modal.msgError('保存图片失败，请重试')
+  }
+}
+
+/** 上传失败回调 */
+function handleUploadError({ file, message }) {
+  // 新组件已经处理了错误提示，这里可以添加特殊逻辑
+  console.error('设计稿上传失败:', { file, message })
+}
+
+/** 移除图片回调 - 优化版本，支持乐观更新和重试机制 */
+function handleRemove({ file, fileList }, room) {
+  console.log(`[设计稿删除] 房间 ${room.id} 删除图片:`, file.name)
+
+  try {
+    // 获取当前房间的上传组件引用
+    const uploadComponent = uploadRef.value?.[room.id]
+    if (!uploadComponent) {
+      console.error('[设计稿删除] 无法找到房间上传组件引用')
+      proxy.$modal.msgError('删除图片失败')
+      return
+    }
+
+    // 使用组件暴露的工具函数提取当前剩余图片的URL
+    if (!uploadComponent.extractImageUrls) {
+      console.error('[设计稿删除] extractImageUrls 工具函数不可用')
+      proxy.$modal.msgError('删除图片失败')
+      return
+    }
+
+    // 获取当前fileList中所有图片的相对路径
+    const remainingUrls = uploadComponent.extractImageUrls(fileList)
+    console.log(`[设计稿删除] 房间 ${room.id} 剩余图片URL:`, remainingUrls)
+
+    // 从当前房间的fileIds中筛选出剩余图片的ID
+    const currentFileIds = getRoomFileIds(room)
+
+    // 优化URL比较逻辑
+    const filteredFileIds = currentFileIds.filter(fileId => {
+      // 检查这个fileId是否还在剩余图片列表中
+      return remainingUrls.some(remainingUrl => {
+        return normalizeImagePath(fileId) === normalizeImagePath(remainingUrl)
+      })
+    })
+
+    console.log(`[设计稿删除] 房间 ${room.id} 过滤前: ${currentFileIds.length}, 过滤后: ${filteredFileIds.length}`)
+
+    // 乐观更新：先更新UI，再更新数据库
+    const roomIndex = rooms.value.findIndex(r => r.id === room.id)
+    if (roomIndex > -1) {
+      rooms.value[roomIndex].fileIds = JSON.stringify(filteredFileIds)
+    }
+
+    // 异步更新数据库，带重试机制
+    updateRoomFileIdsWithRetry(room, filteredFileIds, currentFileIds.length)
+
+  } catch (error) {
+    console.error('[设计稿删除] 删除图片失败:', error)
+    proxy.$modal.msgError('删除图片失败，请重试')
+  }
+}
+
+/** 统一图片路径格式的工具函数 */
+function normalizeImagePath(imagePath) {
+  if (!imagePath) return ''
+
+  const baseUrl = import.meta.env.VITE_APP_BASE_API
+  let normalizedPath = imagePath
+
+  // 移除baseUrl前缀
+  if (imagePath.startsWith(baseUrl)) {
+    normalizedPath = imagePath.substring(baseUrl.length)
+  }
+
+  // 移除开头的斜杠
+  if (normalizedPath.startsWith('/')) {
+    normalizedPath = normalizedPath.substring(1)
+  }
+
+  return normalizedPath.toLowerCase()
+}
+
+/** 带重试机制的房间文件ID更新 */
+async function updateRoomFileIdsWithRetry(room, fileIds, originalCount, attempt = 1) {
+  try {
+    await updateRoomFileIds(room, fileIds)
+    console.log(`[设计稿删除] 房间 ${room.id} 删除完成，从 ${originalCount} 张减少到 ${fileIds.length} 张`)
+  } catch (error) {
+    console.error(`[设计稿删除] 房间 ${room.id} 更新失败 (尝试 ${attempt}/3):`, error)
+
+    if (attempt < 3) {
+      // 重试前等待一段时间
+      setTimeout(() => {
+        updateRoomFileIdsWithRetry(room, fileIds, originalCount, attempt + 1)
+      }, 1000 * attempt) // 递增延迟
+    } else {
+      // 3次重试失败，回滚UI状态
+      console.error('[设计稿删除] 更新失败，已达到最大重试次数')
+      proxy.$modal.msgError('删除图片失败，请刷新页面重试')
+
+      // 回滚到原始状态
+      const roomIndex = rooms.value.findIndex(r => r.id === room.id)
+      if (roomIndex > -1) {
+        // 重新加载该房间数据
+        loadRooms()
+      }
+    }
+  }
+}
+
+/** 更新房间文件ID */
+async function updateRoomFileIds(room, fileIds) {
+  try {
     const updateData = {
       id: room.id,
       fileIds: JSON.stringify(fileIds)
     }
 
-    const res = await updateProjectRooms(updateData)
-    
+    const res = await retryRequest(() => updateProjectRooms(updateData))
+
     if (res.code === 200) {
       // 更新本地数据
       const roomIndex = rooms.value.findIndex(r => r.id === room.id)
       if (roomIndex > -1) {
         rooms.value[roomIndex].fileIds = JSON.stringify(fileIds)
       }
-      proxy.$modal.msgSuccess('设计稿保存成功')
-    } else {
-      throw new Error(res.msg || '保存失败')
+
+      // 通知父组件设计稿已更新
+      emit('designs-updated', {
+        action: 'update',
+        roomId: room.id,
+        projectId: props.project.id,
+        designCount: fileIds.length
+      })
     }
   } catch (error) {
-    console.error('保存设计稿失败:', error)
-    proxy.$modal.msgError('保存设计稿失败：' + (error.msg || error.message || '未知错误'))
+    console.error('更新房间文件ID失败:', error)
+    proxy.$modal.msgError('更新图片失败')
   }
 }
+
+
 
 // 打开添加房间对话框
 function handleAddRoom() {
@@ -428,7 +742,19 @@ async function handleConfirmAddRoom() {
       addRoomDialogVisible.value = false
       addRoomFormRef.value?.resetFields()
       await loadRooms()
-      emit('success')
+
+      // 通知父组件房间列表已更新
+      emit('success', {
+        type: 'room-added',
+        roomId: res.data?.id,
+        roomName: addRoomForm.value.roomName
+      })
+
+      emit('rooms-updated', {
+        action: 'add',
+        roomId: res.data?.id,
+        projectId: props.project.id
+      })
     } else {
       throw new Error(res.msg || '添加失败')
     }
@@ -467,6 +793,7 @@ async function handleAddAndContinue() {
       proxy.$modal.msgSuccess('房间添加成功')
       // 重置表单但保持房间类型，以便继续添加同类型房间
       const currentRoomType = addRoomForm.value.roomType
+      const addedRoomName = addRoomForm.value.roomName
       addRoomForm.value = {
         roomType: currentRoomType,
         roomName: generateRoomName(currentRoomType),
@@ -476,7 +803,19 @@ async function handleAddAndContinue() {
         description: ''
       }
       await loadRooms()
-      emit('success')
+
+      // 通知父组件房间列表已更新
+      emit('success', {
+        type: 'room-added',
+        roomId: res.data?.id,
+        roomName: addedRoomName
+      })
+
+      emit('rooms-updated', {
+        action: 'add',
+        roomId: res.data?.id,
+        projectId: props.project.id
+      })
     } else {
       throw new Error(res.msg || '添加失败')
     }
@@ -492,53 +831,243 @@ async function handleAddAndContinue() {
 // 删除房间
 async function handleDeleteRoom(roomId) {
   try {
-    await proxy.$modal.confirm('确定要删除该房间吗？删除后该房间的所有设计稿也将被删除。')
-    
-    const res = await delProjectRooms(roomId)
-    
+    // 获取要删除的房间信息
+    const roomToDelete = rooms.value.find(r => r.id === roomId)
+    if (!roomToDelete) {
+      proxy.$modal.msgError('房间不存在')
+      return
+    }
+
+    const imageCount = getRoomImageCount(roomToDelete)
+
+    // 构建确认消息
+    let confirmMessage = '确定要删除该房间吗？'
+    if (imageCount > 0) {
+      confirmMessage += `\n\n⚠️ 该房间包含 ${imageCount} 张设计图，删除后将无法恢复！`
+    }
+    confirmMessage += '\n\n此操作不可撤销，请谨慎操作。'
+
+    await proxy.$modal.confirm(confirmMessage, '删除房间确认', {
+      confirmButtonText: '确认删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+      dangerouslyUseHTMLString: true
+    })
+
+    // 检查网络状态
+    if (!navigator.onLine) {
+      proxy.$modal.msgError('网络连接已断开，无法删除房间')
+      return
+    }
+
+    const res = await retryRequest(() => delProjectRooms(roomId))
+
     if (res.code === 200) {
       proxy.$modal.msgSuccess('删除成功')
       await loadRooms()
-      emit('success')
+
+      // 通知父组件房间列表已更新，包含删除的房间信息用于日志记录
+      emit('success', {
+        type: 'room-deleted',
+        roomId: roomId,
+        roomName: roomToDelete.roomName,
+        deletedImageCount: imageCount
+      })
+
+      emit('rooms-updated', {
+        action: 'delete',
+        roomId: roomId,
+        roomName: roomToDelete.roomName,
+        projectId: props.project.id,
+        deletedImageCount: imageCount
+      })
     } else {
       throw new Error(res.msg || '删除失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      proxy.$modal.msgError('删除房间失败：' + (error.msg || error.message || '未知错误'))
+      proxy.$modal.msgError(error.message || '删除房间失败')
     }
   }
 }
 
-// 加载房间列表
+// 加载房间列表 - 优化版本，包含更好的错误处理
 async function loadRooms() {
-  if (!props.project?.id) return
-  
+  if (!props.project?.id) {
+    console.warn('[设计稿管理] 项目ID不存在，无法加载房间列表')
+    rooms.value = []
+    loadError.value = false
+    lastError.value = null
+    return
+  }
+
+  const projectId = props.project.id
+  console.log(`[设计稿管理] 开始加载项目 ${projectId} 的房间列表`)
+
+  // 重置状态
+  loadError.value = false
+  lastError.value = null
+
+  // 取消之前的请求
+  if (currentRequestController) {
+    console.log(`[设计稿管理] 取消之前的加载请求: ${currentProjectId}`)
+    currentRequestController.abort()
+    currentRequestController = null
+  }
+
   try {
     loading.value = true
-    const res = await listProjectRooms({ projectId: props.project.id })
-    
+    currentProjectId = projectId
+
+    // 检查网络状态
+    if (!navigator.onLine) {
+      const errorMsg = '网络连接已断开，请检查网络后重试'
+      loadError.value = true
+      lastError.value = { message: errorMsg }
+      proxy.$modal.msgError(errorMsg)
+      return
+    }
+
+    // 创建新的请求控制器
+    currentRequestController = new AbortController()
+
+    const res = await retryRequest(() => {
+      // 检查请求是否被取消
+      if (currentRequestController?.signal.aborted) {
+        throw new Error('请求已取消')
+      }
+      return listProjectRooms({ projectId })
+    })
+
+    // 检查请求是否被取消
+    if (currentRequestController?.signal.aborted) {
+      console.log(`[设计稿管理] 项目 ${projectId} 的加载请求被取消`)
+      return
+    }
+
     if (res.code === 200) {
-      rooms.value = res.rows || res.data || []
+      const loadedRooms = res.rows || res.data || []
+      console.log(`[设计稿管理] 成功加载项目 ${projectId} 的 ${loadedRooms.length} 个房间`)
+
+      // 只在当前请求有效时更新数据
+      if (currentProjectId === projectId) {
+        rooms.value = loadedRooms.map(room => ({
+          ...room,
+          fileList: room.fileIds ? parseFileIdsToListForRoom(room) : []
+        }))
+
+        // 如果确实没有数据（不是错误），显示正常提示
+        if (loadedRooms.length === 0) {
+          console.log(`项目 ${projectId} 暂无房间数据，这是正常情况`)
+        }
+      } else {
+        console.log(`[设计稿管理] 忽略过期响应，当前项目: ${currentProjectId}, 响应项目: ${projectId}`)
+      }
     } else {
-      throw new Error(res.msg || '加载失败')
+      throw new Error(res.msg || '服务器返回错误')
     }
   } catch (error) {
-    console.error('加载房间列表失败:', error)
-    proxy.$modal.msgError('加载房间列表失败：' + (error.msg || error.message || '未知错误'))
+    // 如果是手动取消的错误，不显示错误提示
+    if (error.name === 'AbortError' || error.message === '请求已取消') {
+      console.log(`[设计稿管理] 项目 ${projectId} 的加载请求被正常取消`)
+      return
+    }
+
+    console.error(`[设计稿管理] 加载项目 ${projectId} 房间列表失败:`, error)
+
+    // 只在当前请求有效时设置错误状态
+    if (currentProjectId === projectId) {
+      loadError.value = true
+      lastError.value = {
+        message: error.message || '加载失败',
+        details: error.response?.data?.msg || error.message || '网络请求失败'
+      }
+
+      // 显示友好的错误提示
+      const errorMsg = `加载房间数据失败：${lastError.value.details}`
+      ElMessage({
+        message: errorMsg,
+        type: 'error',
+        duration: 3000,
+        showClose: true
+      })
+    }
   } finally {
-    loading.value = false
+    // 只在当前请求有效时重置加载状态
+    if (currentProjectId === projectId) {
+      loading.value = false
+      currentRequestController = null
+    }
   }
+}
+
+// 查看模板功能
+function handleViewTemplate() {
+  // 显示房间类型模板提示
+  proxy.$alert(
+    '房间类型参考：\n\n' +
+    '• 客厅 - 家庭活动空间\n' +
+    '• 主卧 - 主要卧室\n' +
+    '• 次卧 - 次要卧室\n' +
+    '• 厨房 - 烹饪空间\n' +
+    '• 卫生间 - 卫浴空间\n' +
+    '• 书房 - 工作学习空间\n' +
+    '• 餐厅 - 用餐空间\n' +
+    '• 阳台 - 户外休闲空间\n\n' +
+    '每个房间都可以上传设计图、施工图、效果图等文件。',
+    '房间类型模板',
+    {
+      confirmButtonText: '知道了',
+      type: 'info'
+    }
+  )
 }
 
 // 取消
 function handleCancel() {
+  // 清理上传队列，执行未完成的保存操作
+  cleanupUploadQueues()
   dialogVisible.value = false
 }
+
+// 组件卸载时清理资源
+onUnmounted(() => {
+  console.log('[设计稿管理] 组件卸载，清理资源')
+  cleanupUploadQueues()
+})
+
+// 监听项目ID变化，重置状态
+watch(() => props.project?.id, (newProjectId, oldProjectId) => {
+  if (newProjectId !== oldProjectId) {
+    console.log(`[设计稿管理] 项目切换: ${oldProjectId} -> ${newProjectId}`)
+
+    // 完全重置组件状态，防止数据混淆
+    rooms.value = []
+    loading.value = false
+    uploadingRoomId.value = null
+    addingRoom.value = false
+    addRoomDialogVisible.value = false
+
+    // 重置表单
+    if (addRoomFormRef.value) {
+      addRoomFormRef.value.resetFields()
+    }
+
+    addRoomForm.value = {
+      roomType: '',
+      roomName: '',
+      area: null,
+      floor: '',
+      orientation: '',
+      description: ''
+    }
+  }
+}, { immediate: true })
 
 // 监听对话框打开，加载数据
 watch(() => props.modelValue, (val) => {
   if (val && props.project?.id) {
+    console.log(`[设计稿管理] 打开项目 ${props.project.id} 的设计稿管理`)
     loadRooms()
   }
 }, { immediate: true })
@@ -548,6 +1077,118 @@ watch(() => props.modelValue, (val) => {
 .project-design-drafts-dialog {
   :deep(.el-dialog__body) {
     padding: 20px;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.vue-viewer {
+  display: contents; // 让子元素直接参与grid布局
+}
+
+.image-item {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+  background: #f5f5f5;
+  transition: all 0.3s ease;
+
+  img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    transition: all 0.3s ease;
+  }
+
+  &:hover {
+    border-color: #1677ff;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+    transform: translateY(-1px);
+
+    img {
+      transform: scale(1.05);
+    }
+
+    .image-overlay {
+      opacity: 1;
+    }
+  }
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none; // 让点击事件穿透到下层图片
+
+  .el-button {
+    margin: 0 4px;
+    pointer-events: auto; // 按钮需要响应点击事件
+  }
+}
+
+// 新增的空状态和错误状态样式
+.room-list-empty {
+  padding: 40px 20px;
+}
+
+.empty-state {
+  text-align: center;
+
+  .empty-description {
+    font-size: 16px;
+    color: #606266;
+    margin: 16px 0 8px 0;
+  }
+
+  .empty-tip {
+    font-size: 14px;
+    color: #909399;
+    margin: 0 0 24px 0;
+  }
+}
+
+.error-state {
+  padding: 40px 20px;
+}
+
+.quick-actions {
+  margin-top: 24px;
+
+  .divider-text {
+    color: #909399;
+    font-size: 14px;
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+  }
+}
+
+// 骨架屏加载状态
+.loading-state {
+  padding: 20px;
+
+  .skeleton-room {
+    padding: 16px;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    margin-bottom: 16px;
   }
 }
 </style>
