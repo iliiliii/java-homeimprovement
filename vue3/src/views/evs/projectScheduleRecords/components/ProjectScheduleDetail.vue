@@ -26,7 +26,7 @@
         </div>
 
         <!-- 进度统计卡片 -->
-        <el-row :gutter="16" class="stat-cards-row">
+        <!-- <el-row :gutter="16" class="stat-cards-row">
           <el-col :span="8">
             <el-card shadow="never" class="stat-card stat-card-blue">
               <div class="stat-content">
@@ -51,7 +51,7 @@
               </div>
             </el-card>
           </el-col>
-        </el-row>
+        </el-row> -->
 
         <!-- 整体进度条 -->
         <div class="overall-progress-section">
@@ -127,20 +127,53 @@
                             {{ record.acceptanceResult === 'QUALIFIED' ? '合格' : '不合格' }}
                           </el-tag>
                         </div>
-                        <span class="record-time">{{ parseTime(record.acceptanceTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+                        <div class="record-actions">
+                          <span class="record-time">{{ parseTime(record.acceptanceTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+                          <el-button
+                            type="primary"
+                            link
+                            size="small"
+                            @click="$emit('edit-acceptance', record)"
+                          >
+                            <el-icon><Edit /></el-icon>
+                            编辑
+                          </el-button>
+                          <el-button
+                            type="danger"
+                            link
+                            size="small"
+                            @click="handleDeleteAcceptance(record)"
+                          >
+                            <el-icon><Delete /></el-icon>
+                            删除
+                          </el-button>
+                        </div>
                       </div>
                       <div class="record-content">{{ record.acceptanceContent }}</div>
-                      <div v-if="record.images && JSON.parse(record.images).length > 0" class="record-images">
-                        <el-image
-                          v-for="(img, imgIndex) in JSON.parse(record.images)"
-                          :key="imgIndex"
-                          :src="getImageUrl(img)"
-                          :preview-src-list="JSON.parse(record.images).map(getImageUrl)"
-                          :initial-index="imgIndex"
-                          :z-index="3000"
-                          fit="cover"
-                          class="record-image"
-                        />
+                      <div v-if="record.images" class="record-images">
+                        <template v-if="getParsedRecordImages(record.images).length > 0">
+                          <!-- 图片数量指示器 -->
+                          <div class="record-images-header">
+                            <el-icon class="record-images-icon"><Picture /></el-icon>
+                            <span class="record-images-count">{{ getParsedRecordImages(record.images).length }} 张图片</span>
+                          </div>
+                          <!-- 使用图片预览容器 -->
+                          <div class="record-images-grid">
+                            <div
+                              v-viewer="getImageViewerOptions(record.images)"
+                              class="vue-viewer"
+                            >
+                              <img
+                                v-for="(img, imgIndex) in getParsedRecordImages(record.images)"
+                                :key="imgIndex"
+                                :src="getImageUrl(img)"
+                                :alt="`验收图片 ${imgIndex + 1}`"
+                                :style="{ width: '80px', height: '80px' }"
+                                class="record-image-item-img"
+                              />
+                            </div>
+                          </div>
+                        </template>
                       </div>
                     </div>
                   </div>
@@ -171,9 +204,9 @@
 </template>
 
 <script setup name="ProjectScheduleDetail">
-import { Calendar, Plus, Check, Close } from "@element-plus/icons-vue"
+import { Calendar, Plus, Check, Close, Edit, Delete, Picture } from "@element-plus/icons-vue"
 import { parseTime } from "@/utils/ruoyi"
-import { listProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
+import { listProjectScheduleRecords, delProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
 
 const { proxy } = getCurrentInstance()
 const { decoration_project_status, decoration_construction_stage } = proxy.useDict('decoration_project_status', 'decoration_construction_stage')
@@ -193,7 +226,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['acceptance-report'])
+defineEmits(['acceptance-report', 'edit-acceptance'])
 
 // 验收记录数据
 const acceptanceRecords = ref([])
@@ -205,6 +238,24 @@ function getProjectSchedules(project) {
   return props.scheduleItems
 }
 
+// 创建图片解析的计算属性缓存
+const recordImageCache = new Map()
+
+function getParsedRecordImages(imagesJson) {
+  if (recordImageCache.has(imagesJson)) {
+    return recordImageCache.get(imagesJson)
+  }
+
+  try {
+    const images = JSON.parse(imagesJson)
+    recordImageCache.set(imagesJson, images)
+    return images
+  } catch (error) {
+    console.error('解析图片JSON失败:', error)
+    return []
+  }
+}
+
 function getProjectProgress(project) {
   if (!project) return 0
   const schedules = getProjectSchedules(project)
@@ -212,24 +263,6 @@ function getProjectProgress(project) {
   const total = schedules.length
   const completed = schedules.filter(item => item.status === 'COMPLETED').length
   return total > 0 ? Math.round((completed / total) * 100) : 0
-}
-
-function getCompletedCount(project) {
-  if (!project) return 0
-  const schedules = getProjectSchedules(project)
-  return schedules.filter(item => item.status === 'COMPLETED').length
-}
-
-function getInProgressCount(project) {
-  if (!project) return 0
-  const schedules = getProjectSchedules(project)
-  return schedules.filter(item => item.status === 'IN_PROGRESS').length
-}
-
-function getTotalCount(project) {
-  if (!project) return 0
-  const schedules = getProjectSchedules(project)
-  return schedules.length
 }
 
 function getTimelineColor(status) {
@@ -286,6 +319,8 @@ async function loadAcceptanceRecords(projectId) {
       pageSize: 100
     })
     acceptanceRecords.value = response.rows || []
+    // 清理图片缓存，避免内存泄漏
+    recordImageCache.clear()
   } catch (error) {
     console.error('加载验收记录失败:', error)
     proxy.$modal.msgError('加载验收记录失败')
@@ -301,14 +336,130 @@ function getAcceptanceRecords(scheduleId) {
     .sort((a, b) => new Date(b.acceptanceTime) - new Date(a.acceptanceTime))
 }
 
-/** 获取���片URL */
+/** 获取图片URL */
 function getImageUrl(imgPath) {
   if (!imgPath) return ''
   if (imgPath.startsWith('http')) {
     return imgPath
   }
+
   const baseUrl = import.meta.env.VITE_APP_BASE_API
-  return baseUrl + imgPath
+  // 检查路径是否已经包含 baseUrl，避免重复拼接
+  if (imgPath.startsWith(baseUrl)) {
+    return imgPath
+  }
+
+  // 确保路径以/开头
+  let path = imgPath
+  if (!path.startsWith('/')) {
+    path = '/' + path
+  }
+
+  // 拼接baseUrl（移除末尾的/）
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+  return cleanBaseUrl + path
+}
+
+/** 删除验收记录 */
+function handleDeleteAcceptance(record) {
+  proxy.$modal.confirm(`确定要删除验收记录"${record.acceptanceTitle || '未命名'}"吗？`)
+    .then(async () => {
+      try {
+        await delProjectScheduleRecords(record.id)
+        proxy.$modal.msgSuccess('删除成功')
+        // 刷新验收记录列表
+        if (props.project?.id) {
+          loadAcceptanceRecords(props.project.id)
+        }
+      } catch (error) {
+        console.error('删除验收记录失败:', error)
+        proxy.$modal.msgError('删除失败：' + (error.msg || error.message))
+      }
+    })
+    .catch(() => {
+      // 用户取消删除
+    })
+}
+
+/** 获取验收记录图片列表（用于ImagePreview组件） */
+function getRecordImages(imagesJson) {
+  try {
+    const images = JSON.parse(imagesJson)
+    if (!images || images.length === 0) {
+      return []
+    }
+    // 返回处理后的完整URL列表
+    return images.map(img => getImageUrl(img))
+  } catch (error) {
+    console.error('解析验收记录图片失败:', error)
+    return []
+  }
+}
+
+/** 获取单个验收记录的v-viewer配置选项 */
+function getImageViewerOptions(imagesJson) {
+  const images = getRecordImages(imagesJson)
+  return {
+    // 工具栏
+    toolbar: true,
+    // 显示缩放按钮
+    zoomOn: true,
+    // 显示缩小按钮
+    zoomOff: true,
+    // 显示旋转按钮
+    rotateOn: true,
+    // 显示翻转按钮
+    flipHOn: true,
+    // 显示全屏按钮
+    fullScreen: true,
+    // 显示上一张按钮
+    prev: true,
+    // 显示下一张按钮
+    next: true,
+    // 显示重置按钮
+    reset: true,
+    // 显示下载按钮
+    download: true,
+
+    // 导航栏
+    navbar: true,
+    // 标题
+    title: false,
+    // 按钮提示
+    tooltip: true,
+
+    // 可移动
+    movable: true,
+    // 可缩放
+    zoomable: true,
+    // 可旋转
+    rotatable: true,
+    // 可翻转
+    flip: true,
+
+    // 动画
+    transition: true,
+
+    // 键盘导航
+    keyboard: true,
+
+    // 循环浏览
+    loop: true,
+
+    // 最小缩放比例
+    minZoomRatio: 0.1,
+    // 最大缩放比例
+    maxZoomRatio: 5,
+
+    // z-index
+    zIndex: 3000,
+
+    // URL 默认是当前激活的图片
+    url: (image) => image.src || image,
+
+    // 确保图片正确传递
+    images: images
+  }
 }
 
 // 监听项目变化，自动加载验收记录
@@ -672,9 +823,22 @@ defineExpose({
                 }
               }
 
-              .record-time {
-                font-size: 12px;
-                color: #999;
+              .record-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+
+                .record-time {
+                  font-size: 12px;
+                  color: #999;
+                  margin-right: 8px;
+                }
+
+                .el-button {
+                  padding: 0;
+                  height: auto;
+                  line-height: 1;
+                }
               }
             }
 
@@ -687,25 +851,58 @@ defineExpose({
             }
 
             .record-images {
-              display: flex;
-              gap: 8px;
-              flex-wrap: wrap;
               margin-top: 8px;
+              background: #fafafa;
+              border-radius: 6px;
+              padding: 12px;
+              border: 1px solid #f0f0f0;
 
-              .record-image {
-                width: 60px;
-                height: 60px;
-                border-radius: 4px;
-                cursor: pointer;
-                overflow: hidden;
+              .record-images-header {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin-bottom: 8px;
 
-                :deep(.el-image__inner) {
-                  transition: transform 0.3s;
+                .record-images-icon {
+                  font-size: 14px;
+                  color: #1677ff;
                 }
 
-                &:hover {
-                  :deep(.el-image__inner) {
-                    transform: scale(1.05);
+                .record-images-count {
+                  font-size: 12px;
+                  color: #666;
+                  font-weight: 500;
+                }
+              }
+
+              .record-images-grid {
+                .vue-viewer {
+                  display: flex;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                  align-items: flex-start;
+
+                  .record-image-item-img {
+                    border-radius: 6px;
+                    overflow: hidden;
+                    border: 1px solid #e8e8e8;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                    background: #fff;
+                    object-fit: cover;
+
+                    &:hover {
+                      border-color: #1677ff;
+                      box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+                      transform: translateY(-1px) scale(1.05);
+                    }
+
+                    // 第一张图片突出显示
+                    &:first-child {
+                      &:hover {
+                        z-index: 10;
+                      }
+                    }
                   }
                 }
               }

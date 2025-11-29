@@ -3,7 +3,7 @@
   <el-dialog
     :model-value="visible"
     @update:model-value="$emit('update:visible', $event)"
-    title="验收上报"
+    :title="isEdit ? '编辑验收记录' : '验收上报'"
     width="600px"
     append-to-body
     :close-on-click-modal="false"
@@ -29,27 +29,29 @@
         />
       </el-form-item>
       <el-form-item label="现场照片">
-        <el-upload
-          v-model:file-list="acceptanceForm.images"
-          :action="uploadUrl"
-          list-type="picture-card"
-          :auto-upload="true"
-          :multiple="true"  
-          :limit="20"
-          :headers="uploadHeaders"
-          :on-exceed="handleExceed"
-          :on-preview="handlePictureCardPreview"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
-          :before-upload="handleBeforeUpload"
-        >
-          <el-icon><Plus /></el-icon>
-          <template #tip>
-            <div class="el-upload__tip" style="color: #999; font-size: 12px; margin-top: 8px;">
-              (最多20张，支持多选)
-            </div>
-          </template>
-        </el-upload>
+        <ImageUploadCard
+          ref="uploadRef"
+          v-model="acceptanceForm.images"
+          :upload-url="props.uploadUrl"
+          :upload-headers="{
+            Authorization: 'Bearer ' + userStore.token
+          }"
+          tip-text="(最多20张，支持多选)"
+          @success="handleUploadSuccess"
+          @error="handleUploadError"
+          @upload-status-change="handleUploadStatusChange"
+        />
+        <!-- 上传状态提示 -->
+        <div v-if="uploadStatus.totalFiles > 0" class="upload-status-tip">
+          <el-tag
+              :type="uploadStatus.isAllUploaded ? 'success' : 'warning'"
+              size="small"
+          >
+            <el-icon><Check v-if="uploadStatus.isAllUploaded" /><Loading v-else /></el-icon>
+            {{ uploadStatus.isAllUploaded ? '图片上传完成' : `正在上传图片 (${uploadStatus.uploadedFiles}/${uploadStatus.totalFiles})` }}
+          </el-tag>
+          <span v-if="!uploadStatus.isAllUploaded" class="upload-hint">请等待图片上传完成后再提交</span>
+        </div>
       </el-form-item>
       <el-form-item label="验收结果" prop="result" required>
         <el-radio-group v-model="acceptanceForm.result">
@@ -77,21 +79,24 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="$emit('update:visible', false)">取 消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="saving">提交验收</el-button>
+        <el-button
+          type="primary"
+          @click="handleSubmit"
+          :loading="saving"
+          :disabled="!uploadStatus.isAllUploaded"
+        >
+          {{ isEdit ? '更新验收' : '提交验收' }}
+        </el-button>
       </div>
     </template>
-  </el-dialog>
-
-  <!-- 图片预览对话框 -->
-  <el-dialog v-model="dialogImageVisible" title="图片预览" width="800px" append-to-body>
-    <img :src="dialogImageUrl" alt="预览图片" style="width: 100%;" />
   </el-dialog>
 </template>
 
 <script setup name="AcceptanceReportDialog">
-import { Plus } from "@element-plus/icons-vue"
 import useUserStore from '@/store/modules/user'
 import { listProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
+import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
+import { Check, Loading } from '@element-plus/icons-vue'
 
 const props = defineProps({
   visible: {
@@ -110,9 +115,13 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  uploadHeaders: {
+  isEdit: {
+    type: Boolean,
+    default: false
+  },
+  editRecord: {
     type: Object,
-    default: () => ({})
+    default: null
   }
 })
 
@@ -124,8 +133,12 @@ const userStore = useUserStore()
 const { decoration_construction_stage } = proxy.useDict('decoration_construction_stage')
 
 const saving = ref(false)
-const dialogImageVisible = ref(false)
-const dialogImageUrl = ref('')
+const uploadRef = ref(null)
+const uploadStatus = ref({
+  isAllUploaded: true,
+  totalFiles: 0,
+  uploadedFiles: 0
+})
 const acceptanceForm = ref({
   title: '',
   content: '',
@@ -156,7 +169,8 @@ const acceptanceRules = {
 
 /** 监听对话框显示状态，��始化表单数据 */
 watch(() => props.visible, async (newVal) => {
-  if (newVal && props.scheduleItem) {
+  // 确保只在新曾模式下初始化，编辑模式下由编辑监听器处理
+  if (newVal && props.scheduleItem && !props.isEdit) {
     try {
       // 1. 查询当前阶段已验收次数
       const response = await listProjectScheduleRecords({
@@ -207,100 +221,98 @@ watch(() => props.visible, async (newVal) => {
   }
 })
 
-/** 处理图片上传超出限制 */
-function handleExceed() {
-  proxy.$modal.msgWarning('最多只能上传20张图片')
-}
+/** 监听编辑模式变化，预填充表单 */
+watch(() => [props.visible, props.isEdit, props.editRecord], async ([visible, isEdit, editRecord]) => {
+  // 当对话框显示、处于编辑模式且有编辑记录时，填充表单数据
+  if (visible && isEdit && editRecord) {
+    try {
+      console.log('编辑模式：预填充表单数据', editRecord)
 
-/**
- * 预览图片
- * @param {Object} file - Element Plus 上传文件对象
- */
-function handlePictureCardPreview(file) {
-  // 优化图片预览URL处理逻辑
-  let previewUrl = ''
-
-  // 1. 优先使用file.url（上传成功后设置的完整URL）
-  if (file.url) {
-    previewUrl = file.url
-  }
-  // 2. 处理后端返回的响应数据
-  else if (file.response) {
-    const imageUrl = file.response.fileName || file.response.url || file.response.imgUrl || file.response.data
-    if (imageUrl) {
-      if (imageUrl.startsWith('http')) {
-        previewUrl = imageUrl
-      } else {
-        // 确保路径格式正确，避免双斜杠
-        const baseUrl = import.meta.env.VITE_APP_BASE_API
-        const baseUrlWithSlash = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'
-        const imagePath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl
-        previewUrl = baseUrlWithSlash + imagePath
+      // 解析图片数组
+      let images = []
+      if (editRecord.images) {
+        try {
+          images = JSON.parse(editRecord.images)
+        } catch (e) {
+          console.warn('解析图片JSON失败，使用空数组', e)
+          images = []
+        }
       }
-    }
-  }
-  // 3. 处理本地文件预览
-  else if (file.raw) {
-    previewUrl = URL.createObjectURL(file.raw)
-  }
 
-  dialogImageUrl.value = previewUrl
-  dialogImageVisible.value = true
-}
+      acceptanceForm.value = {
+        title: editRecord.acceptanceTitle || '',
+        content: editRecord.acceptanceContent || '',
+        images: images.map((img, index) => {
+          // 确保图片URL格式正确
+          let imageUrl = ''
+          const baseUrl = import.meta.env.VITE_APP_BASE_API
 
-/** 上传前验证 */
-function handleBeforeUpload(file) {
-  const isImage = file.type.startsWith('image/')
-  const isLt10M = file.size / 1024 / 1024 < 10
-
-  if (!isImage) {
-    proxy.$modal.msgError('只能上传图片文件!')
-    return false
-  }
-  if (!isLt10M) {
-    proxy.$modal.msgError('上传图片大小不能超过 10MB!')
-    return false
-  }
-  return true
-}
-
-/** 上传成功回调 */
-function handleUploadSuccess(response, file) {
-  if (response.code === 200) {
-    // 优化图片URL设置，支持多种返回格式
-    // 后端可能返回：fileName, url, imgUrl 等字段
-    const imageUrl = response.fileName || response.url || response.imgUrl || response.data
-    if (imageUrl) {
-      // 如果返回的是完整URL（包含http），直接使用
-      if (imageUrl.startsWith('http')) {
-        file.url = imageUrl
-      } else {
-        // 如果返回的是相对路径，拼接Base API
-        // 确保路径格式正确，避免双斜杠
-        const baseUrl = import.meta.env.VITE_APP_BASE_API
-        const baseUrlWithSlash = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'
-        const imagePath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl
-        file.url = baseUrlWithSlash + imagePath
+          if (img.startsWith('http')) {
+            // 完整URL直接使用
+            imageUrl = img
+          } else if (img.startsWith(baseUrl)) {
+            // 已包含baseUrl的路径直接使用
+            imageUrl = img
+          } else {
+            // 纯粹的相对路径需要拼接baseUrl
+            let path = img
+            if (!path.startsWith('/')) {
+              path = '/' + path
+            }
+            const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+            imageUrl = cleanBaseUrl + path
+          }
+          return {
+            uid: `edit-${index}`,
+            name: `image-${index}.jpg`,
+            url: imageUrl
+          }
+        }),
+        result: editRecord.acceptanceResult || 'QUALIFIED',
+        acceptanceTime: editRecord.acceptanceTime || '',
+        acceptor: editRecord.acceptor || ''
       }
+      console.log('表单数据已预填充', acceptanceForm.value)
+    } catch (error) {
+      console.error('初始化编辑表单失败:', error)
+      proxy.$modal.msgError('初始化表单失败，请重试')
     }
-    file.response = response
-    proxy.$modal.msgSuccess('图片上传成功')
-  } else {
-    proxy.$modal.msgError(response.msg || '图片上传失败')
-    const index = acceptanceForm.value.images.findIndex(img => img.uid === file.uid)
-    if (index > -1) {
-      acceptanceForm.value.images.splice(index, 1)
-    }
+  }
+}, { immediate: true })
+
+/** 上传成功回调 - 优化版本 */
+function handleUploadSuccess({ file, response }) {
+  try {
+    // 新组件已经处理了URL设置和成功提示
+    console.log('验收记录图片上传成功:', { file, response })
+
+    // 可以在这里添加特殊的业务逻辑，如记录日志等
+    // 例如：统计上传成功的图片数量、验证图片格式等
+
+  } catch (error) {
+    console.error('验收记录图片上传回调处理失败:', error)
+    // 不需要显示错误提示，因为组件已经处理了
   }
 }
 
-/** 上传失败回调 */
-function handleUploadError(err, file) {
-  proxy.$modal.msgError('图片上传失败')
-  const index = acceptanceForm.value.images.findIndex(img => img.uid === file.uid)
-  if (index > -1) {
-    acceptanceForm.value.images.splice(index, 1)
+/** 上传失败回调 - 优化版本 */
+function handleUploadError({ file, message }) {
+  try {
+    // 新组件已经处理了错误提示和文件移除
+    console.error('验收记录图片上传失败:', { file, message })
+
+    // 可以在这里添加特殊的业务逻辑，如记录错误日志等
+    // 例如：统计失败次数、分析失败原因等
+
+  } catch (error) {
+    console.error('验收记录图片上传错误回调处理失败:', error)
   }
+}
+
+/** 上传状态变化回调 */
+function handleUploadStatusChange(status) {
+  uploadStatus.value = status
+  console.log('上传状态变化:', status)
 }
 
 /** 提交验收 */
@@ -314,8 +326,8 @@ function handleSubmit() {
       return
     }
 
-    const hasUnuploadedImages = acceptanceForm.value.images.some(img => img.raw && !img.url && !img.response)
-    if (hasUnuploadedImages) {
+    // 使用组件提供的精确上传状态检查
+    if (!uploadStatus.value.isAllUploaded) {
       proxy.$modal.msgWarning('请等待图片上传完成后再提交')
       saving.value = false  // 重置loading状态
       return
@@ -324,25 +336,8 @@ function handleSubmit() {
     saving.value = true
 
     try {
-      // 提取所有已上传成功的图片URL
-      const imageUrls = acceptanceForm.value.images
-        .map(img => {
-          // 优先使用后端返回的文件名
-          if (img.response?.code === 200 && img.response.fileName) {
-            return img.response.fileName
-          }
-          // 处理本地预览URL
-          if (img.url) {
-            if (img.url.startsWith('http')) {
-              // 移��完整URL前缀，仅保留相对路径
-              const baseUrl = import.meta.env.VITE_APP_BASE_API
-              return img.url.replace(new RegExp(`^${baseUrl}`), '').replace(/^\/+/, '')
-            }
-            return img.url
-          }
-          return null
-        })
-        .filter(url => url !== null)
+      // 使用新组件的工具函数提取图片URL
+      const imageUrls = uploadRef.value?.extractImageUrls(acceptanceForm.value.images) || []
 
       // 构造验收记录数据对象（与后端 ProjectScheduleRecords 实体类字段完全对应）
       const recordData = {
@@ -379,5 +374,24 @@ defineExpose({
 <style scoped lang="scss">
 .dialog-footer {
   text-align: right;
+}
+
+.upload-status-tip {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+
+  .el-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .upload-hint {
+    color: #e6a23c;
+    font-size: 12px;
+  }
 }
 </style>

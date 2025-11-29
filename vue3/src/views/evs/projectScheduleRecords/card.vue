@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">进度跟踪2333</h2>
+        <h2 class="page-title">进度跟踪</h2>
         <p class="page-subtitle">跟踪和管理项目施工进度</p>
       </div>
     </div>
@@ -41,6 +41,8 @@
         :schedule-items="scheduleItems"
         :loading="scheduleLoading"
         @acceptance-report="handleAcceptanceReport"
+        @edit-acceptance="handleEditAcceptance"
+        @delete-acceptance="handleDeleteAcceptance"
       />
     </el-row>
 
@@ -56,13 +58,28 @@
       @submit="handleSubmitAcceptance"
       @success="handleAcceptanceSuccess"
     />
+
+    <!-- 编辑验收记录对话框 -->
+    <AcceptanceReportDialog
+      ref="acceptanceEditDialogRef"
+      :visible="acceptanceEditOpen"
+      :project="selectedProject"
+      :schedule-item="scheduleItems.find(s => s.id === currentEditRecord?.scheduleId)"
+      :upload-url="uploadUrl"
+      :upload-headers="uploadHeaders"
+      :is-edit="true"
+      :edit-record="currentEditRecord"
+      @update:visible="acceptanceEditOpen = $event"
+      @submit="handleSubmitEditAcceptance"
+      @success="handleEditAcceptanceSuccess"
+    />
   </div>
 </template>
 
 <script setup name="ProjectScheduleRecords">
 import { listProjects } from "@/api/evs/projects"
 import { listProjectSchedules } from "@/api/evs/projectSchedules"
-import { listProjectScheduleRecords, addProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
+import { listProjectScheduleRecords, addProjectScheduleRecords, delProjectScheduleRecords, updateProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
 import ProjectScheduleList from "./components/ProjectScheduleList.vue"
 import ProjectScheduleDetail from "./components/ProjectScheduleDetail.vue"
 import AcceptanceReportDialog from "./components/AcceptanceReportDialog.vue"
@@ -87,9 +104,14 @@ const scheduleLoading = ref(false)
 const acceptanceDialogOpen = ref(false)
 const currentScheduleItem = ref(null)
 
+// 编辑验收记录相关
+const acceptanceEditOpen = ref(false)
+const currentEditRecord = ref(null)
+
 // 子组件引用
 const scheduleDetailRef = ref(null)
 const acceptanceDialogRef = ref(null)
+const acceptanceEditDialogRef = ref(null)
 
 const data = reactive({
   queryParams: {
@@ -176,6 +198,52 @@ function handleSubmitAcceptance(recordData) {
 /** 验收成功回调 */
 function handleAcceptanceSuccess() {
   acceptanceDialogOpen.value = false
+  if (selectedProject.value) {
+    loadProjectSchedules(selectedProject.value.id)
+    // 刷新验收记录
+    scheduleDetailRef.value?.refreshAcceptanceRecords()
+  }
+}
+
+/** 编辑验收记录 */
+function handleEditAcceptance(record) {
+  // 保存当前编辑的记录
+  currentEditRecord.value = record
+  acceptanceEditOpen.value = true
+}
+
+/** 删除验收记录 */
+function handleDeleteAcceptance(record) {
+  // 删除逻辑已在ProjectScheduleDetail的handleDeleteAcceptance中处理
+  // 这里不需要实现，直接传递给父组件
+  // 此函数保留是为了兼容API
+  console.log('删除验收记录:', record)
+}
+
+/** 处理编辑验收提交 */
+function handleSubmitEditAcceptance(recordData) {
+  // 添加ID用于更新
+  recordData.id = currentEditRecord.value.id
+
+  updateProjectScheduleRecords(recordData).then(() => {
+    proxy.$modal.msgSuccess('验收记录更新成功')
+    acceptanceEditOpen.value = false
+    if (selectedProject.value) {
+      loadProjectSchedules(selectedProject.value.id)
+      // 刷新验收记录
+      scheduleDetailRef.value?.refreshAcceptanceRecords()
+    }
+  }).catch(error => {
+    console.error('验收记录更新失败:', error)
+    proxy.$modal.msgError('更新失败：' + (error.msg || error.message))
+    // 失败时重置loading状态
+    acceptanceDialogRef.value?.setSaving(false)
+  })
+}
+
+/** 编辑验收成功回调 */
+function handleEditAcceptanceSuccess() {
+  acceptanceEditOpen.value = false
   if (selectedProject.value) {
     loadProjectSchedules(selectedProject.value.id)
     // 刷新验收记录
