@@ -27,6 +27,35 @@
         按房间分类管理设计图纸，可自定义添加房间
       </div>
 
+      <!-- 房间导航控制 -->
+      <div v-if="rooms.length > 0" class="room-navigation">
+        <div class="nav-header">
+          <div class="nav-left">
+            <div class="room-stats">
+              <el-tag type="info" size="small">
+                <el-icon><Folder /></el-icon>
+                {{ rooms.length }}个房间
+              </el-tag>
+              <el-tag type="success" size="small" style="margin-left: 8px;">
+                <el-icon><Picture /></el-icon>
+                {{ totalImageCount }}张图片
+              </el-tag>
+            </div>
+          </div>
+          <div class="nav-right">
+            <!-- 房间搜索 -->
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索房间..."
+              size="small"
+              style="width: 200px;"
+              clearable
+              prefix-icon="Search"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- 房间列表 -->
       <div v-loading="loading" element-loading-text="正在加载房间列表...">
         <!-- 改进的空状态显示 -->
@@ -64,83 +93,82 @@
 
           </div>
         </div>
-        <!-- 房间卡片 -->
-        <div v-else-if="!loading">
-        <div
-          v-for="room in rooms"
-          :key="room.id"
-          style="margin-bottom: 24px; border: 1px solid #e8e8e8; border-radius: 8px; padding: 16px; background: #fff;"
-        >
-          <!-- 房间头部 -->
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
-            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-              <el-icon style="font-size: 20px; color: #1677ff;"><Folder /></el-icon>
-              <span style="font-size: 16px; font-weight: 600;">{{ room.roomName }}</span>
-              <span style="font-size: 13px; color: #999;">
-                {{ getRoomImageCount(room) }}张图片
-              </span>
-            </div>
-            <el-button
-              type="danger"
-              link
-              size="small"
-              @click="handleDeleteRoom(room.id)"
-              :icon="Delete"
+        <!-- 手风琴折叠视图 -->
+        <div v-else-if="!loading" class="rooms-accordion">
+          <el-collapse v-model="activeAccordionItems" accordion>
+            <el-collapse-item
+              v-for="room in filteredRooms"
+              :key="room.id"
+              :name="room.id"
             >
-              删除房间
-            </el-button>
-          </div>
+              <template #title>
+                <div class="accordion-title">
+                  <div class="title-left">
+                    <el-icon><Folder /></el-icon>
+                    <span class="room-name">{{ room.roomName }}</span>
+                    <el-tag size="small" type="info">{{ getRoomTypeText(room.roomType) }}</el-tag>
+                    <el-tag size="small" type="success">{{ getRoomImageCount(room) }}张图片</el-tag>
+                  </div>
+                  <div class="title-right" @click.stop>
+                    <el-button
+                      type="danger"
+                      link
+                      size="small"
+                      @click="handleDeleteRoom(room.id)"
+                      :icon="Delete"
+                    >
+                      删除
+                    </el-button>
+                  </div>
+                </div>
+              </template>
 
-          <!-- 房间信息展示 -->
-          <div style="margin-bottom: 16px; padding: 12px; background: #fafafa; border-radius: 4px; font-size: 13px;">
-            <el-row :gutter="16">
-              <el-col :span="6" v-if="room.roomType">
-                <span style="color: #999;">房间类型：</span>
-                <span>{{ getRoomTypeText(room.roomType) }}</span>
-              </el-col>
-              <el-col :span="6" v-if="room.area">
-                <span style="color: #999;">面积：</span>
-                <span>{{ room.area }}㎡</span>
-              </el-col>
-              <el-col :span="6" v-if="room.floor">
-                <span style="color: #999;">楼层：</span>
-                <span>{{ room.floor }}</span>
-              </el-col>
-              <el-col :span="6" v-if="room.orientation">
-                <span style="color: #999;">朝向：</span>
-                <dict-tag :options="decoration_orientation" :value="room.orientation" />
-              </el-col>
-            </el-row>
-            <div v-if="room.description" style="margin-top: 8px; color: #666;">
-              <span style="color: #999;">描述：</span>
-              {{ room.description }}
-            </div>
-          </div>
+              <div class="accordion-content">
+                <!-- 房间详细信息 -->
+                <div class="room-detail-info">
+                  <el-descriptions :column="4" size="small" border>
+                    <el-descriptions-item v-if="room.roomType" label="房间类型">
+                      {{ getRoomTypeText(room.roomType) }}
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="room.area" label="面积">
+                      {{ room.area }}㎡
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="room.floor" label="楼层">
+                      {{ room.floor }}
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="room.orientation" label="朝向">
+                      <dict-tag :options="decoration_orientation" :value="room.orientation" />
+                    </el-descriptions-item>
+                  </el-descriptions>
+                  <div v-if="room.description" style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 4px;">
+                    <strong>描述：</strong>{{ room.description }}
+                  </div>
+                </div>
 
-          <!-- 设计稿展示区域 -->
-          <div v-loading="uploadingRoomId === room.id" element-loading-text="正在保存设计稿...">
-            <!-- 图片上传展示区域 -->
-            <div style="margin-bottom: 16px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <span style="font-size: 14px; color: #666;">设计图管理 ({{ getRoomImageCount(room) }}/20)</span>
+                <!-- 图片上传和管理 -->
+                <div v-loading="uploadingRoomId === room.id" element-loading-text="正在保存设计稿...">
+                  <div style="margin-top: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                      <span style="font-size: 14px; color: #666;">设计图管理 ({{ getRoomImageCount(room) }}/20)</span>
+                    </div>
+
+                    <ImageUploadCard
+                      :ref="el => setUploadRef(el, room.id)"
+                      v-model="room.fileList"
+                      :upload-url="uploadUrl"
+                      :upload-headers="{
+                        Authorization: 'Bearer ' + userStore.token
+                      }"
+                      :disabled="uploadingRoomId === room.id"
+                      @success="(data) => handleUploadSuccess(data, room)"
+                      @remove="(data) => handleRemove(data, room)"
+                      @error="handleUploadError"
+                    />
+                  </div>
+                </div>
               </div>
-
-              <!-- 图片卡片式上传 -->
-              <ImageUploadCard
-                :ref="el => setUploadRef(el, room.id)"
-                v-model="room.fileList"
-                :upload-url="uploadUrl"
-                :upload-headers="{
-                  Authorization: 'Bearer ' + userStore.token
-                }"
-                :disabled="uploadingRoomId === room.id"
-                @success="(data) => handleUploadSuccess(data, room)"
-                @remove="(data) => handleRemove(data, room)"
-                @error="handleUploadError"
-              />
-            </div>
-          </div>
-        </div>
+            </el-collapse-item>
+          </el-collapse>
         </div>
       </div>
     </div>
@@ -254,11 +282,11 @@
 </template>
 
 <script setup>
-import { Picture, Plus, Delete, Folder, FolderOpened, InfoFilled, Loading, House, Refresh } from '@element-plus/icons-vue'
+import { Picture, Plus, Delete, Folder, InfoFilled, House, Refresh, Search } from '@element-plus/icons-vue'
 import { listProjectRooms, addProjectRooms, updateProjectRooms, delProjectRooms } from '@/api/evs/projectRooms'
 import useUserStore from '@/store/modules/user'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
-import { onUnmounted } from 'vue'
+import { onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 
 // 简单的重试机制，替代 requestHelper.js 中的复杂实现
@@ -311,6 +339,10 @@ const uploadRef = ref(null) // ImageUploadCard 组件引用
 // 新增：错误处理和状态管理
 const loadError = ref(false)
 const lastError = ref(null)
+
+// 新增：导航状态
+const searchKeyword = ref('')
+const activeAccordionItems = ref([])
 
 // 用于取消请求的控制器
 let currentRequestController = null
@@ -367,6 +399,25 @@ const showAddButton = computed(() => {
 
 const showRetryButton = computed(() => {
   return loadError.value && !loading.value
+})
+
+// 计算属性：过滤后的房间列表
+const filteredRooms = computed(() => {
+  if (!searchKeyword.value) {
+    return rooms.value
+  }
+
+  return rooms.value.filter(room => {
+    const keyword = searchKeyword.value.toLowerCase()
+    return room.roomName.toLowerCase().includes(keyword) ||
+           getRoomTypeText(room.roomType).toLowerCase().includes(keyword) ||
+           (room.description && room.description.toLowerCase().includes(keyword))
+  })
+})
+
+// 计算属性：总图片数量
+const totalImageCount = computed(() => {
+  return rooms.value.reduce((total, room) => total + getRoomImageCount(room), 0)
 })
 
 // 生成房间名称
@@ -1001,6 +1052,7 @@ async function loadRooms() {
   }
 }
 
+
 // 查看模板功能
 function handleViewTemplate() {
   // 显示房间类型模板提示
@@ -1191,5 +1243,190 @@ watch(() => props.modelValue, (val) => {
     margin-bottom: 16px;
   }
 }
-</style>
+
+// 新增：房间导航和视图控制样式
+.room-navigation {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e9ecef;
+
+  .nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+
+    .nav-left {
+      .room-stats {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .room-tabs-nav {
+    .room-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+
+      .room-tab {
+        position: relative;
+        padding: 6px 12px;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 13px;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        &:hover {
+          background: #f5f5f5;
+          border-color: #d0d0d0;
+          color: #333;
+        }
+
+        &.active {
+          background: #1677ff;
+          border-color: #1677ff;
+          color: #fff;
+        }
+      }
+    }
+  }
+}
+
+
+// 手风琴折叠视图样式
+.rooms-accordion {
+  .accordion-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-right: 16px;
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+
+      .room-name {
+        font-weight: 600;
+        color: #333;
+        font-size: 15px;
+      }
+    }
+
+    .title-right {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    &:hover .title-right {
+      opacity: 1;
+    }
+  }
+
+  .accordion-content {
+    padding: 16px 0;
+  }
+
+  .room-detail-info {
+    margin-bottom: 20px;
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .room-navigation {
+    .nav-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+
+      .nav-left {
+        .room-stats {
+          justify-content: center;
+        }
+      }
+
+      .nav-right {
+        justify-content: space-between;
+
+        .el-input {
+          flex: 1;
+          margin-right: 8px !important;
+        }
+      }
+    }
+  }
+
+  
+  .room-tabs-nav {
+    .room-tabs {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+
+  .room-detail-info {
+    :deep(.el-descriptions) {
+      .el-descriptions__cell {
+        padding: 10px 12px;
+      }
+
+      .el-descriptions__label {
+        width: 70px;
+        font-size: 13px;
+      }
+
+      .el-descriptions__content {
+        font-size: 13px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .room-navigation {
+    padding: 12px;
+  }
+
+  .room-detail-info {
+    :deep(.el-descriptions) {
+      .el-descriptions__cell {
+        padding: 8px 12px;
+      }
+
+      .el-descriptions__label {
+        width: 60px;
+        font-size: 12px;
+      }
+
+      .el-descriptions__content {
+        font-size: 12px;
+      }
+    }
+  }
+}
+  </style>
 
