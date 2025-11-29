@@ -32,10 +32,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectProjectRoomsList" parameterType="ProjectRooms" resultMap="ProjectRoomsResult">
         <include refid="selectProjectRoomsVo"/>
-        <where>  
+        <where>
+            <!-- 强制要求 projectId 参数，确保数据安全 -->
+            <choose>
+                <when test="projectId != null and projectId != ''">
+                    and project_id = #{projectId}
+                </when>
+                <otherwise>
+                    and 1=0  <!-- 如果没有 projectId，强制返回空结果 -->
+                </otherwise>
+            </choose>
+
+            <!-- 其他可选筛选条件 -->
             <if test="roomName != null  and roomName != ''"> and room_name like concat('%', #{roomName}, '%')</if>
             <if test="roomType != null  and roomType != ''"> and room_type = #{roomType}</if>
         </where>
+        order by sort_order asc, created_at desc
     </select>
     
     <select id="selectProjectRoomsById" parameterType="String" resultMap="ProjectRoomsResult">
