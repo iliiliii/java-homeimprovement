@@ -57,6 +57,8 @@
       @update:visible="acceptanceDialogOpen = $event"
       @submit="handleSubmitAcceptance"
       @success="handleAcceptanceSuccess"
+      @error="handleAcceptanceError"
+      @loading-change="handleLoadingChange"
     />
 
     <!-- 编辑验收记录对话框 -->
@@ -124,6 +126,52 @@ const data = reactive({
 
 const { queryParams } = toRefs(data)
 
+/** 统一错误处理函数 */
+function handleError(error, context = '', showToast = true) {
+  const timestamp = new Date().toISOString()
+
+  console.error(`${context}错误:`, {
+    error: error,
+    message: error.message,
+    timestamp: timestamp
+  })
+
+  if (showToast) {
+    let errorMsg = `${context}失败`
+
+    if (error.response) {
+      // 服务器返回的错误
+      errorMsg = error.response.data?.msg || error.response.data?.message || `服务器错误(${error.response.status})`
+    } else if (error.request) {
+      // 网络错误
+      errorMsg = '网络连接失败，请检查网络后重试'
+    } else if (error.msg) {
+      // 业务逻辑错误
+      errorMsg = error.msg
+    } else if (error.message) {
+      // 其他错误
+      errorMsg = error.message
+    }
+
+    proxy.$modal.msgError(errorMsg)
+  }
+
+  // 返回处理后的错误信息
+  return {
+    success: false,
+    error: error,
+    message: errorMsg || `${context}失败`,
+    timestamp: timestamp
+  }
+}
+
+/** 重置所有loading状态 */
+function resetAllLoadingStates() {
+  loading.value = false
+  scheduleLoading.value = false
+  // acceptanceDialogRef.value?.setSaving(false) // 不再需要，对话框自行管理
+}
+
 /** 查询项目列表 */
 function getList() {
   loading.value = true
@@ -147,6 +195,9 @@ function getList() {
       selectedProject.value = firstProject
       loadProjectSchedules(firstProject.id)
     }
+  }).catch(error => {
+    handleError(error, '加载项目列表')
+    resetAllLoadingStates()
   })
 }
 
@@ -167,8 +218,7 @@ function loadProjectSchedules(projectId) {
     })
     scheduleLoading.value = false
   }).catch(error => {
-    console.error('加载项目进度失败:', error)
-    proxy.$modal.msgError('加载项目进度失败')
+    handleError(error, '加载项目进度')
     scheduleLoading.value = false
   })
 }
@@ -179,30 +229,41 @@ function handleAcceptanceReport(item) {
   acceptanceDialogOpen.value = true
 }
 
-/** 处理验收提交 */
+/** 处理验收提交 - 简化为兼容性函数 */
 function handleSubmitAcceptance(recordData) {
-  addProjectScheduleRecords(recordData).then(() => {
-    proxy.$modal.msgSuccess('验收上报成功')
-    acceptanceDialogOpen.value = false
-    if (selectedProject.value) {
-      loadProjectSchedules(selectedProject.value.id)
-    }
-  }).catch(error => {
-    console.error('验收上报失败:', error)
-    proxy.$modal.msgError('验收上报失败：' + (error.msg || error.message))
-    // ✅ 失败时重置loading状态，允许用户重试
-    acceptanceDialogRef.value?.setSaving(false)
-  })
+  // 对话框组件已自行处理API调用，这里主要用于兼容性
+  console.log('handleSubmitAcceptance被调用，但API调用已由对话框组件处理')
+  // 此函数保留是为了向后兼容，实际逻辑已在AcceptanceReportDialog内部处理
 }
 
-/** 验收成功回调 */
-function handleAcceptanceSuccess() {
-  acceptanceDialogOpen.value = false
+/** 成功回调处理 - 对话框组件已自动处理API调用 */
+function handleAcceptanceSuccess(recordData) {
+  console.log('收到验收成功回调，记录数据:', recordData)
+
+  // 对话框已自动关闭，只需处理数据刷新
   if (selectedProject.value) {
+    // 刷新项目进度数据
     loadProjectSchedules(selectedProject.value.id)
-    // 刷新验收记录
-    scheduleDetailRef.value?.refreshAcceptanceRecords()
+
+    // 延时刷新验收记录，确保后端数据已更新
+    setTimeout(() => {
+      console.log('开始刷新验收记录')
+      scheduleDetailRef.value?.refreshAcceptanceRecords()
+    }, 300) // 适当延时确保数据一致性
   }
+}
+
+/** 错误回调处理 - 对话框组件已自动处理错误显示 */
+function handleAcceptanceError(error) {
+  console.error('收到验收错误回调:', error)
+  // 对话框已自动处理错误显示，这里可以添加额外逻辑
+}
+
+/** Loading状态变化处理 - 可选的全局loading管理 */
+function handleLoadingChange(isLoading) {
+  console.log('Loading状态变化:', isLoading)
+  // 可以在这里添加全局loading状态管理
+  // 例如：更新页面级loading状态
 }
 
 /** 编辑验收记录 */
@@ -234,9 +295,7 @@ function handleSubmitEditAcceptance(recordData) {
       scheduleDetailRef.value?.refreshAcceptanceRecords()
     }
   }).catch(error => {
-    console.error('验收记录更新失败:', error)
-    proxy.$modal.msgError('更新失败：' + (error.msg || error.message))
-    // 失败时重置loading状态
+    handleError(error, '验收记录更新')
     acceptanceDialogRef.value?.setSaving(false)
   })
 }

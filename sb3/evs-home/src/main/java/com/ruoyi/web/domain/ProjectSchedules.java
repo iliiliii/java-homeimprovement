@@ -68,6 +68,12 @@ public class ProjectSchedules extends BaseEntity
     /** 更新人 */
     private String updatedBy;
 
+    /** 当前用户ID（用于数据权限过滤） */
+    private String currentUserId;
+
+    /** 批量操作ID集合（用于批量删除） */
+    private String[] ids;
+
     public void setId(String id) 
     {
         this.id = id;
@@ -213,9 +219,29 @@ public class ProjectSchedules extends BaseEntity
         this.updatedBy = updatedBy;
     }
 
-    public String getUpdatedBy() 
+    public String getUpdatedBy()
     {
         return updatedBy;
+    }
+
+    public void setCurrentUserId(String currentUserId)
+    {
+        this.currentUserId = currentUserId;
+    }
+
+    public String getCurrentUserId()
+    {
+        return currentUserId;
+    }
+
+    public void setIds(String[] ids)
+    {
+        this.ids = ids;
+    }
+
+    public String[] getIds()
+    {
+        return ids;
     }
 
     @Override

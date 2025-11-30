@@ -24,10 +24,10 @@
       <template #tip v-if="showTip">
         <div class="el-upload__tip">
           {{ computedTipText }}
-          <span v-if="compress" class="compress-tip">
+          <!-- <span v-if="compress" class="compress-tip">
             <el-icon><Picture /></el-icon>
             图片将自动压缩 (质量: {{ Math.round(compressQuality * 100) }}%, 最大: {{ compressMaxSize }}MB)
-          </span>
+          </span> -->
         </div>
       </template>
     </el-upload>
@@ -358,11 +358,6 @@ async function handleBeforeUpload(file) {
           压缩比例: `${compressResult.compressionRatio}%`,
           质量设置: `${Math.round(compressResult.quality * 100)}%`
         })
-
-        // 显示压缩成功提示（可选）
-        if (compressResult.compressionRatio > 10) { // 只有压缩比例超过10%才显示提示
-          proxy.$modal.msgSuccess(`图片压缩成功，减少 ${compressResult.compressionRatio}%`)
-        }
       }
     } catch (error) {
       console.error('图片压缩失败:', error)
@@ -412,7 +407,36 @@ function handleUploadSuccess(response, file) {
 
 // 上传失败回调
 function handleUploadError(error, file) {
-  proxy.$modal.msgError('图片上传失败')
+  console.error('图片上传失败:', error)
+
+  // 尝试从后端响应中提取具体错误信息
+  let errorMessage = '图片上传失败'
+
+  // 优先从 response 中提取错误消息
+  if (error.response && error.response.data) {
+    const responseData = error.response.data
+    if (responseData.msg) {
+      errorMessage = responseData.msg
+    } else if (responseData.message) {
+      errorMessage = responseData.message
+    } else if (typeof responseData === 'string') {
+      errorMessage = responseData
+    }
+  }
+  // 其次从 error 对象本身提取
+  else if (error.message) {
+    errorMessage = error.message
+  }
+  // 最后从文件响应用中提取（如果存在）
+  else if (file.response) {
+    if (file.response.msg) {
+      errorMessage = file.response.msg
+    } else if (file.response.message) {
+      errorMessage = file.response.message
+    }
+  }
+
+  proxy.$modal.msgError('图片上传失败: '+errorMessage)
 
   // 从文件列表中移除失败的文件
   const index = fileList.value.findIndex(img => img.uid === file.uid)
@@ -423,7 +447,7 @@ function handleUploadError(error, file) {
   // 清理压缩缓存
   compressedFiles.value.delete(file.uid)
 
-  emit('error', { error, file, message: '图片上传失败' })
+  emit('error', { error, file, message: errorMessage })
   emit('change', { fileList: fileList.value, file, type: 'error' })
 }
 

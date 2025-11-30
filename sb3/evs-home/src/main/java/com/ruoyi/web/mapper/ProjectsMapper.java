@@ -16,23 +16,23 @@ public interface ProjectsMapper
 {
     /**
      * 查询项目信息
-     * 
-     * @param id 项目信息主键
+     *
+     * @param projects 项目信息（包含权限参数）
      * @return 项目信息
      */
-    public Projects selectProjectsById(String id);
+    public Projects selectProjectsById(Projects projects);
 
     /**
      * 查询项目信息列表
-     * 
-     * @param projects 项目信息
+     *
+     * @param projects 项目信息（包含权限参数）
      * @return 项目信息集合
      */
     public List<Projects> selectProjectsList(Projects projects);
 
     /**
      * 新增项目信息
-     * 
+     *
      * @param projects 项目信息
      * @return 结果
      */
@@ -40,27 +40,27 @@ public interface ProjectsMapper
 
     /**
      * 修改项目信息
-     * 
+     *
      * @param projects 项目信息
      * @return 结果
      */
     public int updateProjects(Projects projects);
 
     /**
-     * 删除项目信息
-     * 
-     * @param id 项目信息主键
+     * 删除项��信息
+     *
+     * @param projects 项目信息（包含权限参数）
      * @return 结果
      */
-    public int deleteProjectsById(String id);
+    public int deleteProjectsById(Projects projects);
 
     /**
-     * 批量删除项目信息
+     * 批量删除项目��息
      *
-     * @param ids 需要删除的数据主键集合
+     * @param projects 项目信息（包含权限参数和ID数组）
      * @return 结果
      */
-    public int deleteProjectsByIds(String[] ids);
+    public int deleteProjectsByIds(Projects projects);
 
     /**
      * 查询项目信息列表（包含客户信息）
@@ -73,10 +73,10 @@ public interface ProjectsMapper
     /**
      * 查询项目信息（包含客户信息）
      *
-     * @param id 项目信息主键
+     * @param projects 项目信息（包含权限参数）
      * @return 项目信息
      */
-    public Projects selectProjectsWithCustomerById(String id);
+    public Projects selectProjectsWithCustomerById(Projects projects);
 
     /**
      * 通过项目成员关联查询项目列表（支持权限过滤）

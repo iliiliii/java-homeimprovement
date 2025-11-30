@@ -43,22 +43,46 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectsVo">
-        select id, project_type, name, customer_id, description, address, area, budget, actual_cost, start_date, end_date, actual_end_date, status, priority, progress, budgets_url, contracts_url, created_at, updated_at, deleted_at, created_by, updated_by from projects
+        select p.id, p.project_type, p.name, p.customer_id, p.description, p.address,
+               p.area, p.budget, p.actual_cost, p.start_date, p.end_date,
+               p.actual_end_date, p.status, p.priority, p.progress,
+               p.budgets_url, p.contracts_url, p.created_at, p.updated_at,
+               p.deleted_at, p.created_by, p.updated_by
+        from projects p
+        <where>
+            <!-- 管理员跳过权限过滤，可以看到所有项目 -->
+            <if test="isAdmin == null or isAdmin == false">
+                <!-- 非管理员用户只能访问自己参与的项目 -->
+                <if test="currentUserId != null and currentUserId != ''">
+                    and p.id in (
+                        select pm.project_id
+                        from project_members pm
+                        where pm.user_id = #{currentUserId}
+                          and pm.is_active = 1
+                    )
+                </if>
+            </if>
+        </where>
     </sql>
 
     <select id="selectProjectsList" parameterType="Projects" resultMap="ProjectsResult">
         <include refid="selectProjectsVo"/>
-        <where>  
-            <if test="projectType != null  and projectType != ''"> and project_type = #{projectType}</if>
-            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
-            <if test="status != null  and status != ''"> and status = #{status}</if>
-            <if test="priority != null  and priority != ''"> and priority = #{priority}</if>
+        <where>
+            <if test="currentUserId != null and currentUserId != ''"></if>
+            <if test="projectType != null and projectType != ''"> and p.project_type = #{projectType}</if>
+            <if test="name != null and name != ''"> and p.name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''"> and p.status = #{status}</if>
+            <if test="priority != null and priority != ''"> and p.priority = #{priority}</if>
         </where>
+        ORDER BY p.created_at DESC
     </select>
     
-    <select id="selectProjectsById" parameterType="String" resultMap="ProjectsResult">
+    <select id="selectProjectsById" parameterType="Projects" resultMap="ProjectsResult">
         <include refid="selectProjectsVo"/>
-        where id = #{id}
+        <where>
+            <if test="currentUserId != null and currentUserId != ''"></if>
+            <if test="id != null and id != ''"> and p.id = #{id}</if>
+        </where>
     </select>
 
     <insert id="insertProjects" parameterType="Projects">
@@ -141,15 +165,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where id = #{id}
     </update>
 
-    <delete id="deleteProjectsById" parameterType="String">
-        delete from projects where id = #{id}
+    <delete id="deleteProjectsById" parameterType="Projects">
+        delete p from projects p
+        where p.id = #{id}
+          and exists (
+              select 1 from project_members pm
+              where pm.project_id = p.id
+                and pm.user_id = #{currentUserId}
+                and pm.is_active = 1
+          )
     </delete>
 
-    <delete id="deleteProjectsByIds" parameterType="String">
-        delete from projects where id in
-        <foreach item="id" collection="array" open="(" separator="," close=")">
+    <delete id="deleteProjectsByIds" parameterType="Projects">
+        delete p from projects p
+        where p.id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
             #{id}
         </foreach>
+          and exists (
+              select 1 from project_members pm
+              where pm.project_id = p.id
+                and pm.user_id = #{currentUserId}
+                and pm.is_active = 1
+          )
     </delete>
 
     <!-- 关联查询项目信息（包含客户信息） -->
@@ -179,9 +217,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ORDER BY p.created_at DESC
     </select>
 
-    <select id="selectProjectsWithCustomerById" parameterType="String" resultMap="ProjectsWithCustomerResult">
+    <select id="selectProjectsWithCustomerById" parameterType="Projects" resultMap="ProjectsWithCustomerResult">
         <include refid="selectProjectsWithCustomerVo"/>
-        WHERE p.id = #{id}
+        <where>
+            <if test="currentUserId != null and currentUserId != ''"></if>
+            <if test="id != null and id != ''"> and p.id = #{id}</if>
+        </where>
     </select>
 
     <!-- 通过项目成员关联查询项目列表（支持权限过滤） -->

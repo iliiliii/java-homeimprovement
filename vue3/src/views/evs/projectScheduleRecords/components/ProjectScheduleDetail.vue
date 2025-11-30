@@ -118,7 +118,7 @@
                             <Close v-else />
                           </el-icon>
                           <span class="record-title">
-                            验收 #{{ getAcceptanceRecords(item.id).length - index }}
+                            {{ record.acceptanceTitle || ('验收 #' + (getAcceptanceRecords(item.id).length - index)) }}
                           </span>
                           <el-tag
                             :type="record.acceptanceResult === 'QUALIFIED' ? 'success' : 'danger'"
@@ -128,7 +128,16 @@
                           </el-tag>
                         </div>
                         <div class="record-actions">
-                          <span class="record-time">{{ parseTime(record.acceptanceTime, '{y}-{m}-{d} {h}:{i}') }}</span>
+                          <div class="record-meta">
+                            <div class="time-info">
+                              <el-icon><Clock /></el-icon>
+                              验收时间: {{ parseTime(record.acceptanceTime, '{y}-{m}-{d} {h}:{i}') }}
+                            </div>
+                            <div class="acceptor-info" v-if="record.acceptor">
+                              <el-icon><User /></el-icon>
+                              验收人: {{ record.acceptor }}
+                            </div>
+                          </div>
                           <el-button
                             type="primary"
                             link
@@ -150,8 +159,7 @@
                         </div>
                       </div>
                       <div class="record-content">{{ record.acceptanceContent }}</div>
-                      <div v-if="record.images" class="record-images">
-                        <template v-if="getParsedRecordImages(record.images).length > 0">
+                      <div v-if="record.images && getParsedRecordImages(record.images).length > 0" class="record-images">
                           <!-- 图片数量指示器 -->
                           <div class="record-images-header">
                             <el-icon class="record-images-icon"><Picture /></el-icon>
@@ -173,7 +181,6 @@
                               />
                             </div>
                           </div>
-                        </template>
                       </div>
                     </div>
                   </div>
@@ -204,7 +211,7 @@
 </template>
 
 <script setup name="ProjectScheduleDetail">
-import { Calendar, Plus, Check, Close, Edit, Delete, Picture } from "@element-plus/icons-vue"
+import { Calendar, Plus, Check, Close, Edit, Delete, Picture, Clock, User } from "@element-plus/icons-vue"
 import { parseTime } from "@/utils/ruoyi"
 import { listProjectScheduleRecords, delProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
 
@@ -226,7 +233,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['acceptance-report', 'edit-acceptance'])
+const emit = defineEmits(['acceptance-report', 'edit-acceptance', 'delete-acceptance', 'records-updated', 'refresh-complete', 'refresh-error'])
 
 // 验收记录数据
 const acceptanceRecords = ref([])
@@ -306,26 +313,74 @@ function getScheduleStageName(stage) {
   return stageDict?.label || stage
 }
 
-/** 加载验收记录 */
-async function loadAcceptanceRecords(projectId) {
+/** 加载验收记录 - 增强版本 */
+async function loadAcceptanceRecords(projectId, forceRefresh = false, cacheKey = null) {
   if (!projectId) return
 
+  // 添加请求标识符
+  const requestId = cacheKey || `load-acceptance-${projectId}-${Date.now()}`
+
+  // 检查缓存（除非强制刷新）
+  if (!forceRefresh && acceptanceRecords.value.length > 0) {
+    console.log('使用缓存的验收记录，跳过API调用')
+    return
+  }
+
+  console.log(`开始加载验收记录，请求ID: ${requestId}`)
   recordsLoading.value = true
+
   try {
     const response = await listProjectScheduleRecords({
       projectId: projectId,
       recordType: 'ACCEPTANCE',
       pageNum: 1,
-      pageSize: 100
+      pageSize: 100,
+      _t: Date.now(),  // 添加时间戳防止缓存
+      _requestId: requestId  // 添加请求标识符
     })
+
+    console.log('API响应成功，记录数量:', response.rows?.length || 0)
+
+    const oldRecords = [...acceptanceRecords.value]
     acceptanceRecords.value = response.rows || []
-    // 清理图片缓存，避免内存泄漏
     recordImageCache.clear()
+
+    // 检测新记录
+    const newRecords = acceptanceRecords.value.filter(record =>
+      !oldRecords.some(oldRecord => oldRecord.id === record.id)
+    )
+
+    if (newRecords.length > 0) {
+      console.log('发现新验收记录:', newRecords.length, '条')
+      newRecords.forEach(record => {
+        console.log('新记录详情:', {
+          id: record.id,
+          title: record.acceptanceTitle,
+          acceptor: record.acceptor,
+          time: record.acceptanceTime
+        })
+      })
+    }
+
+    // 通知父组件数据已更新
+    emit('records-updated', acceptanceRecords.value)
+    emit('refresh-complete', { requestId, newRecords })
+
   } catch (error) {
     console.error('加载验收记录失败:', error)
-    proxy.$modal.msgError('加载验收记录失败')
+    proxy.$modal.msgError('加载验收记录失败: ' + (error.message || error.msg))
+
+    // 尝试使用缓存数据
+    if (acceptanceRecords.value.length > 0) {
+      console.warn('API调用失败，使用缓存数据')
+      proxy.$modal.msgWarning('显示缓存数据，可能不是最新')
+    }
+
+    emit('refresh-error', { requestId, error })
+
   } finally {
     recordsLoading.value = false
+    console.log(`请求完成，请求ID: ${requestId}`)
   }
 }
 
@@ -362,22 +417,81 @@ function getImageUrl(imgPath) {
 
 /** 删除验收记录 */
 function handleDeleteAcceptance(record) {
+  // 参数验证
+  if (!record || !record.id) {
+    proxy.$modal.msgError('无效的验收记录')
+    return
+  }
+
+  // 显示加载状态
+  const loading = proxy.$loading({
+    lock: true,
+    text: '正在删除...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+
   proxy.$modal.confirm(`确定要删除验收记录"${record.acceptanceTitle || '未命名'}"吗？`)
     .then(async () => {
       try {
+        // 调用删除API
         await delProjectScheduleRecords(record.id)
         proxy.$modal.msgSuccess('删除成功')
+
         // 刷新验收记录列表
         if (props.project?.id) {
-          loadAcceptanceRecords(props.project.id)
+          await loadAcceptanceRecords(props.project.id)
         }
+
+        // 详细操作日志
+        console.log('验收记录删除成功', {
+          recordId: record.id,
+          recordTitle: record.acceptanceTitle,
+          timestamp: new Date().toISOString()
+        })
+
       } catch (error) {
         console.error('删除验收记录失败:', error)
-        proxy.$modal.msgError('删除失败：' + (error.msg || error.message))
+
+        // 更详细的错误信息处理
+        let errorMsg = '删除失败'
+        if (error.response) {
+          // 服务器返回的错误
+          errorMsg = error.response.data?.msg || error.response.data?.message || `服务器错误(${error.response.status})`
+        } else if (error.request) {
+          // 网络错误
+          errorMsg = '网络连接失败，请检查网络后重试'
+        } else if (error.msg) {
+          // 业务逻辑错误
+          errorMsg = error.msg
+        } else if (error.message) {
+          // 其他错误
+          errorMsg = error.message
+        }
+
+        proxy.$modal.msgError(errorMsg)
+
+        // 详细错误记录
+        console.error('删除验收记录详细错误信息:', {
+          recordId: record.id,
+          errorType: error.constructor.name,
+          errorMessage: error.message,
+          errorResponse: error.response?.data,
+          timestamp: new Date().toISOString()
+        })
+
+      } finally {
+        // 确保loading状态被重置
+        loading.close()
       }
     })
     .catch(() => {
-      // 用户取消删除
+      // 用户取消删除，也要关闭loading
+      loading.close()
+      console.log('用户取消删除验收记录:', {
+        recordId: record.id,
+        recordTitle: record.acceptanceTitle,
+        timestamp: new Date().toISOString()
+      })
     })
 }
 
@@ -475,8 +589,42 @@ watch(() => props.project?.id, (newVal) => {
 defineExpose({
   refreshAcceptanceRecords: () => {
     if (props.project?.id) {
-      loadAcceptanceRecords(props.project.id)
+      console.log('刷新验收记录，项目ID:', props.project.id)
+      // 强制刷新，并添加随机参数防止缓存
+      const timestamp = Date.now()
+      loadAcceptanceRecords(props.project.id, true, timestamp)
+    } else {
+      console.warn('无法刷新验收记录：项目ID为空')
     }
+  },
+
+  // 添加强制刷新方法，绕过缓存
+  forceRefreshAcceptanceRecords: () => {
+    if (props.project?.id) {
+      console.log('强制刷新验收记录')
+      loadAcceptanceRecords(props.project.id, true, 'force-' + Date.now())
+    }
+  },
+
+  // 添加等待新记录的方法
+  waitForNewRecord: (recordId, timeout = 5000) => {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now()
+      const checkInterval = setInterval(() => {
+        // 刷新数据
+        loadAcceptanceRecords(props.project.id, true, 'wait-' + Date.now())
+
+        // 检查是否包含新记录
+        const newRecord = acceptanceRecords.value.find(r => r.id === recordId)
+        if (newRecord) {
+          clearInterval(checkInterval)
+          resolve(newRecord)
+        } else if (Date.now() - startTime > timeout) {
+          clearInterval(checkInterval)
+          reject(new Error('等待新记录超时'))
+        }
+      }, 500) // 每500ms检查一次
+    })
   }
 })
 </script>
@@ -826,12 +974,25 @@ defineExpose({
               .record-actions {
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
                 gap: 8px;
 
-                .record-time {
-                  font-size: 12px;
-                  color: #999;
-                  margin-right: 8px;
+                .record-meta {
+                  display: flex;
+                  align-items: center;
+                  gap: 16px;
+
+                  .time-info, .acceptor-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 12px;
+                    color: #999;
+
+                    .el-icon {
+                      font-size: 13px;
+                    }
+                  }
                 }
 
                 .el-button {

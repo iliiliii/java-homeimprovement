@@ -96,6 +96,12 @@ public class Projects extends BaseEntity
     /** 更新人 */
     private String updatedBy;
 
+    /** 当前用户ID（用于数据权限过滤） */
+    private String currentUserId;
+
+    /** 是否为管理员（true=查看所有，false=仅查看成员项目） */
+    private Boolean isAdmin;
+
     /** 关联的客户信息 */
     private Customers customer;
 
@@ -104,6 +110,9 @@ public class Projects extends BaseEntity
 
     /** 进度计划列表 */
     private List<Object> schedules;
+
+    /** 批量操作ID集合（用于批量删除） */
+    private String[] ids;
 
     public void setId(String id)
     {
@@ -405,6 +414,36 @@ public class Projects extends BaseEntity
     public Integer getProgressRate()
     {
         return progressRate;
+    }
+
+    public void setCurrentUserId(String currentUserId)
+    {
+        this.currentUserId = currentUserId;
+    }
+
+    public String getCurrentUserId()
+    {
+        return currentUserId;
+    }
+
+    public void setIsAdmin(Boolean isAdmin)
+    {
+        this.isAdmin = isAdmin;
+    }
+
+    public Boolean getIsAdmin()
+    {
+        return isAdmin;
+    }
+
+    public void setIds(String[] ids)
+    {
+        this.ids = ids;
+    }
+
+    public String[] getIds()
+    {
+        return ids;
     }
 
     @Override

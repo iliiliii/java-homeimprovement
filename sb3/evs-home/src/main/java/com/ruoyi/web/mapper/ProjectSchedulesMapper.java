@@ -13,11 +13,11 @@ public interface ProjectSchedulesMapper
 {
     /**
      * 查询项目进度
-     * 
-     * @param id 项目进度主键
+     *
+     * @param projectSchedules 项目进度
      * @return 项目进度
      */
-    public ProjectSchedules selectProjectSchedulesById(String id);
+    public ProjectSchedules selectProjectSchedulesById(ProjectSchedules projectSchedules);
 
     /**
      * 查询项目进度列表
@@ -49,7 +49,7 @@ public interface ProjectSchedulesMapper
      * @param id 项目进度主键
      * @return 结果
      */
-    public int deleteProjectSchedulesById(String id);
+    public int deleteProjectSchedulesById(ProjectSchedules projectSchedules);
 
     /**
      * 批量删除项目进度
@@ -57,5 +57,5 @@ public interface ProjectSchedulesMapper
      * @param ids 需要删除的数据主键集合
      * @return 结果
      */
-    public int deleteProjectSchedulesByIds(String[] ids);
+    public int deleteProjectSchedulesByIds(ProjectSchedules projectSchedules);
 }

@@ -108,8 +108,19 @@
                     <span class="room-name">{{ room.roomName }}</span>
                     <el-tag size="small" type="info">{{ getRoomTypeText(room.roomType) }}</el-tag>
                     <el-tag size="small" type="success">{{ getRoomImageCount(room) }}张图片</el-tag>
+                    <el-tag v-if="room.area" size="small" type="warning">{{ room.area }}㎡</el-tag>
+                    <el-tag v-if="room.floor" size="small" type="info">{{ room.floor }}(楼层)</el-tag>
                   </div>
                   <div class="title-right" @click.stop>
+                    <el-button
+                      type="primary"
+                      link
+                      size="small"
+                      @click="handleEditRoom(room)"
+                      :icon="Edit"
+                    >
+                      编辑
+                    </el-button>
                     <el-button
                       type="danger"
                       link
@@ -124,25 +135,10 @@
               </template>
 
               <div class="accordion-content">
-                <!-- 房间详细信息 -->
-                <div class="room-detail-info">
-                  <el-descriptions :column="4" size="small" border>
-                    <el-descriptions-item v-if="room.roomType" label="房间类型">
-                      {{ getRoomTypeText(room.roomType) }}
-                    </el-descriptions-item>
-                    <el-descriptions-item v-if="room.area" label="面积">
-                      {{ room.area }}㎡
-                    </el-descriptions-item>
-                    <el-descriptions-item v-if="room.floor" label="楼层">
-                      {{ room.floor }}
-                    </el-descriptions-item>
-                    <el-descriptions-item v-if="room.orientation" label="朝向">
-                      <dict-tag :options="decoration_orientation" :value="room.orientation" />
-                    </el-descriptions-item>
-                  </el-descriptions>
-                  <div v-if="room.description" style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 4px;">
-                    <strong>描述：</strong>{{ room.description }}
-                  </div>
+                <!-- 房间描述 - 简洁文本显示 -->
+                <div v-if="room.description" class="room-description">
+                  <!-- <span class="room-description-label">房间描述：</span> -->
+                  <span class="room-description-text">{{ room.description }}</span>
                 </div>
 
                 <!-- 图片上传和管理 -->
@@ -179,23 +175,23 @@
       </div>
     </template>
 
-    <!-- 添加房间对话框 -->
+    <!-- 房间管理对话框 - 新增和编辑共用 -->
     <el-dialog
-      v-model="addRoomDialogVisible"
-      title="添加房间"
+      v-model="roomDialogVisible"
+      :title="roomDialogMode === 'add' ? '添加房间' : '编辑房间'"
       width="800px"
       append-to-body
       :close-on-click-modal="false"
     >
       <el-form
-        ref="addRoomFormRef"
-        :model="addRoomForm"
-        :rules="addRoomRules"
+        ref="roomFormRef"
+        :model="roomForm"
+        :rules="roomRules"
         label-width="100px"
       >
         <el-form-item label="房间类型" prop="roomType" required>
           <el-select
-            v-model="addRoomForm.roomType"
+            v-model="roomForm.roomType"
             placeholder="请选择房间类型"
             style="width: 100%"
             @change="handleRoomTypeChange"
@@ -211,17 +207,17 @@
 
         <el-form-item label="房间名称" prop="roomName" required>
           <el-input
-            v-model="addRoomForm.roomName"
+            v-model="roomForm.roomName"
             placeholder="请输入房间名称，或根据房间类型自动生成"
             style="width: 100%"
           />
         </el-form-item>
 
         <el-row :gutter="16">
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="房间面积">
               <el-input-number
-                v-model="addRoomForm.area"
+                v-model="roomForm.area"
                 placeholder="平方米"
                 :min="0"
                 :precision="2"
@@ -229,11 +225,12 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="16">
             <el-form-item label="房间楼层">
-              <el-input
-                v-model="addRoomForm.floor"
-                placeholder="如：1楼、2楼"
+              <el-input-number
+                v-model="roomForm.floor"
+                type="number"
+                placeholder="如：1楼、2楼，主要用于复式、别墅等特殊户型，并非总楼层"
                 style="width: 100%"
               />
             </el-form-item>
@@ -242,7 +239,7 @@
 
         <el-form-item label="房间朝向">
           <el-select
-            v-model="addRoomForm.orientation"
+            v-model="roomForm.orientation"
             placeholder="请选择朝向"
             style="width: 100%"
           >
@@ -257,7 +254,7 @@
 
         <el-form-item label="房间描述">
           <el-input
-            v-model="addRoomForm.description"
+            v-model="roomForm.description"
             type="textarea"
             :rows="3"
             placeholder="请输入房间描述（可选）"
@@ -268,12 +265,30 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleCancelAddRoom">取 消</el-button>
-          <el-button type="primary" @click="handleConfirmAddRoom" :loading="addingRoom">
+          <el-button @click="handleCancelRoom">取 消</el-button>
+          <el-button
+            v-if="roomDialogMode === 'add'"
+            type="primary"
+            @click="handleConfirmRoom"
+            :loading="addingRoom"
+          >
             确认添加
           </el-button>
-          <el-button type="success" @click="handleAddAndContinue" :loading="addingRoom">
+          <el-button
+            v-if="roomDialogMode === 'add'"
+            type="success"
+            @click="handleAddAndContinue"
+            :loading="addingRoom"
+          >
             添加并继续
+          </el-button>
+          <el-button
+            v-if="roomDialogMode === 'edit'"
+            type="primary"
+            @click="handleConfirmRoom"
+            :loading="editingRoom"
+          >
+            确认更新
           </el-button>
         </div>
       </template>
@@ -282,7 +297,7 @@
 </template>
 
 <script setup>
-import { Picture, Plus, Delete, Folder, InfoFilled, House, Refresh, Search } from '@element-plus/icons-vue'
+import { Picture, Plus, Delete, Edit, Folder, InfoFilled, House, Refresh, Search } from '@element-plus/icons-vue'
 import { listProjectRooms, addProjectRooms, updateProjectRooms, delProjectRooms } from '@/api/evs/projectRooms'
 import useUserStore from '@/store/modules/user'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
@@ -332,8 +347,10 @@ const rooms = ref([])
 const loading = ref(false)
 const uploadingRoomId = ref(null) // 正在上传的房间ID
 const addingRoom = ref(false)
-const addRoomDialogVisible = ref(false)
-const addRoomFormRef = ref(null)
+const editingRoom = ref(false) // 编辑房间状态
+const roomDialogVisible = ref(false) // 房间对话框显示状态
+const roomDialogMode = ref('add') // add 或 edit
+const roomFormRef = ref(null) // 房间表单引用
 const uploadRef = ref(null) // ImageUploadCard 组件引用
 
 // 新增：错误处理和状态管理
@@ -352,8 +369,9 @@ let currentProjectId = null
 const roomUploadQueues = ref(new Map()) // 每个房间的上传队列
 const roomUploadTimers = ref(new Map()) // 每个房间的延迟保存定时器
 
-// 添加房间表单
-const addRoomForm = ref({
+// 房间表单
+const roomForm = ref({
+  id: '',
   roomType: '',
   roomName: '',
   area: null,
@@ -363,7 +381,7 @@ const addRoomForm = ref({
 })
 
 // 表单验证规则
-const addRoomRules = {
+const roomRules = {
   roomType: [
     { required: true, message: '请选择房间类型', trigger: 'change' }
   ],
@@ -428,13 +446,13 @@ function generateRoomName(roomType) {
   const sameTypeRooms = rooms.value.filter(r => r.roomType === roomType)
   const count = sameTypeRooms.length + 1
   
-  return `${typeLabel}-${count}`
+  return `${typeLabel}-#${count}`
 }
 
 // 房间类型改变时自动生成名称
 function handleRoomTypeChange() {
-  if (!addRoomForm.value.roomName || addRoomForm.value.roomName.match(/^.+-\d+$/)) {
-    addRoomForm.value.roomName = generateRoomName(addRoomForm.value.roomType)
+  if (!roomForm.value.roomName || roomForm.value.roomName.match(/^.+-\d+$/)) {
+    roomForm.value.roomName = generateRoomName(roomForm.value.roomType)
   }
 }
 
@@ -749,7 +767,9 @@ async function updateRoomFileIds(room, fileIds) {
 
 // 打开添加房间对话框
 function handleAddRoom() {
-  addRoomForm.value = {
+  roomDialogMode.value = 'add'
+  roomForm.value = {
+    id: '',
     roomType: '',
     roomName: '',
     area: null,
@@ -757,119 +777,71 @@ function handleAddRoom() {
     orientation: '',
     description: ''
   }
-  addRoomDialogVisible.value = true
+  roomDialogVisible.value = true
 }
 
-// 取消添加房间
-function handleCancelAddRoom() {
-  addRoomDialogVisible.value = false
-  addRoomFormRef.value?.resetFields()
+// 打开编辑房间对话框
+function handleEditRoom(room) {
+  roomDialogMode.value = 'edit'
+  roomForm.value = {
+    id: room.id,
+    roomType: room.roomType,
+    roomName: room.roomName,
+    area: room.area,
+    floor: room.floor,
+    orientation: room.orientation,
+    description: room.description || ''
+  }
+  roomDialogVisible.value = true
 }
 
-// 确认添加房间
-async function handleConfirmAddRoom() {
-  if (!addRoomFormRef.value) return
-  
+// 取消
+function handleCancel() {
+  // 清理上传队列，执行未完成的保存操作
+  cleanupUploadQueues()
+  dialogVisible.value = false
+}
+
+// 取消房间操作
+function handleCancelRoom() {
+  roomDialogVisible.value = false
+  roomFormRef.value?.resetFields()
+}
+
+// 确认房间操作
+async function handleConfirmRoom() {
+  if (!roomFormRef.value) return
+
   try {
-    await addRoomFormRef.value.validate()
-    
-    addingRoom.value = true
-    
-    const roomData = {
-      projectId: props.project.id,
-      roomType: addRoomForm.value.roomType,
-      roomName: addRoomForm.value.roomName,
-      area: addRoomForm.value.area,
-      floor: addRoomForm.value.floor,
-      orientation: addRoomForm.value.orientation,
-      description: addRoomForm.value.description,
-      fileIds: JSON.stringify([])
-    }
+    await roomFormRef.value.validate()
 
-    const res = await addProjectRooms(roomData)
-    
-    if (res.code === 200) {
-      proxy.$modal.msgSuccess('房间添加成功')
-      addRoomDialogVisible.value = false
-      addRoomFormRef.value?.resetFields()
-      await loadRooms()
-
-      // 通知父组件房间列表已更新
-      emit('success', {
-        type: 'room-added',
-        roomId: res.data?.id,
-        roomName: addRoomForm.value.roomName
-      })
-
-      emit('rooms-updated', {
-        action: 'add',
-        roomId: res.data?.id,
-        projectId: props.project.id
-      })
+    if (roomDialogMode.value === 'add') {
+      // 新增房间
+      addingRoom.value = true
+      await handleConfirmAddRoom()
     } else {
-      throw new Error(res.msg || '添加失败')
+      // 编辑房间
+      editingRoom.value = true
+      await handleConfirmEditRoom()
     }
   } catch (error) {
     if (error !== false) { // 表单验证失败会返回false
-      proxy.$modal.msgError('添加房间失败：' + (error.msg || error.message || '未知错误'))
+      proxy.$modal.msgError((roomDialogMode.value === 'add' ? '添加' : '更新') + '房间失败：' + (error.msg || error.message || '未知错误'))
     }
   } finally {
     addingRoom.value = false
+    editingRoom.value = false
   }
 }
 
 // 添加并继续
 async function handleAddAndContinue() {
-  if (!addRoomFormRef.value) return
-  
+  if (!roomFormRef.value) return
+
   try {
-    await addRoomFormRef.value.validate()
-    
+    await roomFormRef.value.validate()
     addingRoom.value = true
-    
-    const roomData = {
-      projectId: props.project.id,
-      roomType: addRoomForm.value.roomType,
-      roomName: addRoomForm.value.roomName,
-      area: addRoomForm.value.area,
-      floor: addRoomForm.value.floor,
-      orientation: addRoomForm.value.orientation,
-      description: addRoomForm.value.description,
-      fileIds: JSON.stringify([])
-    }
-
-    const res = await addProjectRooms(roomData)
-    
-    if (res.code === 200) {
-      proxy.$modal.msgSuccess('房间添加成功')
-      // 重置表单但保持房间类型，以便继续添加同类型房间
-      const currentRoomType = addRoomForm.value.roomType
-      const addedRoomName = addRoomForm.value.roomName
-      addRoomForm.value = {
-        roomType: currentRoomType,
-        roomName: generateRoomName(currentRoomType),
-        area: null,
-        floor: '',
-        orientation: '',
-        description: ''
-      }
-      await loadRooms()
-
-      // 通知父组件房间列表已更新
-      emit('success', {
-        type: 'room-added',
-        roomId: res.data?.id,
-        roomName: addedRoomName
-      })
-
-      emit('rooms-updated', {
-        action: 'add',
-        roomId: res.data?.id,
-        projectId: props.project.id
-      })
-    } else {
-      throw new Error(res.msg || '添加失败')
-    }
+    await handleConfirmAddRoomContinue()
   } catch (error) {
     if (error !== false) {
       proxy.$modal.msgError('添加房间失败：' + (error.msg || error.message || '未知错误'))
@@ -879,7 +851,129 @@ async function handleAddAndContinue() {
   }
 }
 
-// 删除房间
+// 确认添加房间
+async function handleConfirmAddRoom() {
+  const roomData = {
+    projectId: props.project.id,
+    roomType: roomForm.value.roomType,
+    roomName: roomForm.value.roomName,
+    area: roomForm.value.area,
+    floor: roomForm.value.floor,
+    orientation: roomForm.value.orientation,
+    description: roomForm.value.description,
+    fileIds: JSON.stringify([])
+  }
+
+  const res = await addProjectRooms(roomData)
+
+  if (res.code === 200) {
+    proxy.$modal.msgSuccess('房间添加成功')
+    roomDialogVisible.value = false
+    roomFormRef.value?.resetFields()
+    await loadRooms()
+
+    // 通知父组件房间列表已更新
+    emit('success', {
+      type: 'room-added',
+      roomId: res.data?.id,
+      roomName: roomForm.value.roomName
+    })
+
+    emit('rooms-updated', {
+      action: 'add',
+      roomId: res.data?.id,
+      projectId: props.project.id
+    })
+  } else {
+    throw new Error(res.msg || '添加失败')
+  }
+}
+
+// 确认添加并继续
+async function handleConfirmAddRoomContinue() {
+  const roomData = {
+    projectId: props.project.id,
+    roomType: roomForm.value.roomType,
+    roomName: roomForm.value.roomName,
+    area: roomForm.value.area,
+    floor: roomForm.value.floor,
+    orientation: roomForm.value.orientation,
+    description: roomForm.value.description,
+    fileIds: JSON.stringify([])
+  }
+
+  const res = await addProjectRooms(roomData)
+
+  if (res.code === 200) {
+    proxy.$modal.msgSuccess('房间添加成功')
+    // 重置表单但保持房间类型，以便继续添加同类型房间
+    const currentRoomType = roomForm.value.roomType
+    const addedRoomName = roomForm.value.roomName
+    roomForm.value = {
+      id: '',
+      roomType: currentRoomType,
+      roomName: generateRoomName(currentRoomType),
+      area: null,
+      floor: '',
+      orientation: '',
+      description: ''
+    }
+    await loadRooms()
+
+    // 通知父组件房间列表已更新
+    emit('success', {
+      type: 'room-added',
+      roomId: res.data?.id,
+      roomName: addedRoomName
+    })
+
+    emit('rooms-updated', {
+      action: 'add',
+      roomId: res.data?.id,
+      projectId: props.project.id
+    })
+  } else {
+    throw new Error(res.msg || '添加失败')
+  }
+}
+
+// 确认编辑房间
+async function handleConfirmEditRoom() {
+  const updateData = {
+    id: roomForm.value.id,
+    projectId: props.project.id,
+    roomType: roomForm.value.roomType,
+    roomName: roomForm.value.roomName,
+    area: roomForm.value.area,
+    floor: roomForm.value.floor,
+    orientation: roomForm.value.orientation,
+    description: roomForm.value.description
+  }
+
+  const res = await updateProjectRooms(updateData)
+
+  if (res.code === 200) {
+    proxy.$modal.msgSuccess('房间更新成功')
+    roomDialogVisible.value = false
+    roomFormRef.value?.resetFields()
+    await loadRooms()
+
+    // 通知父组件房间列表已更新
+    emit('success', {
+      type: 'room-updated',
+      roomId: roomForm.value.id,
+      roomName: roomForm.value.roomName
+    })
+
+    emit('rooms-updated', {
+      action: 'update',
+      roomId: roomForm.value.id,
+      projectId: props.project.id
+    })
+  } else {
+    throw new Error(res.msg || '更新失败')
+  }
+}
 async function handleDeleteRoom(roomId) {
   try {
     // 获取要删除的房间信息
@@ -1075,12 +1169,6 @@ function handleViewTemplate() {
   )
 }
 
-// 取消
-function handleCancel() {
-  // 清理上传队列，执行未完成的保存操作
-  cleanupUploadQueues()
-  dialogVisible.value = false
-}
 
 // 组件卸载时清理资源
 onUnmounted(() => {
@@ -1098,14 +1186,16 @@ watch(() => props.project?.id, (newProjectId, oldProjectId) => {
     loading.value = false
     uploadingRoomId.value = null
     addingRoom.value = false
-    addRoomDialogVisible.value = false
+    editingRoom.value = false
+    roomDialogVisible.value = false
 
     // 重置表单
-    if (addRoomFormRef.value) {
-      addRoomFormRef.value.resetFields()
+    if (roomFormRef.value) {
+      roomFormRef.value.resetFields()
     }
 
-    addRoomForm.value = {
+    roomForm.value = {
+      id: '',
       roomType: '',
       roomName: '',
       area: null,
@@ -1317,13 +1407,14 @@ watch(() => props.modelValue, (val) => {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding-right: 16px;
+    padding-right: 8px;
 
     .title-left {
       display: flex;
       align-items: center;
       gap: 8px;
       flex: 1;
+      flex-wrap: wrap;
 
       .room-name {
         font-weight: 600;
@@ -1333,6 +1424,9 @@ watch(() => props.modelValue, (val) => {
     }
 
     .title-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       opacity: 0;
       transition: opacity 0.2s ease;
 
@@ -1350,8 +1444,31 @@ watch(() => props.modelValue, (val) => {
     padding: 16px 0;
   }
 
-  .room-detail-info {
-    margin-bottom: 20px;
+  .room-description {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-left: 3px solid #409EFF;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.6;
+
+    .room-description-label {
+      font-weight: 600;
+      color: #303133;
+      margin-right: 8px;
+    }
+
+    .room-description-text {
+      color: #606266;
+      display: inline;
+      word-break: break-all;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
   }
 }
 

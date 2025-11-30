@@ -23,22 +23,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectSchedulesVo">
-        select id, project_id, stage, stage_order, plan_start_date, plan_end_date, actual_start_date, actual_end_date, status, completion_rate, description, created_at, updated_at, created_by, updated_by from project_schedules
+        select
+            ps.id, ps.project_id, ps.stage, ps.stage_order,
+            ps.plan_start_date, ps.plan_end_date,
+            ps.actual_start_date, ps.actual_end_date,
+            ps.status, ps.completion_rate, ps.description,
+            ps.created_at, ps.updated_at, ps.created_by, ps.updated_by
+        from project_schedules ps
+        <!-- 关联 project_members 表进行权限过滤 -->
+        inner join project_members pm on ps.project_id = pm.project_id
+        <!-- 关联当前登录用户，只返回当前用户有权限的项目 -->
+        where pm.user_id = #{currentUserId}
+          and pm.is_active = 1
     </sql>
 
     <select id="selectProjectSchedulesList" parameterType="ProjectSchedules" resultMap="ProjectSchedulesResult">
         <include refid="selectProjectSchedulesVo"/>
-        <where>  
-            <if test="projectId != null  and projectId != ''"> and project_id = #{projectId}</if>
-            <if test="stage != null  and stage != ''"> and stage = #{stage}</if>
-            <if test="stageOrder != null "> and stage_order = #{stageOrder}</if>
-            <if test="status != null  and status != ''"> and status = #{status}</if>
+        <where>
+            <if test="projectId != null  and projectId != ''"> and ps.project_id = #{projectId}</if>
+            <if test="stage != null  and stage != ''"> and ps.stage = #{stage}</if>
+            <if test="stageOrder != null "> and ps.stage_order = #{stageOrder}</if>
+            <if test="status != null  and status != ''"> and ps.status = #{status}</if>
         </where>
+        order by ps.project_id, ps.stage_order
     </select>
     
-    <select id="selectProjectSchedulesById" parameterType="String" resultMap="ProjectSchedulesResult">
+    <select id="selectProjectSchedulesById" parameterType="ProjectSchedules" resultMap="ProjectSchedulesResult">
         <include refid="selectProjectSchedulesVo"/>
-        where id = #{id}
+        <where>
+            <if test="id != null and id != ''"> and ps.id = #{id}</if>
+        </where>
     </select>
 
     <insert id="insertProjectSchedules" parameterType="ProjectSchedules">
@@ -100,14 +114,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where id = #{id}
     </update>
 
-    <delete id="deleteProjectSchedulesById" parameterType="String">
-        delete from project_schedules where id = #{id}
+    <delete id="deleteProjectSchedulesById" parameterType="ProjectSchedules">
+        delete ps from project_schedules ps
+        inner join project_members pm on ps.project_id = pm.project_id
+        where ps.id = #{id}
+          and pm.user_id = #{currentUserId}
+          and pm.is_active = 1
     </delete>
 
-    <delete id="deleteProjectSchedulesByIds" parameterType="String">
-        delete from project_schedules where id in 
-        <foreach item="id" collection="array" open="(" separator="," close=")">
+    <delete id="deleteProjectSchedulesByIds" parameterType="ProjectSchedules">
+        delete ps from project_schedules ps
+        inner join project_members pm on ps.project_id = pm.project_id
+        where ps.id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
             #{id}
         </foreach>
+          and pm.user_id = #{currentUserId}
+          and pm.is_active = 1
     </delete>
 </mapper>

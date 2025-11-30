@@ -8,6 +8,7 @@ import com.ruoyi.web.domain.ProjectSchedules;
 import com.ruoyi.web.service.IProjectSchedulesService;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.uuid.IdUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 /**
  * 项目进度Service业务层处理
  * 
@@ -37,6 +38,13 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         ProjectSchedules query = new ProjectSchedules();
         query.setProjectId(projectId);
         query.setStage(stage);
+
+        // 设置当前用户ID，用于数据权限过滤
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId != null) {
+            query.setCurrentUserId(String.valueOf(currentUserId));
+        }
+
         List<ProjectSchedules> existing = projectSchedulesMapper.selectProjectSchedulesList(query);
         return existing.isEmpty() ? null : existing.get(0);
     }
@@ -59,6 +67,13 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         ProjectSchedules query = new ProjectSchedules();
         query.setProjectId(projectId);
         query.setStage(stage);
+
+        // 设置当前用户ID，用于数据权限过滤
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId != null) {
+            query.setCurrentUserId(String.valueOf(currentUserId));
+        }
+
         List<ProjectSchedules> existing = projectSchedulesMapper.selectProjectSchedulesList(query);
 
         for (ProjectSchedules schedule : existing)
@@ -80,18 +95,33 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
     @Override
     public ProjectSchedules selectProjectSchedulesById(String id)
     {
-        return projectSchedulesMapper.selectProjectSchedulesById(id);
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            return null;
+        }
+
+        ProjectSchedules query = new ProjectSchedules();
+        query.setId(id);
+        query.setCurrentUserId(String.valueOf(currentUserId));
+
+        return projectSchedulesMapper.selectProjectSchedulesById(query);
     }
 
     /**
      * 查询项目进度列表
-     * 
+     *
      * @param projectSchedules 项目进度
      * @return 项目进度
      */
     @Override
     public List<ProjectSchedules> selectProjectSchedulesList(ProjectSchedules projectSchedules)
     {
+        // 设置当前用户ID，用于数据权限过滤
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId != null) {
+            projectSchedules.setCurrentUserId(String.valueOf(currentUserId));
+        }
+
         return projectSchedulesMapper.selectProjectSchedulesList(projectSchedules);
     }
 
@@ -127,6 +157,18 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
     @Override
     public int updateProjectSchedules(ProjectSchedules projectSchedules)
     {
+        // 验证权限：检查用户是否有权限修改该项目进度
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            throw new ServiceException("用户未登录");
+        }
+
+        // 验证操作的项目进度是否存在且用户有权限
+        ProjectSchedules existing = selectProjectSchedulesById(projectSchedules.getId());
+        if (existing == null) {
+            throw new ServiceException("项目进度不存在或无权限操作");
+        }
+
         // 检查重复：同一项目不能有相同的施工阶段（排除当前记录）
         ProjectSchedules duplicate = checkDuplicateExclude(
             projectSchedules.getProjectId(),
@@ -143,25 +185,61 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
 
     /**
      * 批量删除项目进度
-     * 
+     *
      * @param ids 需要删除的项目进度主键
      * @return 结果
      */
     @Override
     public int deleteProjectSchedulesByIds(String[] ids)
     {
-        return projectSchedulesMapper.deleteProjectSchedulesByIds(ids);
+        // 验证权限：检查用户是否有权限删除这些项目进度
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            throw new ServiceException("用户未登录");
+        }
+
+        // 逐个验证每个ID的删除权限
+        for (String id : ids) {
+            ProjectSchedules existing = selectProjectSchedulesById(id);
+            if (existing == null) {
+                throw new ServiceException("项目进度不存在或无权限删除: " + id);
+            }
+        }
+
+        // 创建查询对象传递参数
+        ProjectSchedules query = new ProjectSchedules();
+        query.setIds(ids);
+        query.setCurrentUserId(String.valueOf(currentUserId));
+
+        return projectSchedulesMapper.deleteProjectSchedulesByIds(query);
     }
 
     /**
      * 删除项目进度信息
-     * 
+     *
      * @param id 项目进度主键
      * @return 结果
      */
     @Override
     public int deleteProjectSchedulesById(String id)
     {
-        return projectSchedulesMapper.deleteProjectSchedulesById(id);
+        // 验证权限：检查用户是否有权限删除该项目进度
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            throw new ServiceException("用户未登录");
+        }
+
+        // 验证要删除的项目进度是否存在且用户有权限
+        ProjectSchedules existing = selectProjectSchedulesById(id);
+        if (existing == null) {
+            throw new ServiceException("项目进度不存在或无权限删除");
+        }
+
+        // 创建查询对象传递参数
+        ProjectSchedules query = new ProjectSchedules();
+        query.setId(id);
+        query.setCurrentUserId(String.valueOf(currentUserId));
+
+        return projectSchedulesMapper.deleteProjectSchedulesById(query);
     }
 }

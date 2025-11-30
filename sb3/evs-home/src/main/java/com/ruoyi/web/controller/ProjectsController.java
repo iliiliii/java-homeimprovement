@@ -68,19 +68,14 @@ public class ProjectsController extends BaseController
             includeRelations.append("projectMembers");
         }
 
-        // 获取当前用户ID和权限信息（自动获取，不依赖前端传递）
-        Long currentUserId = SecurityUtils.getUserId();
-        boolean isAdmin = SecurityUtils.hasRole("admin");
-
-        // 传递查询参数和权限信息到Service层
+        // Service层自动处理权限控制，无需手动传递用户信息
         List<Projects> list;
         if ("true".equals(includeScheduleInfo)) {
-            // ✅ 传参 includeScheduleInfo=true 时，返回项目列表及进度统计
+            // 进度统计查询（带权限控制）
             list = projectsService.selectProjectsListWithScheduleInfo(projects);
         } else {
-            // ✅ 传参 includeScheduleInfo=false 或未传参时，保持原有逻辑
-            list = projectsService.selectProjectsWithRelations(
-                projects, includeRelations.toString(), currentUserId.toString(), isAdmin);
+            // 普通列表查询（带权限控制） - 优先使用 selectProjectsList
+            list = projectsService.selectProjectsList(projects);
         }
 
         return getDataTable(list);
@@ -121,6 +116,7 @@ public class ProjectsController extends BaseController
             includeRelations.append("schedules");
         }
 
+        // Service层自动处理权限控制
         Projects project = projectsService.selectProjectsWithRelationsById(
             id, includeRelations.toString());
 

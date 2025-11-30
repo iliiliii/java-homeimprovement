@@ -10,6 +10,8 @@ import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectsService;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.exception.ServiceException;
 
 /**
  * 项目信息Service业务层处理
@@ -23,29 +25,65 @@ public class ProjectsServiceImpl implements IProjectsService
     @Autowired
     private ProjectsMapper projectsMapper;
 
-  
+    /**
+     * 设置当前用户权限信息
+     */
+    private Projects setCurrentUser(Projects projects) {
+        Long currentUserId = SecurityUtils.getUserId();
+        Boolean isAdmin = SecurityUtils.hasRole("admin");
+
+        System.out.println("=== 权限设置调试 ===");
+        System.out.println("SecurityUtils.getUserId(): " + currentUserId);
+        System.out.println("SecurityUtils.hasRole('admin'): " + isAdmin);
+
+        if (currentUserId != null) {
+            projects.setCurrentUserId(String.valueOf(currentUserId));
+            projects.setIsAdmin(isAdmin);
+            System.out.println("设置权限参数 - currentUserId: " + currentUserId + ", isAdmin: " + isAdmin);
+        } else {
+            System.out.println("⚠️ 警告：未获取到当前用户ID");
+        }
+        return projects;
+    }
+
     /**
      * 查询项目信息
-     * 
+     *
      * @param id 项目信息主键
      * @return 项目信息
      */
     @Override
     public Projects selectProjectsById(String id)
     {
-        return projectsMapper.selectProjectsById(id);
+        Projects query = new Projects();
+        query.setId(id);
+        setCurrentUser(query);
+        return projectsMapper.selectProjectsById(query);
     }
 
     /**
      * 查询项目信息列表
-     * 
+     *
      * @param projects 项目信息
      * @return 项目信息
      */
     @Override
     public List<Projects> selectProjectsList(Projects projects)
     {
-        return projectsMapper.selectProjectsList(projects);
+        System.out.println("\n=== 项目列表查询调试 ===");
+        System.out.println("原始查询参数: " + projects);
+
+        Projects query = setCurrentUser(projects);
+        System.out.println("设置权限后参数: currentUserId=" + query.getCurrentUserId() + ", isAdmin=" + query.getIsAdmin());
+
+        List<Projects> result = projectsMapper.selectProjectsList(query);
+        System.out.println("查询结果数量: " + result.size());
+
+        if (result.size() > 0) {
+            System.out.println("返回的第一个项目: " + result.get(0));
+        }
+
+        return result;
     }
 
     /**
@@ -62,44 +100,93 @@ public class ProjectsServiceImpl implements IProjectsService
 
     /**
      * 修改项目信息
-     * 
+     *
      * @param projects 项目信息
      * @return 结果
      */
     @Override
     public int updateProjects(Projects projects)
     {
+        // 验证权限：检查用户是否有权限修改该项目
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            throw new ServiceException("用户未登录");
+        }
+
+        // 验证操作的项目是否存在且用户有权限
+        Projects existing = selectProjectsById(projects.getId());
+        if (existing == null) {
+            throw new ServiceException("项目不存在或无权限操作");
+        }
+
         return projectsMapper.updateProjects(projects);
     }
 
     /**
      * 批量删除项目信息
-     * 
+     *
      * @param ids 需要删除的项目信息主键
      * @return 结果
      */
     @Override
     public int deleteProjectsByIds(String[] ids)
     {
-        return projectsMapper.deleteProjectsByIds(ids);
+        // 验证权限：检查用户是否有权限删除这些项目
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            throw new ServiceException("用户未登录");
+        }
+
+        // 逐个验证每个ID的删除权限
+        for (String id : ids) {
+            Projects existing = selectProjectsById(id);
+            if (existing == null) {
+                throw new ServiceException("项目不存在或无权限删除: " + id);
+            }
+        }
+
+        // 创建删除对象
+        Projects query = new Projects();
+        query.setIds(ids);
+        query.setCurrentUserId(String.valueOf(currentUserId));
+
+        return projectsMapper.deleteProjectsByIds(query);
     }
 
     /**
      * 删除项目信息信息
-     * 
+     *
      * @param id 项目信息主键
      * @return 结果
      */
     @Override
     public int deleteProjectsById(String id)
     {
-        return projectsMapper.deleteProjectsById(id);
+        // 验证权限：检查用户是否有权限删除该项目
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            throw new ServiceException("用户未登录");
+        }
+
+        // 验证要删除的项目是否存在且用户有权限
+        Projects existing = selectProjectsById(id);
+        if (existing == null) {
+            throw new ServiceException("项目不存在或无权限删除");
+        }
+
+        // 创建删除对象
+        Projects query = new Projects();
+        query.setId(id);
+        query.setCurrentUserId(String.valueOf(currentUserId));
+
+        return projectsMapper.deleteProjectsById(query);
     }
 
     @Override
     public int softDeleteProjectsById(String id)
     {
-        Projects projects = projectsMapper.selectProjectsById(id);
+        // 使用带权限控制的查询方法
+        Projects projects = selectProjectsById(id);
         if (projects == null) {
             return 0;
         }
@@ -138,7 +225,10 @@ public class ProjectsServiceImpl implements IProjectsService
         Projects project;
 
         if (includeRelations.contains("customer")) {
-            project = projectsMapper.selectProjectsWithCustomerById(id);
+            Projects query = new Projects();
+            query.setId(id);
+            setCurrentUser(query);
+            project = projectsMapper.selectProjectsWithCustomerById(query);
         } else {
             project = selectProjectsById(id);
         }
@@ -149,8 +239,11 @@ public class ProjectsServiceImpl implements IProjectsService
     @Override
     public List<Projects> selectProjectsListWithScheduleInfo(Projects projects)
     {
-        // 1. 查询项目列表
-        List<Projects> projectsList = selectProjectsList(projects);
+        // 设置权限信息（自动应用权限控制）
+        Projects query = setCurrentUser(projects);
+
+        // 1. 查询项目列表（带权限过滤）
+        List<Projects> projectsList = projectsMapper.selectProjectsList(query);
 
         // 2. 如果无项目，直接返回
         if (projectsList.isEmpty()) {
@@ -165,7 +258,7 @@ public class ProjectsServiceImpl implements IProjectsService
         // 4. 批量查询进度统计
         Map<String, Map<String, Object>> statsMap = projectsMapper.selectScheduleStatsMap(projectIds);
 
-        // 5. 为每个项目设置统计信息
+        // 5. 为每��项目设置统计信息
         for (Projects project : projectsList) {
             Map<String, Object> stats = statsMap.get(project.getId());
             if (stats != null) {
