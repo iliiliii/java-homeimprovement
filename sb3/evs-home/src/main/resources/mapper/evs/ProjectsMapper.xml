@@ -43,45 +43,54 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectsVo">
-        select p.id, p.project_type, p.name, p.customer_id, p.description, p.address,
+        SELECT p.id, p.project_type, p.name, p.customer_id, p.description, p.address,
                p.area, p.budget, p.actual_cost, p.start_date, p.end_date,
                p.actual_end_date, p.status, p.priority, p.progress,
                p.budgets_url, p.contracts_url, p.created_at, p.updated_at,
                p.deleted_at, p.created_by, p.updated_by
-        from projects p
+        FROM projects p
+    </sql>
+
+    <sql id="selectProjectsWithPermissionVo">
+        <include refid="selectProjectsVo"/>
         <where>
-            <!-- 管理员跳过权限过滤，可以看到所有项目 -->
+            <!-- 统一的权限控制逻辑 -->
+            <if test="isAdmin != null and isAdmin == true">
+                <!-- 管理员查看所有项目 -->
+                1=1
+            </if>
             <if test="isAdmin == null or isAdmin == false">
-                <!-- 非管理员用户只能访问自己参与的项目 -->
+                <!-- 非管理员只能查看参与的项目 -->
                 <if test="currentUserId != null and currentUserId != ''">
-                    and p.id in (
-                        select pm.project_id
-                        from project_members pm
-                        where pm.user_id = #{currentUserId}
-                          and pm.is_active = 1
+                    AND p.id IN (
+                        SELECT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{currentUserId} AND pm.is_active = 1
                     )
+                </if>
+                <if test="currentUserId == null or currentUserId == ''">
+                    <!-- 未登录用户无法查看任何项目 -->
+                    1=0
                 </if>
             </if>
         </where>
     </sql>
 
     <select id="selectProjectsList" parameterType="Projects" resultMap="ProjectsResult">
-        <include refid="selectProjectsVo"/>
+        <include refid="selectProjectsWithPermissionVo"/>
         <where>
-            <if test="currentUserId != null and currentUserId != ''"></if>
-            <if test="projectType != null and projectType != ''"> and p.project_type = #{projectType}</if>
-            <if test="name != null and name != ''"> and p.name like concat('%', #{name}, '%')</if>
-            <if test="status != null and status != ''"> and p.status = #{status}</if>
-            <if test="priority != null and priority != ''"> and p.priority = #{priority}</if>
+            <if test="projectType != null and projectType != ''"> AND p.project_type = #{projectType}</if>
+            <if test="name != null and name != ''"> AND p.name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''"> AND p.status = #{status}</if>
+            <if test="priority != null and priority != ''"> AND p.priority = #{priority}</if>
         </where>
         ORDER BY p.created_at DESC
     </select>
     
     <select id="selectProjectsById" parameterType="Projects" resultMap="ProjectsResult">
-        <include refid="selectProjectsVo"/>
+        <include refid="selectProjectsWithPermissionVo"/>
         <where>
-            <if test="currentUserId != null and currentUserId != ''"></if>
-            <if test="id != null and id != ''"> and p.id = #{id}</if>
+            <if test="id != null and id != ''"> AND p.id = #{id}</if>
         </where>
     </select>
 
@@ -208,25 +217,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectProjectsWithCustomer" parameterType="Projects" resultMap="ProjectsWithCustomerResult">
         <include refid="selectProjectsWithCustomerVo"/>
         <where>
-            <if test="projectType != null and projectType != ''"> and p.project_type = #{projectType}</if>
-            <if test="name != null and name != ''"> and p.name like concat('%', #{name}, '%')</if>
-            <if test="status != null and status != ''"> and p.status = #{status}</if>
-            <if test="priority != null and priority != ''"> and p.priority = #{priority}</if>
-            <if test="customerId != null and customerId != ''"> and p.customer_id = #{customerId}</if>
+            <!-- 统一的权限控制逻辑 -->
+            <if test="isAdmin != null and isAdmin == true">
+                <!-- 管理员查看所有项目 -->
+                1=1
+            </if>
+            <if test="isAdmin == null or isAdmin == false">
+                <!-- 非管理员只能查看参与的项目 -->
+                <if test="currentUserId != null and currentUserId != ''">
+                    AND p.id IN (
+                        SELECT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{currentUserId} AND pm.is_active = 1
+                    )
+                </if>
+                <if test="currentUserId == null or currentUserId == ''">
+                    <!-- 未登录用户无法查看任何项目 -->
+                    1=0
+                </if>
+            </if>
+            <!-- 查询条件过滤 -->
+            <if test="projectType != null and projectType != ''"> AND p.project_type = #{projectType}</if>
+            <if test="name != null and name != ''"> AND p.name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''"> AND p.status = #{status}</if>
+            <if test="priority != null and priority != ''"> AND p.priority = #{priority}</if>
+            <if test="customerId != null and customerId != ''"> AND p.customer_id = #{customerId}</if>
         </where>
         ORDER BY p.created_at DESC
     </select>
 
     <select id="selectProjectsWithCustomerById" parameterType="Projects" resultMap="ProjectsWithCustomerResult">
-        <include refid="selectProjectsWithCustomerVo"/>
-        <where>
-            <if test="currentUserId != null and currentUserId != ''"></if>
-            <if test="id != null and id != ''"> and p.id = #{id}</if>
-        </where>
-    </select>
-
-    <!-- 通过项目成员关联查询项目列表（支持权限过滤） -->
-    <sql id="selectProjectsWithMembersVo">
         SELECT
             p.id, p.project_type, p.name, p.customer_id, p.description, p.address,
             p.area, p.budget, p.actual_cost, p.start_date, p.end_date,
@@ -239,25 +259,61 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         FROM projects p
         LEFT JOIN customers c ON p.customer_id = c.id
         <where>
-            <!-- 非管理员用户只能看到自己参与的项目 -->
-            <if test="isAdmin != null and isAdmin == false">
+            <!-- 统一的权限控制逻辑 -->
+            <if test="isAdmin != null and isAdmin == true">
+                <!-- 管理员查看所有项目 -->
+                1=1
+            </if>
+            <if test="isAdmin == null or isAdmin == false">
+                <!-- 非管理员只能查看参与的项目 -->
+                <if test="currentUserId != null and currentUserId != ''">
+                    AND p.id IN (
+                        SELECT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{currentUserId} AND pm.is_active = 1
+                    )
+                </if>
+                <if test="currentUserId == null or currentUserId == ''">
+                    <!-- 未登录用户无法查看任何项目 -->
+                    1=0
+                </if>
+            </if>
+            <if test="id != null and id != ''"> AND p.id = #{id}</if>
+        </where>
+    </select>
+
+    <select id="selectProjectsWithMembers" resultMap="ProjectsWithCustomerResult">
+        SELECT
+            p.id, p.project_type, p.name, p.customer_id, p.description, p.address,
+            p.area, p.budget, p.actual_cost, p.start_date, p.end_date,
+            p.actual_end_date, p.status, p.priority, p.progress,
+            p.budgets_url, p.contracts_url, p.created_at, p.updated_at,
+            p.deleted_at, p.created_by, p.updated_by,
+            c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
+            c.address as customer_address, c.level as customer_level,
+            c.source as customer_source, c.is_active as customer_is_active
+        FROM projects p
+        LEFT JOIN customers c ON p.customer_id = c.id
+        <where>
+            <!-- 统一的权限控制逻辑 -->
+            <if test="isAdmin == true">
+                <!-- 管理员查看所有项目 -->
+                1=1
+            </if>
+            <if test="isAdmin == false">
+                <!-- 非管理员只能查看指定用户参与的项目 -->
                 AND p.id IN (
                     SELECT DISTINCT pm.project_id
                     FROM project_members pm
                     WHERE pm.user_id = #{memberUserId} AND pm.is_active = 1
                 )
             </if>
-        </where>
-    </sql>
-
-    <select id="selectProjectsWithMembers" parameterType="Projects" resultMap="ProjectsWithCustomerResult">
-        <include refid="selectProjectsWithMembersVo"/>
-        <where>
-            <if test="projects.projectType != null and projects.projectType != ''"> and p.project_type = #{projects.projectType}</if>
-            <if test="projects.name != null and projects.name != ''"> and p.name like concat('%', #{projects.name}, '%')</if>
-            <if test="projects.status != null and projects.status != ''"> and p.status = #{projects.status}</if>
-            <if test="projects.priority != null and projects.priority != ''"> and p.priority = #{projects.priority}</if>
-            <if test="projects.customerId != null and projects.customerId != ''"> and p.customer_id = #{projects.customerId}</if>
+            <!-- 查询条件过滤 -->
+            <if test="projects.projectType != null and projects.projectType != ''"> AND p.project_type = #{projects.projectType}</if>
+            <if test="projects.name != null and projects.name != ''"> AND p.name like concat('%', #{projects.name}, '%')</if>
+            <if test="projects.status != null and projects.status != ''"> AND p.status = #{projects.status}</if>
+            <if test="projects.priority != null and projects.priority != ''"> AND p.priority = #{projects.priority}</if>
+            <if test="projects.customerId != null and projects.customerId != ''"> AND p.customer_id = #{projects.customerId}</if>
         </where>
         ORDER BY p.created_at DESC
     </select>
