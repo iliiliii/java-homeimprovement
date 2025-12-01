@@ -30,15 +30,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ps.status, ps.completion_rate, ps.description,
             ps.created_at, ps.updated_at, ps.created_by, ps.updated_by
         from project_schedules ps
-        <!-- 关联 project_members 表进行权限过滤 -->
-        inner join project_members pm on ps.project_id = pm.project_id
     </sql>
 
     <select id="selectProjectSchedulesList" parameterType="ProjectSchedules" resultMap="ProjectSchedulesResult">
         <include refid="selectProjectSchedulesVo"/>
         <where>
-            <!-- 数据权限过滤：只查询当前用户有权限的项目 -->
-            pm.user_id = #{currentUserId} and pm.is_active = 1
+            <!-- 数据权限控制：区分管理员和非管理员 -->
+            <if test="isAdmin != null and isAdmin == true">
+                <!-- 管理员查看所有项目的进度 -->
+                1=1
+            </if>
+            <if test="isAdmin == null or isAdmin == false">
+                <!-- 非管理员只能查看参与项目的进度 -->
+                <if test="currentUserId != null and currentUserId != ''">
+                    AND ps.project_id IN (
+                        SELECT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{currentUserId} AND pm.is_active = 1
+                    )
+                </if>
+                <if test="currentUserId == null or currentUserId == ''">
+                    <!-- 未登录用户无法查看任何进度 -->
+                    1=0
+                </if>
+            </if>
+            <!-- 查询条件过滤 -->
             <if test="projectId != null  and projectId != ''"> and ps.project_id = #{projectId}</if>
             <if test="stage != null  and stage != ''"> and ps.stage = #{stage}</if>
             <if test="stageOrder != null "> and ps.stage_order = #{stageOrder}</if>
@@ -46,12 +62,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
         order by ps.project_id, ps.stage_order
     </select>
-    
+
     <select id="selectProjectSchedulesById" parameterType="ProjectSchedules" resultMap="ProjectSchedulesResult">
         <include refid="selectProjectSchedulesVo"/>
         <where>
-            <!-- 数据权限过滤：只查询当前用户有权限的项目 -->
-            pm.user_id = #{currentUserId} and pm.is_active = 1
+            <!-- 数据权限控制：区分管理员和非管理员 -->
+            <if test="isAdmin != null and isAdmin == true">
+                <!-- 管理员查看所有项目的进度 -->
+                1=1
+            </if>
+            <if test="isAdmin == null or isAdmin == false">
+                <!-- 非管理员只能查看参与项目的进度 -->
+                <if test="currentUserId != null and currentUserId != ''">
+                    AND ps.project_id IN (
+                        SELECT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{currentUserId} AND pm.is_active = 1
+                    )
+                </if>
+                <if test="currentUserId == null or currentUserId == ''">
+                    <!-- 未登录用户无法查看任何进度 -->
+                    1=0
+                </if>
+            </if>
             <if test="id != null and id != ''"> and ps.id = #{id}</if>
         </where>
     </select>

@@ -28,7 +28,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectProjectScheduleRecordsList" parameterType="ProjectScheduleRecords" resultMap="ProjectScheduleRecordsResult">
         <include refid="selectProjectScheduleRecordsVo"/>
-        <where>  
+        <where>
+            <if test="projectId != null and projectId != ''"> and project_id = #{projectId}</if>
+            <if test="scheduleId != null and scheduleId != ''"> and schedule_id = #{scheduleId}</if>
             <if test="recordType != null  and recordType != ''"> and record_type = #{recordType}</if>
             <if test="acceptanceTitle != null  and acceptanceTitle != ''"> and acceptance_title = #{acceptanceTitle}</if>
             <if test="acceptanceResult != null  and acceptanceResult != ''"> and acceptance_result = #{acceptanceResult}</if>

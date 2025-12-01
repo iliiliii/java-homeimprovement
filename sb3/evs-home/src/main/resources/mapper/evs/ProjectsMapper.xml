@@ -76,22 +76,69 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </sql>
 
-    <select id="selectProjectsList" parameterType="Projects" resultMap="ProjectsResult">
-        <include refid="selectProjectsWithPermissionVo"/>
+    <sql id="selectProjectsListVo">
+        <include refid="selectProjectsVo"/>
         <where>
+            <!-- 统一的权限控制逻辑 -->
+            <if test="isAdmin != null and isAdmin == true">
+                <!-- 管理员查看所有项目 -->
+                1=1
+            </if>
+            <if test="isAdmin == null or isAdmin == false">
+                <!-- 非管理员只能查看参与的项目 -->
+                <if test="currentUserId != null and currentUserId != ''">
+                    AND p.id IN (
+                        SELECT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{currentUserId} AND pm.is_active = 1
+                    )
+                </if>
+                <if test="currentUserId == null or currentUserId == ''">
+                    <!-- 未登录用户无法查看任何项目 -->
+                    1=0
+                </if>
+            </if>
+            <!-- 查询条件过滤 -->
             <if test="projectType != null and projectType != ''"> AND p.project_type = #{projectType}</if>
             <if test="name != null and name != ''"> AND p.name like concat('%', #{name}, '%')</if>
             <if test="status != null and status != ''"> AND p.status = #{status}</if>
             <if test="priority != null and priority != ''"> AND p.priority = #{priority}</if>
         </where>
         ORDER BY p.created_at DESC
-    </select>
-    
-    <select id="selectProjectsById" parameterType="Projects" resultMap="ProjectsResult">
-        <include refid="selectProjectsWithPermissionVo"/>
+    </sql>
+
+    <sql id="selectProjectsByIdVo">
+        <include refid="selectProjectsVo"/>
         <where>
+            <!-- 统一的权限控制逻辑 -->
+            <if test="isAdmin != null and isAdmin == true">
+                <!-- 管理员查看所有项目 -->
+                1=1
+            </if>
+            <if test="isAdmin == null or isAdmin == false">
+                <!-- 非管理员只能查看参与的项目 -->
+                <if test="currentUserId != null and currentUserId != ''">
+                    AND p.id IN (
+                        SELECT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{currentUserId} AND pm.is_active = 1
+                    )
+                </if>
+                <if test="currentUserId == null or currentUserId == ''">
+                    <!-- 未登录用户无法查看任何项目 -->
+                    1=0
+                </if>
+            </if>
             <if test="id != null and id != ''"> AND p.id = #{id}</if>
         </where>
+    </sql>
+
+    <select id="selectProjectsList" parameterType="Projects" resultMap="ProjectsResult">
+        <include refid="selectProjectsListVo"/>
+    </select>
+
+    <select id="selectProjectsById" parameterType="Projects" resultMap="ProjectsResult">
+        <include refid="selectProjectsByIdVo"/>
     </select>
 
     <insert id="insertProjects" parameterType="Projects">

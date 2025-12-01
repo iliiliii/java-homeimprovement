@@ -74,6 +74,9 @@ public class ProjectSchedules extends BaseEntity
     /** 批量操作ID集合（用于批量删除） */
     private String[] ids;
 
+    /** 是否为管理员（用于数据权限控制） */
+    private Boolean isAdmin;
+
     public void setId(String id) 
     {
         this.id = id;
@@ -242,6 +245,16 @@ public class ProjectSchedules extends BaseEntity
     public String[] getIds()
     {
         return ids;
+    }
+
+    public void setIsAdmin(Boolean isAdmin)
+    {
+        this.isAdmin = isAdmin;
+    }
+
+    public Boolean getIsAdmin()
+    {
+        return isAdmin;
     }
 
     @Override
