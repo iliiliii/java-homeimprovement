@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.web.mapper.QualityFixesMapper">
+    
+    <resultMap type="QualityFixes" id="QualityFixesResult">
+        <result property="id"    column="id"    />
+        <result property="qualityIssuesId"    column="quality_issues_id"    />
+        <result property="fixDescription"    column="fix_description"    />
+        <result property="images"    column="images"    />
+        <result property="status"    column="status"    />
+        <result property="fixedAt"    column="fixed_at"    />
+        <result property="verifiedAt"    column="verified_at"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+        <result property="createdBy"    column="created_by"    />
+        <result property="updatedBy"    column="updated_by"    />
+    </resultMap>
+
+    <sql id="selectQualityFixesVo">
+        select id, quality_issues_id, fix_description, images, status, fixed_at, verified_at, created_at, updated_at, created_by, updated_by from quality_fixes
+    </sql>
+
+    <select id="selectQualityFixesList" parameterType="QualityFixes" resultMap="QualityFixesResult">
+        <include refid="selectQualityFixesVo"/>
+        <where>  
+            <if test="qualityIssuesId != null  and qualityIssuesId != ''"> and quality_issues_id = #{qualityIssuesId}</if>
+        </where>
+    </select>
+    
+    <select id="selectQualityFixesById" parameterType="String" resultMap="QualityFixesResult">
+        <include refid="selectQualityFixesVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertQualityFixes" parameterType="QualityFixes">
+        insert into quality_fixes
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="qualityIssuesId != null and qualityIssuesId != ''">quality_issues_id,</if>
+            <if test="fixDescription != null and fixDescription != ''">fix_description,</if>
+            <if test="images != null and images != ''">images,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="fixedAt != null">fixed_at,</if>
+            <if test="verifiedAt != null">verified_at,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+            <if test="createdBy != null">created_by,</if>
+            <if test="updatedBy != null">updated_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="qualityIssuesId != null and qualityIssuesId != ''">#{qualityIssuesId},</if>
+            <if test="fixDescription != null and fixDescription != ''">#{fixDescription},</if>
+            <if test="images != null and images != ''">#{images},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="fixedAt != null">#{fixedAt},</if>
+            <if test="verifiedAt != null">#{verifiedAt},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            <if test="updatedBy != null">#{updatedBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateQualityFixes" parameterType="QualityFixes">
+        update quality_fixes
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="qualityIssuesId != null and qualityIssuesId != ''">quality_issues_id = #{qualityIssuesId},</if>
+            <if test="fixDescription != null and fixDescription != ''">fix_description = #{fixDescription},</if>
+            <if test="images != null and images != ''">images = #{images},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="fixedAt != null">fixed_at = #{fixedAt},</if>
+            <if test="verifiedAt != null">verified_at = #{verifiedAt},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="createdBy != null">created_by = #{createdBy},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteQualityFixesById" parameterType="String">
+        delete from quality_fixes where id = #{id}
+    </delete>
+
+    <delete id="deleteQualityFixesByIds" parameterType="String">
+        delete from quality_fixes where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
