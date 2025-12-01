@@ -65,23 +65,17 @@
                 <el-icon><Location /></el-icon>
                 <span>{{ project.address || '未设置地址' }}</span>
               </div>
-              <div class="project-stats">
-                <div class="stat-item">
-                  <span class="stat-label">总检查</span>
-                  <span class="stat-value stat-value-blue">{{ getTotalInspections(project) }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">通过</span>
-                  <span class="stat-value stat-value-green">{{ getPassedInspections(project) }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">问题</span>
-                  <span class="stat-value stat-value-red">{{ getFailedInspections(project) }}</span>
-                </div>
-              </div>
-              <div v-if="getPendingIssuesCount(project) > 0" class="pending-issues-alert">
-                <el-icon><Warning /></el-icon>
-                <span>{{ getPendingIssuesCount(project) }}个问题待处理</span>
+              <div class="project-progress-info">
+                <el-progress
+                  :percentage="getPassRate(project)"
+                  :stroke-width="8"
+                  :show-text="true"
+                  :format="(percentage) => `${percentage}%`"
+                >
+                  <div class="progress-summary">
+                    已检查 {{ getTotalInspections(project) }} · 不通过 {{ getFailedInspections(project) }} · 问题 {{ getPendingIssuesCount(project) }}
+                  </div>
+                </el-progress>
               </div>
             </div>
             <el-empty v-if="inProgressProjects.length === 0" description="暂无进行中的项目" :image-size="100" />
