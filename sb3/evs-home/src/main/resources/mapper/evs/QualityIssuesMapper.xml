@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.web.mapper.QualityIssuesMapper">
+    
+    <resultMap type="QualityIssues" id="QualityIssuesResult">
+        <result property="id"    column="id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="qualityInspectionId"    column="quality_inspection_id"    />
+        <result property="title"    column="title"    />
+        <result property="description"    column="description"    />
+        <result property="category"    column="category"    />
+        <result property="location"    column="location"    />
+        <result property="images"    column="images"    />
+        <result property="status"    column="status"    />
+        <result property="resolvedAt"    column="resolved_at"    />
+        <result property="dueDate"    column="due_date"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+        <result property="createdBy"    column="created_by"    />
+        <result property="updatedBy"    column="updated_by"    />
+    </resultMap>
+
+    <sql id="selectQualityIssuesVo">
+        select id, project_id, quality_inspection_id, title, description, category, location, images, status, resolved_at, due_date, created_at, updated_at, created_by, updated_by from quality_issues
+    </sql>
+
+    <select id="selectQualityIssuesList" parameterType="QualityIssues" resultMap="QualityIssuesResult">
+        <include refid="selectQualityIssuesVo"/>
+        <where>  
+            <if test="title != null  and title != ''"> and title = #{title}</if>
+            <if test="description != null  and description != ''"> and description = #{description}</if>
+            <if test="category != null  and category != ''"> and category = #{category}</if>
+            <if test="location != null  and location != ''"> and location = #{location}</if>
+            <if test="images != null  and images != ''"> and images = #{images}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="resolvedAt != null "> and resolved_at = #{resolvedAt}</if>
+        </where>
+    </select>
+    
+    <select id="selectQualityIssuesById" parameterType="String" resultMap="QualityIssuesResult">
+        <include refid="selectQualityIssuesVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertQualityIssues" parameterType="QualityIssues">
+        insert into quality_issues
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="projectId != null">project_id,</if>
+            <if test="qualityInspectionId != null">quality_inspection_id,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="description != null and description != ''">description,</if>
+            <if test="category != null and category != ''">category,</if>
+            <if test="location != null">location,</if>
+            <if test="images != null and images != ''">images,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="resolvedAt != null">resolved_at,</if>
+            <if test="dueDate != null">due_date,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+            <if test="createdBy != null">created_by,</if>
+            <if test="updatedBy != null">updated_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="projectId != null">#{projectId},</if>
+            <if test="qualityInspectionId != null">#{qualityInspectionId},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="description != null and description != ''">#{description},</if>
+            <if test="category != null and category != ''">#{category},</if>
+            <if test="location != null">#{location},</if>
+            <if test="images != null and images != ''">#{images},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="resolvedAt != null">#{resolvedAt},</if>
+            <if test="dueDate != null">#{dueDate},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            <if test="updatedBy != null">#{updatedBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateQualityIssues" parameterType="QualityIssues">
+        update quality_issues
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="qualityInspectionId != null">quality_inspection_id = #{qualityInspectionId},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="category != null and category != ''">category = #{category},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="images != null and images != ''">images = #{images},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="resolvedAt != null">resolved_at = #{resolvedAt},</if>
+            <if test="dueDate != null">due_date = #{dueDate},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="createdBy != null">created_by = #{createdBy},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteQualityIssuesById" parameterType="String">
+        delete from quality_issues where id = #{id}
+    </delete>
+
+    <delete id="deleteQualityIssuesByIds" parameterType="String">
+        delete from quality_issues where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
