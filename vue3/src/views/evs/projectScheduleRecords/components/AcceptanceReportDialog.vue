@@ -503,11 +503,25 @@ async function handleSubmit() {
       acceptor: acceptanceForm.value.acceptor
     }
 
+    // 编辑模式下添加ID字段
+    if (props.isEdit && props.editRecord?.id) {
+      recordData.id = props.editRecord.id
+    }
+
     console.log('提交验收记录数据:', recordData)
 
-    // 直接调用API，不依赖父组件
-    const { addProjectScheduleRecords } = await import('@/api/evs/projectScheduleRecords')
-    await addProjectScheduleRecords(recordData)
+    // 根据编辑模式调用不同的API
+    const { addProjectScheduleRecords, updateProjectScheduleRecords } = await import('@/api/evs/projectScheduleRecords')
+
+    if (props.isEdit) {
+      // 编辑模式：调用更新API
+      await updateProjectScheduleRecords(recordData)
+      console.log('编辑模式：调用更新API')
+    } else {
+      // 新增模式：调用新增API
+      await addProjectScheduleRecords(recordData)
+      console.log('新增模式：调用新增API')
+    }
 
     // API调用成功监控
     const apiEndTime = Date.now()
@@ -515,7 +529,11 @@ async function handleSubmit() {
     console.log(`API调用成功，耗时: ${apiDuration}ms`)
 
     // 成功处理
-    proxy.$modal.msgSuccess('验收上报成功')
+    if (props.isEdit) {
+      proxy.$modal.msgSuccess('验收记录更新成功')
+    } else {
+      proxy.$modal.msgSuccess('验收上报成功')
+    }
     emit('success', recordData)
 
     // 重置loading状态

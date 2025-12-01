@@ -320,13 +320,12 @@ async function loadAcceptanceRecords(projectId, forceRefresh = false, cacheKey =
   // 添加请求标识符
   const requestId = cacheKey || `load-acceptance-${projectId}-${Date.now()}`
 
-  // 检查缓存（除非强制刷新）
-  if (!forceRefresh && acceptanceRecords.value.length > 0) {
-    console.log('使用缓存的验收记录，跳过API调用')
-    return
-  }
+  // ✅ 优化：每次都清空旧数据，确保数据新鲜
+  console.log(`[验收记录] 清空旧数据，项目ID: ${projectId}`)
+  acceptanceRecords.value = []
+  recordImageCache.clear()
 
-  console.log(`开始加载验收记录，请求ID: ${requestId}`)
+  console.log(`[验收记录] 开始加载验收记录，项目ID: ${projectId}，请求ID: ${requestId}`)
   recordsLoading.value = true
 
   try {
@@ -339,56 +338,68 @@ async function loadAcceptanceRecords(projectId, forceRefresh = false, cacheKey =
       _requestId: requestId  // 添加请求标识符
     })
 
-    console.log('API响应成功，记录数量:', response.rows?.length || 0)
+    console.log('[验收记录] API响应成功，记录数量:', response.rows?.length || 0)
+    console.log('[验收记录] API返回数据:', response.rows)
 
-    const oldRecords = [...acceptanceRecords.value]
     acceptanceRecords.value = response.rows || []
-    recordImageCache.clear()
 
-    // 检测新记录
-    const newRecords = acceptanceRecords.value.filter(record =>
-      !oldRecords.some(oldRecord => oldRecord.id === record.id)
-    )
-
-    if (newRecords.length > 0) {
-      console.log('发现新验收记录:', newRecords.length, '条')
-      newRecords.forEach(record => {
-        console.log('新记录详情:', {
-          id: record.id,
-          title: record.acceptanceTitle,
-          acceptor: record.acceptor,
-          time: record.acceptanceTime
-        })
-      })
-    }
+    // 输出验收记录详情
+    console.log('[验收记录] 加载完成，验收记录详情:', acceptanceRecords.value.map(r => ({
+      id: r.id,
+      scheduleId: r.scheduleId,
+      title: r.acceptanceTitle || '无标题',
+      acceptor: r.acceptor || '未知',
+      time: r.acceptanceTime
+    })))
 
     // 通知父组件数据已更新
     emit('records-updated', acceptanceRecords.value)
-    emit('refresh-complete', { requestId, newRecords })
+    emit('refresh-complete', { requestId, newRecords: acceptanceRecords.value })
 
   } catch (error) {
-    console.error('加载验收记录失败:', error)
+    console.error('[验收记录] 加载验收记录失败:', error)
     proxy.$modal.msgError('加载验收记录失败: ' + (error.message || error.msg))
-
-    // 尝试使用缓存数据
-    if (acceptanceRecords.value.length > 0) {
-      console.warn('API调用失败，使用缓存数据')
-      proxy.$modal.msgWarning('显示缓存数据，可能不是最新')
-    }
 
     emit('refresh-error', { requestId, error })
 
   } finally {
     recordsLoading.value = false
-    console.log(`请求完成，请求ID: ${requestId}`)
+    console.log(`[验收记录] 请求完成，请求ID: ${requestId}`)
   }
 }
 
 /** 获取指定进度的验收记录 */
 function getAcceptanceRecords(scheduleId) {
-  return acceptanceRecords.value
+  const records = acceptanceRecords.value
     .filter(record => record.scheduleId === scheduleId)
     .sort((a, b) => new Date(b.acceptanceTime) - new Date(a.acceptanceTime))
+  // ✅ 增强调试日志：每次都输出，帮助定位问题
+  console.log(`[验收记录调试] 查询进度ID: ${scheduleId}`)
+  console.log(`[验收记录调试] 总验收记录数: ${acceptanceRecords.value.length}`)
+  console.log(`[验收记录调试] 所有验收记录的ID映射:`, acceptanceRecords.value.map(r => ({
+    id: r.id,
+    scheduleId: r.scheduleId,
+    title: r.acceptanceTitle || '无标题'
+  })))
+  console.log(`[验收记录调试] 匹配到记录数: ${records.length}`)
+
+  if (records.length === 0) {
+    console.log(`[验收记录调试] ❌ 未找到匹配的验收记录`)
+    console.log(`[验收记录调试] 🔍 详细对比:`, {
+      查询的scheduleId: scheduleId,
+      验收记录中的scheduleId集合: [...new Set(acceptanceRecords.value.map(r => r.scheduleId))],
+      是否存在匹配的scheduleId: acceptanceRecords.value.some(r => r.scheduleId === scheduleId)
+    })
+  } else {
+    console.log(`[验收记录调试] ✅ 匹配的验收记录:`, records.map(r => ({
+      id: r.id,
+      scheduleId: r.scheduleId,
+      title: r.acceptanceTitle,
+      time: r.acceptanceTime
+    })))
+  }
+
+  return records
 }
 
 /** 获取图片URL */
@@ -577,9 +588,11 @@ function getImageViewerOptions(imagesJson) {
 }
 
 // 监听项目变化，自动加载验收记录
-watch(() => props.project?.id, (newVal) => {
+watch(() => props.project?.id, (newVal, oldVal) => {
+  console.log(`[项目切换] 从 ${oldVal} 切换到 ${newVal}`)
   if (newVal) {
-    loadAcceptanceRecords(newVal)
+    // ✅ 优化：每次切换项目都重新获取验收记录
+    loadAcceptanceRecords(newVal, false, 'watch-' + Date.now())
   } else {
     acceptanceRecords.value = []
   }
@@ -589,10 +602,9 @@ watch(() => props.project?.id, (newVal) => {
 defineExpose({
   refreshAcceptanceRecords: () => {
     if (props.project?.id) {
-      console.log('刷新验收记录，项目ID:', props.project.id)
-      // 强制刷新，并添加随机参数防止缓存
-      const timestamp = Date.now()
-      loadAcceptanceRecords(props.project.id, true, timestamp)
+      console.log('[验收记录] 手动刷新验收记录，项目ID:', props.project.id)
+      // ✅ 优化：每次刷新都重新获取数据
+      loadAcceptanceRecords(props.project.id, false, 'manual-' + Date.now())
     } else {
       console.warn('无法刷新验收记录：项目ID为空')
     }
@@ -601,8 +613,9 @@ defineExpose({
   // 添加强制刷新方法，绕过缓存
   forceRefreshAcceptanceRecords: () => {
     if (props.project?.id) {
-      console.log('强制刷新验收记录')
-      loadAcceptanceRecords(props.project.id, true, 'force-' + Date.now())
+      console.log('[验收记录] 强制刷新验收记录')
+      // ✅ 优化：每次都重新获取数据
+      loadAcceptanceRecords(props.project.id, false, 'force-' + Date.now())
     }
   },
 
@@ -612,7 +625,7 @@ defineExpose({
       const startTime = Date.now()
       const checkInterval = setInterval(() => {
         // 刷新数据
-        loadAcceptanceRecords(props.project.id, true, 'wait-' + Date.now())
+        loadAcceptanceRecords(props.project.id, false, 'wait-' + Date.now())
 
         // 检查是否包含新记录
         const newRecord = acceptanceRecords.value.find(r => r.id === recordId)

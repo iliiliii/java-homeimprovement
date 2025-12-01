@@ -281,23 +281,10 @@ function handleDeleteAcceptance(record) {
   console.log('删除验收记录:', record)
 }
 
-/** 处理编辑验收提交 */
+/** 处理编辑验收提交 - 对话框组件已自行处理API调用 */
 function handleSubmitEditAcceptance(recordData) {
-  // 添加ID用于更新
-  recordData.id = currentEditRecord.value.id
-
-  updateProjectScheduleRecords(recordData).then(() => {
-    proxy.$modal.msgSuccess('验收记录更新成功')
-    acceptanceEditOpen.value = false
-    if (selectedProject.value) {
-      loadProjectSchedules(selectedProject.value.id)
-      // 刷新验收记录
-      scheduleDetailRef.value?.refreshAcceptanceRecords()
-    }
-  }).catch(error => {
-    handleError(error, '验收记录更新')
-    acceptanceDialogRef.value?.setSaving(false)
-  })
+  // 对话框组件已自行处理API调用，此函数保留是为了向后兼容
+  console.log('handleSubmitEditAcceptance被调用，但API调用已由对话框组件处理')
 }
 
 /** 编辑验收成功回调 */
