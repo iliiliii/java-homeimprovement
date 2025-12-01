@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设计方案 - 智享家 Pro</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* Sticky Header for Tags */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(245, 247, 250, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            margin: 0 -24px 24px -24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .room-scroll-container {
+            flex: 1;
+            overflow: hidden;
+            /* Hide scrollbar for cleaner look */
+        }
+
+        .room-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 0;
+            scrollbar-width: none;
+        }
+
+        .room-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .room-chip {
+            white-space: nowrap;
+            padding: 8px 20px;
+            background: white;
+            border-radius: 100px;
+            color: var(--glass-text-muted);
+            font-size: 14px;
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .room-chip.active {
+            background: var(--glass-accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(45, 91, 255, 0.3);
+        }
+
+        .show-all-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-card);
+            color: var(--glass-text-main);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* Design Cards */
+        .design-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .design-img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .design-info {
+            padding: 16px;
+        }
+
+        .version-badge {
+            background: var(--glass-bg);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--glass-text-muted);
+        }
+
+        /* Drawer */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drawer {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-radius: 32px 32px 0 0;
+            padding: 24px;
+            z-index: 999;
+            transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .drawer.active {
+            bottom: 0;
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .room-grid-item {
+            background: var(--glass-bg);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--glass-text-main);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+        }
+
+        .room-grid-item.active {
+            background: var(--glass-accent);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <a href="dashboard.html" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="page-title">设计方案</div>
+        <div style="width: 24px;"></div>
+    </div>
+
+    <div style="padding: 0 24px;">
+        <!-- Sticky Header with Horizontal Scroll and Drawer Toggle -->
+        <div class="sticky-header">
+            <div class="room-scroll-container">
+                <div class="room-scroll" id="roomScroll">
+                    <div class="room-chip active" onclick="filterRoom('all', this)">全部</div>
+                    <div class="room-chip" onclick="filterRoom('living', this)">客厅</div>
+                    <div class="room-chip" onclick="filterRoom('master', this)">主卧</div>
+                    <div class="room-chip" onclick="filterRoom('dining', this)">餐厅</div>
+                    <div class="room-chip" onclick="filterRoom('study', this)">书房</div>
+                    <div class="room-chip" onclick="filterRoom('kitchen', this)">厨房</div>
+                    <div class="room-chip" onclick="filterRoom('bath', this)">卫浴</div>
+                    <div class="room-chip" onclick="filterRoom('kids', this)">儿童房</div>
+                    <div class="room-chip" onclick="filterRoom('balcony', this)">阳台</div>
+                </div>
+            </div>
+            <div class="show-all-btn" onclick="toggleDrawer()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Design Cards Container -->
+        <div id="designContainer">
+            <div class="design-card" data-room="living">
+                <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    class="design-img" onclick="openLightbox(this.src)">
+                <div class="design-info">
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <h3 style="font-size: 18px;">客厅 - 现代极简方案</h3>
+                        <span class="version-badge">v2.0</span>
+                    </div>
+                    <p style="font-size: 14px; color: var(--glass-text-muted); margin-bottom: 16px;">
+                        调整了电视背景墙的材质，采用岩板+格栅组合。沙发配色改为米灰色。
+                    </p>
+                    <div class="flex-between">
+                        <button class="glass-btn"
+                            style="width: auto; padding: 8px 20px; font-size: 14px; background: var(--glass-bg); color: var(--glass-text-main);">历史版本</button>
+                        <button class="glass-btn" style="width: auto; padding: 8px 20px; font-size: 14px;">确认方案</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="design-card" data-room="living">
+                <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    class="design-img" onclick="openLightbox(this.src)">
+                <div class="design-info">
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <h3 style="font-size: 18px;">客厅 - 视角 B</h3>
+                        <span class="version-badge">v2.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="design-card" data-room="master">
+                <img src="https://images.unsplash.com/photo-1616594039964-40891a9cbc81?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    class="design-img" onclick="openLightbox(this.src)">
+                <div class="design-info">
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <h3 style="font-size: 18px;">主卧 - 暖色调方案</h3>
+                        <span class="version-badge">v1.5</span>
+                    </div>
+                    <p style="font-size: 14px; color: var(--glass-text-muted); margin-bottom: 16px;">
+                        增加床头氛围灯带，衣柜门板调整为肤感膜。
+                    </p>
+                    <div class="flex-between">
+                        <button class="glass-btn"
+                            style="width: auto; padding: 8px 20px; font-size: 14px; background: var(--glass-bg); color: var(--glass-text-main);">历史版本</button>
+                        <button class="glass-btn" style="width: auto; padding: 8px 20px; font-size: 14px;">确认方案</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="design-card" data-room="dining">
+                <img src="https://images.unsplash.com/photo-1617806118233-18e1de247200?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    class="design-img" onclick="openLightbox(this.src)">
+                <div class="design-info">
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <h3 style="font-size: 18px;">餐厅 - 岛台设计</h3>
+                        <span class="version-badge">v1.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drawer for All Rooms -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+    <div class="drawer" id="roomDrawer">
+        <div class="drawer-header">
+            <div style="font-size: 18px; font-weight: 600;">选择空间</div>
+            <div onclick="toggleDrawer()" style="cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </div>
+        </div>
+        <div class="room-grid">
+            <div class="room-grid-item active" onclick="selectFromDrawer('all', this)">全部</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('living', this)">客厅</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('master', this)">主卧</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('dining', this)">餐厅</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('study', this)">书房</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('kitchen', this)">厨房</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('bath', this)">卫浴</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('kids', this)">儿童房</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('balcony', this)">阳台</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('entry', this)">玄关</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('corridor', this)">过道</div>
+            <div class="room-grid-item" onclick="selectFromDrawer('storage', this)">储物间</div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <div class="lightbox-close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+        <img src="" class="lightbox-img" id="lightboxImg">
+    </div>
+
+    <script>
+        // Filter Logic
+        function filterRoom(room, element) {
+            // Update Active State in Scroll
+            document.querySelectorAll('.room-scroll .room-chip').forEach(el => el.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            // Update Active State in Drawer (Sync)
+            document.querySelectorAll('.room-grid-item').forEach(el => {
+                el.classList.remove('active');
+                if (el.innerText === element?.innerText) el.classList.add('active');
+            });
+
+            // Filter Cards
+            const cards = document.querySelectorAll('.design-card');
+            cards.forEach(card => {
+                if (room === 'all' || card.dataset.room === room) {
+                    card.style.display = 'block';
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 50);
+                } else {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    setTimeout(() => card.style.display = 'none', 300);
+                }
+            });
+        }
+
+        // Drawer Logic
+        function toggleDrawer() {
+            const drawer = document.getElementById('roomDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function selectFromDrawer(room, element) {
+            // Find corresponding chip in scroll and click it
+            const scrollChips = document.querySelectorAll('.room-scroll .room-chip');
+            let targetChip = null;
+
+            // Simple text matching for demo
+            scrollChips.forEach(chip => {
+                if (chip.innerText === element.innerText) targetChip = chip;
+            });
+
+            if (targetChip) {
+                targetChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                filterRoom(room, targetChip);
+            } else {
+                // Fallback if not in scroll list (e.g. hidden items)
+                filterRoom(room, null);
+                // Update drawer active state manually since filterRoom might not find a scroll chip
+                document.querySelectorAll('.room-grid-item').forEach(el => el.classList.remove('active'));
+                element.classList.add('active');
+            }
+
+            toggleDrawer();
+        }
+
+        // Lightbox Logic
+        function openLightbox(src) {
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightboxImg');
+            img.src = src;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+    </script>
+</body>
+
+</html>

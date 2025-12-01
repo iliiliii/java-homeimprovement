@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>施工日志 - 智享家 Pro</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .log-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .log-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .log-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #eee;
+        }
+
+        .icon-small {
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <a href="dashboard.html" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="page-title">施工日志</div>
+        <div style="width: 24px;"></div>
+    </div>
+
+    <div style="padding: 0 24px;">
+        <div class="log-card">
+            <div class="flex-between" style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 32px; height: 32px; background: #eee; border-radius: 50%;"></div>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600;">张工长</div>
+                        <div style="font-size: 10px; color: var(--glass-text-muted);">10分钟前</div>
+                    </div>
+                </div>
+                <span
+                    style="background: rgba(0, 194, 178, 0.1); color: var(--glass-success); padding: 2px 8px; border-radius: 4px; font-size: 12px;">验收合格</span>
+            </div>
+            <p style="font-size: 14px; line-height: 1.5; margin-bottom: 8px;">
+                今日水电验收顺利完成。所有点位核对无误，水管打压8kg/30min正常。
+            </p>
+            <div class="log-grid">
+                <img src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
+                    class="log-thumb">
+                <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
+                    class="log-thumb">
+                <img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
+                    class="log-thumb">
+            </div>
+            <div
+                style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--glass-bg); font-size: 12px; color: var(--glass-text-muted); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon-small" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                御景壹号 · 天气 晴 22°C
+            </div>
+        </div>
+
+        <div class="log-card">
+            <div class="flex-between" style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 32px; height: 32px; background: #eee; border-radius: 50%;"></div>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600;">李监理</div>
+                        <div style="font-size: 10px; color: var(--glass-text-muted);">昨天 14:20</div>
+                    </div>
+                </div>
+                <span
+                    style="background: rgba(255, 176, 32, 0.1); color: var(--glass-warning); padding: 2px 8px; border-radius: 4px; font-size: 12px;">需整改</span>
+            </div>
+            <p style="font-size: 14px; line-height: 1.5; margin-bottom: 8px;">
+                巡检发现次卧空调插座位置偏低，已要求工长整改。
+            </p>
+            <div class="log-grid">
+                <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
+                    class="log-thumb">
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

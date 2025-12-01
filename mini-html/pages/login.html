@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 智享家 Pro</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 32px;
+            position: relative;
+        }
+
+        .bg-blob {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: var(--glass-accent);
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            z-index: -1;
+        }
+
+        .blob-1 {
+            top: -50px;
+            left: -50px;
+        }
+
+        .blob-2 {
+            bottom: -50px;
+            right: -50px;
+            background: var(--glass-success);
+        }
+
+        .icon-logo {
+            width: 64px;
+            height: 64px;
+            color: white;
+            background: var(--glass-accent);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 20px rgba(45, 91, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="bg-blob blob-1"></div>
+        <div class="bg-blob blob-2"></div>
+
+        <div style="margin-bottom: 40px;">
+            <div class="icon-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </div>
+            <h1 style="font-size: 32px; margin-bottom: 8px;">工程管理</h1>
+            <p style="color: var(--glass-text-muted);">智享家 Pro · 全流程装修管家</p>
+        </div>
+
+        <div class="glass-card">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">手机号码</label>
+                <input type="tel" class="glass-input" value="138****3967">
+            </div>
+
+            <div style="margin-bottom: 32px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500;">项目编号</label>
+                <input type="text" class="glass-input" value="PJ-20251125-01">
+            </div>
+
+            <a href="dashboard.html" class="glass-btn">
+                进入项目
+            </a>
+        </div>
+    </div>
+</body>
+
+</html>

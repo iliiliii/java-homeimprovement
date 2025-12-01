@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目概览 - 智享家 Pro</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .hero-section {
+            padding: 0 24px;
+            margin-bottom: 24px;
+        }
+
+        .progress-card {
+            background: linear-gradient(135deg, var(--glass-accent), #5E81FF);
+            color: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(45, 91, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--glass-text-main);
+        }
+
+        .menu-icon-box {
+            width: 56px;
+            height: 56px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--glass-text-main);
+            box-shadow: var(--shadow-card);
+        }
+
+        .menu-icon-box svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* State Toggle for Demo */
+        .state-toggle {
+            position: fixed;
+            top: 100px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 999;
+            cursor: pointer;
+        }
+
+        /* State: Design */
+        .state-design .construction-only {
+            display: none;
+        }
+
+        .state-design .design-only {
+            display: block;
+        }
+
+        /* State: Construction */
+        .state-construction .construction-only {
+            display: block;
+        }
+
+        .state-construction .design-only {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="state-design"> <!-- Default to Design State -->
+
+    <div class="state-toggle" onclick="toggleState()">切换状态 (演示用)</div>
+
+    <div class="header">
+        <div>
+            <div style="font-size: 14px; color: var(--glass-text-muted);">御景壹号 · 150㎡</div>
+            <div class="design-only" style="font-size: 20px; font-weight: 700;">方案设计中</div>
+            <div class="construction-only" style="font-size: 20px; font-weight: 700;">施工进行中</div>
+        </div>
+        <div
+            style="width: 40px; height: 40px; background: white; border-radius: 50%; box-shadow: var(--shadow-card); display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+        </div>
+    </div>
+
+    <div class="hero-section">
+        <div class="progress-card">
+            <div style="position: relative; z-index: 1;">
+                <div class="flex-between" style="margin-bottom: 16px;">
+                    <span class="design-only" style="opacity: 0.9;">当前阶段: 深化设计</span>
+                    <span class="construction-only" style="opacity: 0.9;">当前阶段: 水电工程</span>
+                    <span
+                        style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-size: 12px;">正常推进</span>
+                </div>
+                <div
+                    style="height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                    <div class="design-only" style="width: 40%; height: 100%; background: white;"></div>
+                    <div class="construction-only" style="width: 35%; height: 100%; background: white;"></div>
+                </div>
+                <div class="flex-between" style="font-size: 12px; opacity: 0.8;">
+                    <span class="design-only">方案确认度 40%</span>
+                    <span class="construction-only">总进度 35%</span>
+                    <span>预计 12.10 节点完成</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="padding: 0 24px; margin-bottom: 24px;">
+        <div class="menu-grid" style="margin-bottom: 0;">
+            <!-- Design State Menu -->
+            <a href="design_gallery.html" class="menu-item design-only">
+                <div class="menu-icon-box" style="color: #FF6B6B;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                </div>
+                <span style="font-size: 12px; font-weight: 500;">设计图</span>
+            </a>
+
+            <!-- Construction State Menu -->
+            <a href="schedule.html" class="menu-item construction-only">
+                <div class="menu-icon-box" style="color: #4ECDC4;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <span style="font-size: 12px; font-weight: 500;">排期</span>
+            </a>
+            <a href="project_log.html" class="menu-item construction-only">
+                <div class="menu-icon-box" style="color: #45B7D1;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <span style="font-size: 12px; font-weight: 500;">日志</span>
+            </a>
+
+            <!-- Common Menu -->
+            <a href="shopping_list.html" class="menu-item">
+                <div class="menu-icon-box" style="color: #96CEB4;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                </div>
+                <span style="font-size: 12px; font-weight: 500;">清单</span>
+            </a>
+            <a href="budget.html" class="menu-item">
+                <div class="menu-icon-box" style="color: #FFB020;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <span style="font-size: 12px; font-weight: 500;">预算</span>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Design State Content -->
+    <div class="design-only" style="padding: 0 24px;">
+        <div class="section-title">设计方案</div>
+        <div class="glass-card" onclick="window.location.href='design_gallery.html'">
+            <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                style="width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 12px;">
+            <div class="flex-between">
+                <div>
+                    <div style="font-weight: 600;">全屋效果图 v2.0</div>
+                    <div style="font-size: 12px; color: var(--glass-text-muted);">更新于 今天 09:30</div>
+                </div>
+                <span style="color: var(--glass-accent); font-size: 14px;">查看 ></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Construction State Content -->
+    <div class="construction-only" style="padding: 0 24px 100px;">
+        <div class="flex-between" style="margin-bottom: 16px;">
+            <div class="section-title" style="margin-bottom: 0;">最新日志</div>
+            <a href="project_log.html"
+                style="font-size: 12px; color: var(--glass-text-muted); text-decoration: none;">查看全部</a>
+        </div>
+        <a href="log_detail.html" class="log-preview" style="text-decoration: none; color: inherit;">
+            <img src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
+                class="log-img">
+            <div style="flex: 1;">
+                <div class="flex-between" style="margin-bottom: 4px;">
+                    <span style="font-weight: 600;">水电验收</span>
+                    <span style="font-size: 12px; color: var(--glass-text-muted);">今天 10:30</span>
+                </div>
+                <p
+                    style="font-size: 12px; color: var(--glass-text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    今日进行水电节点验收，强弱电间距符合标准，水管打压测试8kg保压30分钟无掉压。
+                </p>
+            </div>
+        </a>
+    </div>
+
+    <div class="nav-bar">
+        <a href="#" class="nav-item active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>概览</span>
+        </a>
+        <a href="schedule.html" class="nav-item construction-only">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>进度</span>
+        </a>
+        <a href="design_gallery.html" class="nav-item design-only">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>设计</span>
+        </a>
+        <a href="brand.html" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                <line x1="16" y1="8" x2="2" y2="22"></line>
+                <line x1="17.5" y1="15" x2="9" y2="15"></line>
+            </svg>
+            <span>品牌</span>
+        </a>
+        <a href="#" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>我的</span>
+        </a>
+    </div>
+
+    <script>
+        function toggleState() {
+            const body = document.body;
+            if (body.classList.contains('state-design')) {
+                body.classList.remove('state-design');
+                body.classList.add('state-construction');
+            } else {
+                body.classList.remove('state-construction');
+                body.classList.add('state-design');
+            }
+        }
+    </script>
+</body>
+
+</html>
