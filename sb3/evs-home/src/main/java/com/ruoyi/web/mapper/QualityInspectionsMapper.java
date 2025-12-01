@@ -7,7 +7,7 @@ import com.ruoyi.web.domain.QualityInspections;
  * 质量检测Mapper接口
  * 
  * @author evs
- * @date 2025-11-26
+ * @date 2025-12-02
  */
 public interface QualityInspectionsMapper 
 {

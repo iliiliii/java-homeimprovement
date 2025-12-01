@@ -11,7 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 质量检测对象 quality_inspections
  * 
  * @author evs
- * @date 2025-11-26
+ * @date 2025-12-02
  */
 public class QualityInspections extends BaseEntity
 {

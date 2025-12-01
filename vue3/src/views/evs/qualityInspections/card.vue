@@ -116,41 +116,22 @@
               </div>
             </div>
 
-            <!-- 统计卡片 -->
-            <el-row :gutter="16" class="stat-cards-row">
-              <el-col :span="6">
-                <el-card shadow="never" class="stat-card stat-card-blue">
-                  <div class="stat-content">
-                    <div class="stat-label">总检查</div>
-                    <div class="stat-value">{{ getTotalInspections(selectedProject) }}次</div>
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :span="6">
-                <el-card shadow="never" class="stat-card stat-card-green">
-                  <div class="stat-content">
-                    <div class="stat-label">通过率</div>
-                    <div class="stat-value">{{ getPassRate(selectedProject) }}%</div>
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :span="6">
-                <el-card shadow="never" class="stat-card stat-card-red">
-                  <div class="stat-content">
-                    <div class="stat-label">不通过</div>
-                    <div class="stat-value">{{ getFailedInspections(selectedProject) }}次</div>
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :span="6">
-                <el-card shadow="never" class="stat-card stat-card-orange">
-                  <div class="stat-content">
-                    <div class="stat-label">待检查</div>
-                    <div class="stat-value">{{ getPendingInspections(selectedProject) }}项</div>
-                  </div>
-                </el-card>
-              </el-col>
-            </el-row>
+            <!-- 质检概览 -->
+            <div class="inspection-overview-section">
+              <div class="overview-header">
+                <span class="overview-label">质检概览</span>
+                <span class="overview-percentage">{{ getPassRate(selectedProject) }}%</span>
+              </div>
+              <el-progress
+                :percentage="getPassRate(selectedProject)"
+                :stroke-width="12"
+                :show-text="false"
+                style="margin-bottom: 8px;"
+              />
+              <div class="overview-footer">
+                <span>{{ getPassRate(selectedProject) }}% 通过率 · 已检查 {{ getTotalInspections(selectedProject) }} · 不通过 {{ getFailedInspections(selectedProject) }} · 问题 {{ getPendingIssuesCount(selectedProject) }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- 滚动区域：质检记录时间轴 -->
@@ -199,7 +180,9 @@
                                 <div class="issue-title">
                                   <el-icon style="color: #ff4d4f;"><WarningFilled /></el-icon>
                                   <span>{{ issue.title || '质量问题' }}</span>
-                                  <el-tag type="danger" size="small" style="margin-left: 8px;">待整改</el-tag>
+                                  <el-tag :type="getIssueStatusType(issue.status)" size="small" style="margin-left: 8px;">
+                                    {{ getIssueStatusText(issue.status) }}
+                                  </el-tag>
                                 </div>
                               </template>
                               <div class="issue-details">
@@ -215,14 +198,46 @@
                                   <span class="detail-label">上报人：</span>
                                   <span class="detail-value">{{ issue.reportedBy || issue.createdBy || item.createdBy || '未知' }}</span>
                                 </div>
-                                <el-button
-                                  type="primary"
-                                  size="small"
-                                  style="margin-top: 12px;"
-                                  @click="handleSubmitFix(issue)"
-                                >
-                                  提交整改
-                                </el-button>
+                                <div class="issue-detail-item" v-if="issue.dueDate">
+                                  <span class="detail-label">整改期限：</span>
+                                  <span class="detail-value">{{ proxy.parseTime(issue.dueDate, '{y}-{m}-{d}') }}</span>
+                                </div>
+                                <div class="issue-detail-item" v-if="issue.location">
+                                  <span class="detail-label">问题位置：</span>
+                                  <span class="detail-value">{{ issue.location }}</span>
+                                </div>
+                                <div class="issue-detail-item">
+                                  <span class="detail-label">问题分类：</span>
+                                  <el-tag :type="getIssueCategoryType(issue.category)" size="small">
+                                    {{ getIssueCategoryText(issue.category) }}
+                                  </el-tag>
+                                </div>
+                                <div class="issue-actions" style="margin-top: 12px;">
+                                  <el-button
+                                    v-if="issue.status === 'OPEN' || issue.status === 'IN_PROGRESS'"
+                                    type="primary"
+                                    size="small"
+                                    @click="handleSubmitFix(issue)"
+                                  >
+                                    提交整改
+                                  </el-button>
+                                  <el-button
+                                    v-if="issue.status === 'RESOLVED'"
+                                    type="success"
+                                    size="small"
+                                    disabled
+                                  >
+                                    已完成整改
+                                  </el-button>
+                                  <el-button
+                                    v-if="issue.images && JSON.parse(issue.images || '[]').length > 0"
+                                    type="default"
+                                    size="small"
+                                    @click="previewIssueImages(issue)"
+                                  >
+                                    查看图片
+                                  </el-button>
+                                </div>
                               </div>
                             </el-collapse-item>
                           </el-collapse>
@@ -279,27 +294,55 @@
             <el-option label="其他" value="其他" />
           </el-select>
         </el-form-item>
-        <el-form-item label="现场照片">
-          <el-upload
-            v-model:file-list="issueForm.images"
-            :action="uploadUrl"
-            list-type="picture-card"
-            :auto-upload="true"
-            :limit="20"
-            :headers="uploadHeaders"
-            :on-exceed="handleExceed"
-            :on-preview="handlePictureCardPreview"
-            :on-success="handleUploadSuccess"
-            :on-error="handleUploadError"
-            :before-upload="handleBeforeUpload"
-          >
-            <el-icon><Plus /></el-icon>
-            <template #tip>
-              <div class="el-upload__tip" style="color: #999; font-size: 12px; margin-top: 8px;">
-                (最多20张)
-              </div>
-            </template>
-          </el-upload>
+        <el-form-item label="问题分类" prop="category" required>
+          <el-select v-model="issueForm.category" placeholder="请选择问题分类" style="width: 100%;">
+            <el-option label="一般问题" value="GENERAL" />
+            <el-option label="红线问题" value="CRITICAL" />
+            <el-option label="紧急问题" value="URGENT" />
+            <el-option label="其他" value="OTHER" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="问题位置" prop="location">
+          <el-input
+            v-model="issueForm.location"
+            placeholder="请输入问题具体位置（如：主卧墙面、厨房水管等）"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="整改期限" prop="dueDate">
+          <el-date-picker
+            v-model="issueForm.dueDate"
+            type="date"
+            placeholder="请选择整改期限"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            style="width: 100%;"
+          />
+        </el-form-item>
+        <el-form-item label="现场照片" prop="images">
+          <ImageUploadCard
+            ref="uploadRef"
+            v-model="issueForm.images"
+            :upload-url="uploadUrl"
+            :upload-headers="uploadHeaders"
+            :max-count="20"
+            :max-size="10"
+            tip-text="(最多20张，支持多选)"
+            @success="handleUploadSuccess"
+            @error="handleUploadError"
+            @upload-status-change="handleUploadStatusChange"
+          />
+          <!-- 上传状态提示 -->
+          <div v-if="uploadStatus.totalFiles > 0" class="upload-status-tip">
+            <el-tag
+                :type="uploadStatus.isAllUploaded ? 'success' : 'warning'"
+                size="small"
+            >
+              <el-icon><Check v-if="uploadStatus.isAllUploaded" /><Loading v-else /></el-icon>
+              {{ uploadStatus.isAllUploaded ? '图片上传完成' : `正在上传图片 (${uploadStatus.uploadedFiles}/${uploadStatus.totalFiles})` }}
+            </el-tag>
+            <span v-if="!uploadStatus.isAllUploaded" class="upload-hint">请等待图片上传完成后再提交</span>
+          </div>
         </el-form-item>
         <el-form-item label="检查日期" prop="inspectionDate" required>
           <el-date-picker
@@ -315,10 +358,27 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="issueDialogOpen = false">取 消</el-button>
-          <el-button type="primary" @click="submitIssue" :loading="issueSaving">提交上报</el-button>
+          <el-button
+          type="primary"
+          @click="submitIssue"
+          :loading="issueSaving"
+          :disabled="!uploadStatus.isAllUploaded"
+        >
+          提交上报
+        </el-button>
         </div>
       </template>
     </el-dialog>
+
+    <!-- 整改提交对话框 -->
+    <FixSubmissionDialog
+      v-model:visible="fixDialogOpen"
+      :issue="currentIssue"
+      :upload-url="uploadUrl"
+      @success="handleFixSuccess"
+      @error="handleFixError"
+      @refresh="loadProjectInspections(selectedProject?.id)"
+    />
 
     <!-- 图片预览对话框 -->
     <el-dialog v-model="dialogImageVisible" title="图片预览" width="800px" append-to-body>
@@ -332,16 +392,31 @@ import { listQualityInspections } from "@/api/evs/qualityInspections"
 import { listProjectsWithCustomer } from "@/api/evs/projects"
 import { listProjectSchedules } from "@/api/evs/projectSchedules"
 import { addQualityInspections } from "@/api/evs/qualityInspections"
-import { Calendar, Location, CircleCheck, Warning, WarningFilled, Plus, User } from "@element-plus/icons-vue"
+import { addQualityIssues, listQualityIssues } from "@/api/evs/qualityIssues"
+import { addQualityFixes } from "@/api/evs/qualityFixes"
+import { Calendar, Location, CircleCheck, Warning, WarningFilled, Plus, User, Check, Loading } from "@element-plus/icons-vue"
 import { getToken } from "@/utils/auth"
 import { useProjectAuth } from '@/utils/projectAuth'
 import { onMounted } from 'vue'
+import FixSubmissionDialog from './components/FixSubmissionDialog.vue'
+import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
+import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
 const { decoration_project_status } = proxy.useDict('decoration_project_status')
 
 // 权限控制
 const { isAdmin, getUserProjectIds } = useProjectAuth()
+
+// 用户存储
+const userStore = useUserStore()
+
+// 上传状态管理
+const uploadStatus = ref({
+  isAllUploaded: true,
+  totalFiles: 0,
+  uploadedFiles: 0
+})
 
 // 图片上传配置
 const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/common/upload')
@@ -356,16 +431,34 @@ const inspectionItems = ref([])
 const inspectionLoading = ref(false)
 const projectInspectionsMap = ref(new Map()) // 存储每个项目的质检数据
 const expandedIssues = ref([])
+const inspectionIssuesMap = ref(new Map()) // 存储质检对应的问题列表
 
 // 问题上报相关
 const issueDialogOpen = ref(false)
 const issueSaving = ref(false)
 const dialogImageVisible = ref(false)
 const dialogImageUrl = ref('')
+
+// 整改相关
+const fixDialogOpen = ref(false)
+const currentIssue = ref(null)
+
+// 上传组件引用
+const uploadRef = ref(null)
+
+// 上传状态变化回调
+function handleUploadStatusChange(status) {
+  uploadStatus.value = status
+  console.log('上传状态变化:', status)
+}
+
 const issueForm = ref({
   title: '',
   description: '',
   inspectionType: '',
+  category: '',
+  location: '',
+  dueDate: '',
   images: [],
   inspectionDate: ''
 })
@@ -379,6 +472,9 @@ const issueRules = {
   ],
   inspectionType: [
     { required: true, message: '请选择质检类型', trigger: 'change' }
+  ],
+  category: [
+    { required: true, message: '请选择问题分类', trigger: 'change' }
   ],
   inspectionDate: [
     { required: true, message: '请选择检查日期', trigger: 'change' }
@@ -460,23 +556,48 @@ function selectProject(project) {
 }
 
 /** 加载项目质检记录 */
-function loadProjectInspections(projectId) {
+async function loadProjectInspections(projectId) {
   if (!projectId) return
-  
+
   inspectionLoading.value = true
-  listQualityInspections({ projectId, pageNum: 1, pageSize: 100 }).then(response => {
-    inspectionItems.value = (response.rows || []).sort((a, b) => {
+  try {
+    // 加载质检记录
+    const response = await listQualityInspections({ projectId, pageNum: 1, pageSize: 100 })
+    const inspections = response.rows || []
+
+    // 为每个质检记录加载对应的问题
+    const inspectionsWithIssues = await Promise.all(
+      inspections.map(async (inspection) => {
+        try {
+          const issuesResponse = await listQualityIssues({
+            qualityInspectionId: inspection.id,
+            pageNum: 1,
+            pageSize: 100
+          })
+          const issues = issuesResponse.rows || []
+          inspectionIssuesMap.value.set(inspection.id, issues)
+          return inspection
+        } catch (error) {
+          console.error(`加载质检记录 ${inspection.id} 的问题失败:`, error)
+          inspectionIssuesMap.value.set(inspection.id, [])
+          return inspection
+        }
+      })
+    )
+
+    inspectionItems.value = inspectionsWithIssues.sort((a, b) => {
       // 按检查日期倒序排序
       const dateA = new Date(a.inspectionDate || a.createdAt)
       const dateB = new Date(b.inspectionDate || b.createdAt)
       return dateB - dateA
     })
-    inspectionLoading.value = false
-  }).catch(error => {
+
+  } catch (error) {
     console.error('加载项目质检记录失败:', error)
     proxy.$modal.msgError('加载项目质检记录失败')
+  } finally {
     inspectionLoading.value = false
-  })
+  }
 }
 
 /** 获取项目质检数据（用于计算） */
@@ -540,32 +661,19 @@ function getPendingIssuesCount(project) {
   return count
 }
 
-/** 获取问题数量 */
+/** 获取问题数量（从缓存中获取） */
 function getIssuesCount(inspection) {
-  if (inspection.issues && Array.isArray(inspection.issues)) {
-    return inspection.issues.filter(issue => issue.status !== 'RESOLVED' && issue.status !== 'CLOSED').length
-  }
-  // 如果没有issues字段，根据描述判断（简单处理）
-  return inspection.result === 'UNQUALIFIED' ? 1 : 0
+  if (!inspection.id) return 0
+
+  const issues = inspectionIssuesMap.value.get(inspection.id) || []
+  return issues.filter(issue => issue.status !== 'RESOLVED' && issue.status !== 'CLOSED').length
 }
 
-/** 获取问题列表 */
+/** 获取问题列表（从缓存中获取） */
 function getIssuesList(inspection) {
-  if (inspection.issues && Array.isArray(inspection.issues)) {
-    return inspection.issues
-  }
-  // 如果没有issues字段，从描述中创建一个虚拟问题（用于显示）
-  if (inspection.result === 'UNQUALIFIED' && inspection.description) {
-    return [{
-      id: inspection.id + '_issue',
-      title: inspection.title || '质量问题',
-      description: inspection.description,
-      createdAt: inspection.inspectionDate || inspection.createdAt,
-      reportedBy: inspection.createdBy,
-      status: 'OPEN'
-    }]
-  }
-  return []
+  if (!inspection.id) return []
+
+  return inspectionIssuesMap.value.get(inspection.id) || []
 }
 
 /** 获取时间轴颜色 */
@@ -614,7 +722,7 @@ function handleReportIssue() {
     proxy.$modal.msgWarning('请先选择项目')
     return
   }
-  
+
   // 获取当前时间，格式化为 YYYY-MM-DD HH:mm:ss
   const now = new Date()
   const year = now.getFullYear()
@@ -624,71 +732,44 @@ function handleReportIssue() {
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const seconds = String(now.getSeconds()).padStart(2, '0')
   const defaultTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-  
+
+  // 计算默认整改期限（7天后）
+  const defaultDueDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const dueDateYear = defaultDueDate.getFullYear()
+  const dueDateMonth = String(defaultDueDate.getMonth() + 1).padStart(2, '0')
+  const dueDateDay = String(defaultDueDate.getDate()).padStart(2, '0')
+  const defaultDueDateStr = `${dueDateYear}-${dueDateMonth}-${dueDateDay}`
+
   issueForm.value = {
     title: '',
     description: '',
     inspectionType: '',
+    category: 'GENERAL',
+    location: '',
+    dueDate: defaultDueDateStr,
     images: [],
     inspectionDate: defaultTime
   }
   issueDialogOpen.value = true
 }
 
-/** 处理图片上传超出限制 */
-function handleExceed() {
-  proxy.$modal.msgWarning('最多只能上传20张图片')
-}
-
-/** 预览图片 */
-function handlePictureCardPreview(file) {
-  if (file.url) {
-    dialogImageUrl.value = file.url.startsWith('http') ? file.url : import.meta.env.VITE_APP_BASE_API + file.url
-  } else if (file.raw) {
-    dialogImageUrl.value = URL.createObjectURL(file.raw)
-  } else {
-    dialogImageUrl.value = ''
-  }
-  dialogImageVisible.value = true
-}
-
-/** 上传前验证 */
-function handleBeforeUpload(file) {
-  const isImage = file.type.startsWith('image/')
-  const isLt10M = file.size / 1024 / 1024 < 10
-  
-  if (!isImage) {
-    proxy.$modal.msgError('只能上传图片文件!')
-    return false
-  }
-  if (!isLt10M) {
-    proxy.$modal.msgError('上传图片大小不能超过 10MB!')
-    return false
-  }
-  return true
-}
-
-/** 上传成功回调 */
-function handleUploadSuccess(response, file) {
-  if (response.code === 200) {
-    file.url = response.fileName
-    file.response = response
-    proxy.$modal.msgSuccess('图片上传成功')
-  } else {
-    proxy.$modal.msgError(response.msg || '图片上传失败')
-    const index = issueForm.value.images.findIndex(img => img.uid === file.uid)
-    if (index > -1) {
-      issueForm.value.images.splice(index, 1)
-    }
+/** 上传成功回调 - 简化版本 */
+function handleUploadSuccess({ response, file }) {
+  try {
+    console.log('问题上报图片上传成功:', { response, file })
+    // ImageUploadCard组件已处理大部分逻辑，这里只记录日志
+  } catch (error) {
+    console.error('问题上报图片上传回调处理失败:', error)
   }
 }
 
-/** 上传失败回调 */
-function handleUploadError(err, file) {
-  proxy.$modal.msgError('图片上传失败')
-  const index = issueForm.value.images.findIndex(img => img.uid === file.uid)
-  if (index > -1) {
-    issueForm.value.images.splice(index, 1)
+/** 上传失败回调 - 简化版本 */
+function handleUploadError({ message }) {
+  try {
+    console.error('问题上报图片上传失败:', message)
+    // ImageUploadCard组件已处理错误提示和文件移除
+  } catch (error) {
+    console.error('问题上报图片上传错误回调处理失败:', error)
   }
 }
 
@@ -696,38 +777,23 @@ function handleUploadError(err, file) {
 function submitIssue() {
   proxy.$refs.issueFormRef.validate(valid => {
     if (!valid) return
-    
+
     if (!selectedProject.value) {
       proxy.$modal.msgError('数据错误')
       return
     }
-    
-    // 检查是否有未上传完成的图片
-    const hasUnuploadedImages = issueForm.value.images.some(img => img.raw && !img.url && !img.response)
-    if (hasUnuploadedImages) {
+
+    // 检查图片上传状态
+    if (!uploadStatus.value.isAllUploaded) {
       proxy.$modal.msgWarning('请等待图片上传完成后再提交')
       return
     }
-    
+
     issueSaving.value = true
-    
-    // 提取所有图片URL
-    const imageUrls = issueForm.value.images
-      .map(img => {
-        if (img.response && img.response.fileName) {
-          return img.response.fileName
-        }
-        if (img.url) {
-          if (img.url.startsWith('http')) {
-            const baseUrl = import.meta.env.VITE_APP_BASE_API
-            return img.url.replace(baseUrl, '').replace(/^\/+/, '')
-          }
-          return img.url
-        }
-        return null
-      })
-      .filter(url => url !== null)
-    
+
+    // 使用ImageUploadCard组件提供的工具函数提取图片URL
+    const imageUrls = uploadRef.value?.extractImageUrls(issueForm.value.images) || []
+
     const inspectionData = {
       projectId: selectedProject.value.id,
       inspectionType: issueForm.value.inspectionType,
@@ -738,8 +804,32 @@ function submitIssue() {
       images: JSON.stringify(imageUrls),
       remarks: '问题上报'
     }
-    
-    addQualityInspections(inspectionData).then(() => {
+
+    // 先创建质检记录，然后创建问题记录
+    addQualityInspections(inspectionData).then(async (inspectionResponse) => {
+      // 获取创建的质检记录ID
+      const inspectionId = inspectionResponse.data?.id || inspectionResponse.id
+
+      if (!inspectionId) {
+        throw new Error('质检记录创建失败，无法获取ID')
+      }
+
+      // 创建质量问题记录
+      const issueData = {
+        projectId: selectedProject.value.id,
+        qualityInspectionId: inspectionId,
+        title: issueForm.value.title,
+        description: issueForm.value.description,
+        category: issueForm.value.category || 'GENERAL',
+        location: issueForm.value.location || '',
+        images: JSON.stringify(imageUrls),
+        status: 'OPEN',
+        dueDate: issueForm.value.dueDate || null
+      }
+
+      return addQualityIssues(issueData)
+
+    }).then(() => {
       proxy.$modal.msgSuccess('问题上报成功')
       issueDialogOpen.value = false
       issueSaving.value = false
@@ -748,6 +838,7 @@ function submitIssue() {
       // 更新列表数据
       loadProjectInspectionsForList(selectedProject.value.id)
     }).catch(error => {
+      console.error('问题上报失败:', error)
       proxy.$modal.msgError('问题上报失败：' + (error.msg || error.message))
       issueSaving.value = false
     })
@@ -756,8 +847,87 @@ function submitIssue() {
 
 /** 提交整改 */
 function handleSubmitFix(issue) {
-  proxy.$modal.msgInfo('整改功能开发中...')
-  // TODO: 实现整改功能
+  if (!issue) {
+    proxy.$modal.msgError('数据错误')
+    return
+  }
+  currentIssue.value = issue
+  fixDialogOpen.value = true
+}
+
+/** 整改成功回调 */
+function handleFixSuccess(fixData) {
+  proxy.$modal.msgSuccess('整改提交成功')
+  fixDialogOpen.value = false
+  currentIssue.value = null
+}
+
+/** 整改失败回调 */
+function handleFixError(error) {
+  console.error('整改提交失败:', error)
+  proxy.$modal.msgError('整改提交失败：' + (error.msg || error.message))
+}
+
+/** 获取问题状态标签类型 */
+function getIssueStatusType(status) {
+  const typeMap = {
+    'OPEN': 'danger',
+    'IN_PROGRESS': 'warning',
+    'RESOLVED': 'success',
+    'CLOSED': 'info'
+  }
+  return typeMap[status] || 'info'
+}
+
+/** 获取问题状态文本 */
+function getIssueStatusText(status) {
+  const textMap = {
+    'OPEN': '待处理',
+    'IN_PROGRESS': '整改中',
+    'RESOLVED': '已解决',
+    'CLOSED': '已关闭'
+  }
+  return textMap[status] || '未知'
+}
+
+/** 获取问题分类标签类型 */
+function getIssueCategoryType(category) {
+  const typeMap = {
+    'GENERAL': 'info',
+    'CRITICAL': 'danger',
+    'URGENT': 'warning',
+    'OTHER': ''
+  }
+  return typeMap[category] || ''
+}
+
+/** 获取问题分类文本 */
+function getIssueCategoryText(category) {
+  const textMap = {
+    'GENERAL': '一般问题',
+    'CRITICAL': '红线问题',
+    'URGENT': '紧急问题',
+    'OTHER': '其他'
+  }
+  return textMap[category] || '未分类'
+}
+
+/** 预览问题图片 */
+function previewIssueImages(issue) {
+  try {
+    const images = JSON.parse(issue.images || '[]')
+    if (images && images.length > 0) {
+      // 显示第一张图片
+      const firstImage = images[0]
+      dialogImageUrl.value = firstImage.startsWith('http') ? firstImage : import.meta.env.VITE_APP_BASE_API + firstImage
+      dialogImageVisible.value = true
+    } else {
+      proxy.$modal.msgWarning('该问题暂无图片')
+    }
+  } catch (error) {
+    console.error('解析图片数据失败:', error)
+    proxy.$modal.msgError('图片数据格式错误')
+  }
 }
 
 /** 搜索按钮操作 */
@@ -954,54 +1124,11 @@ onMounted(() => {
       margin-bottom: 12px;
     }
 
-    .project-stats {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 12px;
-
-      .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-
-        .stat-label {
-          font-size: 12px;
-          color: #999;
-        }
-
-        .stat-value {
-          font-size: 16px;
-          font-weight: 600;
-
-          &.stat-value-blue {
-            color: #1677ff;
-          }
-
-          &.stat-value-green {
-            color: #52c41a;
-          }
-
-          &.stat-value-red {
-            color: #ff4d4f;
-          }
-        }
-      }
-    }
-
-    .pending-issues-alert {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      background: #fff1f0;
-      border: 1px solid #ffccc7;
-      border-radius: 4px;
-      font-size: 13px;
-      color: #ff4d4f;
-
-      .el-icon {
-        font-size: 16px;
+    .project-progress-info {
+      .progress-summary {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #999;
       }
     }
   }
@@ -1084,79 +1211,36 @@ onMounted(() => {
     }
   }
 
-  .stat-cards-row {
-    margin-bottom: 16px;
-    
-    :deep(.el-col) {
+  .inspection-overview-section {
+    margin-bottom: 0;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-radius: 8px;
+
+    .overview-header {
       display: flex;
-      height: auto;
-    }
-  }
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
 
-  .stat-card {
-    flex: 1;
-    text-align: center;
-    padding: 12px 8px;
-    height: auto;
-    min-height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    :deep(.el-card__body) {
-      padding: 0;
-      width: 100%;
-    }
-
-    &.stat-card-blue {
-      background: #e6f7ff;
-      border-color: #91d5ff;
-    }
-
-    &.stat-card-green {
-      background: #f6ffed;
-      border-color: #b7eb8f;
-    }
-
-    &.stat-card-red {
-      background: #fff1f0;
-      border-color: #ffccc7;
-    }
-
-    &.stat-card-orange {
-      background: #fff7e6;
-      border-color: #ffd591;
-    }
-
-    .stat-content {
-      width: 100%;
-      .stat-label {
-        font-size: 12px;
-        color: #666;
-        margin-bottom: 4px;
-      }
-
-      .stat-value {
-        font-size: 18px;
+      .overview-label {
+        font-size: 14px;
         font-weight: 600;
-        line-height: 1.2;
+        color: #303133;
+      }
+
+      .overview-percentage {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1677ff;
       }
     }
 
-    &.stat-card-blue .stat-content .stat-value {
-      color: #1677ff;
-    }
-
-    &.stat-card-green .stat-content .stat-value {
-      color: #52c41a;
-    }
-
-    &.stat-card-red .stat-content .stat-value {
-      color: #ff4d4f;
-    }
-
-    &.stat-card-orange .stat-content .stat-value {
-      color: #fa8c16;
+    .overview-footer {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
     }
   }
 
@@ -1310,6 +1394,26 @@ onMounted(() => {
         }
       }
     }
+  }
+}
+
+// 上传状态提示样式
+.upload-status-tip {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+
+  .el-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .upload-hint {
+    color: #e6a23c;
+    font-size: 12px;
   }
 }
 </style>
