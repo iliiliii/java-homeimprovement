@@ -43,6 +43,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         Long currentUserId = SecurityUtils.getUserId();
         if (currentUserId != null) {
             query.setCurrentUserId(String.valueOf(currentUserId));
+            query.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
         }
 
         List<ProjectSchedules> existing = projectSchedulesMapper.selectProjectSchedulesList(query);
@@ -72,6 +73,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         Long currentUserId = SecurityUtils.getUserId();
         if (currentUserId != null) {
             query.setCurrentUserId(String.valueOf(currentUserId));
+            query.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
         }
 
         List<ProjectSchedules> existing = projectSchedulesMapper.selectProjectSchedulesList(query);
@@ -103,6 +105,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         ProjectSchedules query = new ProjectSchedules();
         query.setId(id);
         query.setCurrentUserId(String.valueOf(currentUserId));
+        query.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
 
         return projectSchedulesMapper.selectProjectSchedulesById(query);
     }
@@ -120,6 +123,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         Long currentUserId = SecurityUtils.getUserId();
         if (currentUserId != null) {
             projectSchedules.setCurrentUserId(String.valueOf(currentUserId));
+            projectSchedules.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
         }
 
         return projectSchedulesMapper.selectProjectSchedulesList(projectSchedules);
