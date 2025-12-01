@@ -6,12 +6,15 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.QualityInspectionsMapper;
 import com.ruoyi.web.domain.QualityInspections;
 import com.ruoyi.web.service.IQualityInspectionsService;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.uuid.IdUtils;
 
 /**
  * 质量检测Service业务层处理
  * 
  * @author evs
- * @date 2025-11-26
+ * @date 2025-12-02
  */
 @Service
 public class QualityInspectionsServiceImpl implements IQualityInspectionsService 
@@ -45,14 +48,20 @@ public class QualityInspectionsServiceImpl implements IQualityInspectionsService
 
     /**
      * 新增质量检测
-     * 
+     *
      * @param qualityInspections 质量检测
      * @return 结果
      */
     @Override
-    public int insertQualityInspections(QualityInspections qualityInspections)
+    public QualityInspections insertQualityInspections(QualityInspections qualityInspections)
     {
-        return qualityInspectionsMapper.insertQualityInspections(qualityInspections);
+        if (qualityInspections.getId() == null || qualityInspections.getId().isEmpty()) {
+            qualityInspections.setId(IdUtils.fastSimpleUUID());
+        }
+        qualityInspections.setCreatedAt(DateUtils.getNowDate());
+        qualityInspections.setCreatedBy(SecurityUtils.getUsername());
+        qualityInspectionsMapper.insertQualityInspections(qualityInspections);
+        return qualityInspections;
     }
 
     /**
@@ -64,6 +73,8 @@ public class QualityInspectionsServiceImpl implements IQualityInspectionsService
     @Override
     public int updateQualityInspections(QualityInspections qualityInspections)
     {
+        qualityInspections.setUpdatedAt(DateUtils.getNowDate());
+        qualityInspections.setUpdatedBy(SecurityUtils.getUsername());
         return qualityInspectionsMapper.updateQualityInspections(qualityInspections);
     }
 

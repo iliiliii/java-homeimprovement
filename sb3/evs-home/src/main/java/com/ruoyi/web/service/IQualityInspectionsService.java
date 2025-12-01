@@ -7,7 +7,7 @@ import com.ruoyi.web.domain.QualityInspections;
  * 质量检测Service接口
  * 
  * @author evs
- * @date 2025-11-26
+ * @date 2025-12-02
  */
 public interface IQualityInspectionsService 
 {
@@ -29,11 +29,11 @@ public interface IQualityInspectionsService
 
     /**
      * 新增质量检测
-     * 
+     *
      * @param qualityInspections 质量检测
-     * @return 结果
+     * @return 创建的质量检测记录
      */
-    public int insertQualityInspections(QualityInspections qualityInspections);
+    public QualityInspections insertQualityInspections(QualityInspections qualityInspections);
 
     /**
      * 修改质量检测

@@ -25,7 +25,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * 质量检测Controller
  * 
  * @author evs
- * @date 2025-11-26
+ * @date 2025-12-02
  */
 @RestController
 @RequestMapping("/evs/qualityInspections")
@@ -77,7 +77,8 @@ public class QualityInspectionsController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody QualityInspections qualityInspections)
     {
-        return toAjax(qualityInspectionsService.insertQualityInspections(qualityInspections));
+        QualityInspections createdInspection = qualityInspectionsService.insertQualityInspections(qualityInspections);
+        return AjaxResult.success(createdInspection);
     }
 
     /**
