@@ -1,0 +1,60 @@
+// ===========================================
+// 智享家 Pro - 设计变量定义
+// 基于 Glassmorphism（毛玻璃）风格
+// ===========================================
+
+// 主要颜色
+$glass-bg: #F0F4F8;
+$glass-surface: rgba(255, 255, 255, 0.7);
+$glass-surface-strong: rgba(255, 255, 255, 0.9);
+$glass-border: rgba(255, 255, 255, 0.8);
+
+// 文字颜色
+$glass-text-main: #1A2B3C;
+$glass-text-muted: #64748B;
+
+// 主题色
+$glass-accent: #2D5BFF;  // Electric Blue
+$glass-accent-light: #E6EEFF;
+$glass-success: #00C2B2;
+$glass-warning: #FFB020;
+$glass-danger: #FF6B6B;
+
+// 彩色图标
+$color-red: #FF6B6B;
+$color-teal: #4ECDC4;
+$color-blue: #45B7D1;
+$color-green: #96CEB4;
+$color-orange: #FFB020;
+
+// 效果
+$blur-amount: 20px;
+$shadow-glass: 0 8px 32px rgba(45, 91, 255, 0.08);
+$shadow-card: 0 4px 12px rgba(0, 0, 0, 0.03);
+$shadow-btn: 0 4px 12px rgba(45, 91, 255, 0.3);
+
+// 字体
+$font-main: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+
+// 圆角
+$radius-xl: 32rpx;
+$radius-l: 24rpx;
+$radius-m: 16rpx;
+$radius-s: 12rpx;
+
+// 间距
+$spacing-xs: 8rpx;
+$spacing-s: 16rpx;
+$spacing-m: 24rpx;
+$spacing-l: 32rpx;
+$spacing-xl: 48rpx;
+
+// uview-plus 主题变量覆盖
+$u-primary: $glass-accent;
+$u-success: $glass-success;
+$u-warning: $glass-warning;
+$u-error: $glass-danger;
+$u-main-color: $glass-text-main;
+$u-content-color: $glass-text-muted;
+$u-border-color: $glass-border;
+

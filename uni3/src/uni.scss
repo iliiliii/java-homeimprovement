@@ -1,0 +1,78 @@
+/**
+ * uni.scss - uview-plus 主题定制
+ * 此处为 uview-plus 的全局样式变量，会覆盖 uview-plus 默认的样式变量
+ * 这些变量需要在 uview-plus 之前定义
+ */
+
+// ==================== uview-plus 必需变量 ====================
+
+// 文字颜色
+$u-main-color: #1A2B3C;
+$u-content-color: #64748B;
+$u-tips-color: #94A3B8;
+$u-light-color: #CBD5E1;
+$u-disabled-color: #c8c9cc;
+
+// 边框颜色
+$u-border-color: rgba(255, 255, 255, 0.8);
+
+// 背景颜色
+$u-bg-color: #F0F4F8;
+
+// 主题色 - Primary (Electric Blue)
+$u-primary: #2D5BFF;
+$u-primary-dark: #2449CC;
+$u-primary-disabled: #96ADFF;
+$u-primary-light: #E6EEFF;
+
+// 主题色 - Warning
+$u-warning: #FFB020;
+$u-warning-dark: #CC8C1A;
+$u-warning-disabled: #FFD899;
+$u-warning-light: #FFF5E6;
+
+// 主题色 - Success
+$u-success: #00C2B2;
+$u-success-dark: #009B8E;
+$u-success-disabled: #80E1D9;
+$u-success-light: #E6FAF8;
+
+// 主题色 - Error
+$u-error: #FF6B6B;
+$u-error-dark: #CC5555;
+$u-error-disabled: #FFB5B5;
+$u-error-light: #FFEFEF;
+
+// 主题色 - Info
+$u-info: #64748B;
+$u-info-dark: #505D6E;
+$u-info-disabled: #B1BAC5;
+$u-info-light: #F1F5F9;
+
+// 字体大小
+$u-font-size-xs: 22rpx;
+$u-font-size-sm: 24rpx;
+$u-font-size: 28rpx;
+$u-font-size-lg: 32rpx;
+$u-font-size-xl: 36rpx;
+
+// 圆角
+$u-border-radius-sm: 8rpx;
+$u-border-radius: 16rpx;
+$u-border-radius-lg: 24rpx;
+
+// 默认单元格大小
+$u-cell-padding: 24rpx 32rpx;
+
+// 按钮高度
+$u-button-height: 88rpx;
+$u-button-mini-height: 56rpx;
+
+// ==================== scss混入 ====================
+@mixin flex($direction: row) {
+	/* #ifndef APP-NVUE */
+	display: flex;
+	/* #endif */
+	flex-direction: $direction;
+}
+

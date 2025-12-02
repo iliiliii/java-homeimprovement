@@ -1,0 +1,120 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^u--(.*)": "uview-plus/components/u-$1/u-$1.vue",
+      "^up-(.*)": "uview-plus/components/u-$1/u-$1.vue",
+      "^u-([^-].*)": "uview-plus/components/u-$1/u-$1.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/dashboard/index",
+      "style": {
+        "navigationBarTitleText": "项目概况",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/design/index",
+      "style": {
+        "navigationBarTitleText": "设计方案",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/log/index",
+      "style": {
+        "navigationBarTitleText": "施工日志",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/schedule/index",
+      "style": {
+        "navigationBarTitleText": "施工排期",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/brand/index",
+      "style": {
+        "navigationBarTitleText": "品牌介绍",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/budget/index",
+      "style": {
+        "navigationBarTitleText": "预算详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/protocol/index",
+      "style": {
+        "navigationBarTitleText": "用户协议",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/privacy/index",
+      "style": {
+        "navigationBarTitleText": "隐私政策",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/shopping/index",
+      "style": {
+        "navigationBarTitleText": "物料清单",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "tabBar": {
+    "custom": true,
+    "color": "#999999",
+    "selectedColor": "#2D5BFF",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/dashboard/index",
+        "text": "概况"
+      },
+      {
+        "pagePath": "pages/design/index",
+        "text": "设计"
+      },
+      {
+        "pagePath": "pages/log/index",
+        "text": "日志"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "逅时代设计",
+    "navigationBarBackgroundColor": "#F0F4F8",
+    "backgroundColor": "#F0F4F8"
+  }
+}
