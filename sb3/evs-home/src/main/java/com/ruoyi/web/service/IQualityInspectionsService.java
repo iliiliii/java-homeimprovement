@@ -53,9 +53,17 @@ public interface IQualityInspectionsService
 
     /**
      * 删除质量检测信息
-     * 
+     *
      * @param id 质量检测主键
      * @return 结果
      */
     public int deleteQualityInspectionsById(String id);
+
+    /**
+     * 按项目ID查询质检记录及对应问题（使用JOIN查询，解决N+1问题）
+     *
+     * @param projectId 项目ID
+     * @return 质检记录集合（包含问题列表）
+     */
+    public List<QualityInspections> selectQualityInspectionsWithIssuesByProjectId(String projectId);
 }

@@ -53,9 +53,17 @@ public interface QualityInspectionsMapper
 
     /**
      * 批量删除质量检测
-     * 
+     *
      * @param ids 需要删除的数据主键集合
      * @return 结果
      */
     public int deleteQualityInspectionsByIds(String[] ids);
+
+    /**
+     * 按项目ID查询质检记录及对应问题（使用JOIN查询，解决N+1问题）
+     *
+     * @param projectId 项目ID
+     * @return 质检记录集合（包含问题列表）
+     */
+    public List<QualityInspections> selectQualityInspectionsWithIssuesByProjectId(String projectId);
 }

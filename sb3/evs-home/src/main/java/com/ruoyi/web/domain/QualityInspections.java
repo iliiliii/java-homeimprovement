@@ -1,6 +1,7 @@
 package com.ruoyi.web.domain;
 
 import java.util.Date;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -64,6 +65,9 @@ public class QualityInspections extends BaseEntity
 
     /** 更新人 */
     private String updatedBy;
+
+    /** 关联问题列表（JOIN查询结果） */
+    private List<QualityIssues> issues;
 
     public void setId(String id) 
     {
@@ -200,9 +204,19 @@ public class QualityInspections extends BaseEntity
         this.updatedBy = updatedBy;
     }
 
-    public String getUpdatedBy() 
+    public String getUpdatedBy()
     {
         return updatedBy;
+    }
+
+    public void setIssues(List<QualityIssues> issues)
+    {
+        this.issues = issues;
+    }
+
+    public List<QualityIssues> getIssues()
+    {
+        return issues;
     }
 
     @Override
@@ -222,6 +236,7 @@ public class QualityInspections extends BaseEntity
             .append("updatedAt", getUpdatedAt())
             .append("createdBy", getCreatedBy())
             .append("updatedBy", getUpdatedBy())
+            .append("issues", getIssues())
             .toString();
     }
 }

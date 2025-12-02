@@ -102,4 +102,15 @@ public class QualityInspectionsController extends BaseController
     {
         return toAjax(qualityInspectionsService.deleteQualityInspectionsByIds(ids));
     }
+
+    /**
+     * 按项目ID查询质检记录及对应问题（使用JOIN查询，解决N+1问题）
+     */
+    @PreAuthorize("@ss.hasPermi('evs:qualityInspections:list')")
+    @GetMapping("/withIssues/{projectId}")
+    public AjaxResult getWithIssuesByProjectId(@PathVariable("projectId") String projectId)
+    {
+        List<QualityInspections> list = qualityInspectionsService.selectQualityInspectionsWithIssuesByProjectId(projectId);
+        return success(list);
+    }
 }

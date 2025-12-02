@@ -21,17 +21,59 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updatedBy"    column="updated_by"    />
     </resultMap>
 
+    <!-- 使用JOIN查询的ResultMap：质检记录 + 问题列表（一次查询获取所有数据） -->
+    <resultMap type="QualityInspections" id="QualityInspectionsWithIssuesResult" extends="QualityInspectionsResult">
+        <!-- 关联问题列表（使用JOIN结果） -->
+        <collection property="issues" ofType="QualityIssues" javaType="java.util.ArrayList">
+            <id property="id" column="issue_id" />
+            <result property="projectId" column="issue_project_id" />
+            <result property="qualityInspectionId" column="issue_quality_inspection_id" />
+            <result property="title" column="issue_title" />
+            <result property="description" column="issue_description" />
+            <result property="category" column="issue_category" />
+            <result property="location" column="issue_location" />
+            <result property="images" column="issue_images" />
+            <result property="status" column="issue_status" />
+            <result property="resolvedAt" column="issue_resolved_at" />
+            <result property="dueDate" column="issue_due_date" />
+            <result property="createdAt" column="issue_created_at" />
+            <result property="updatedAt" column="issue_updated_at" />
+            <result property="createdBy" column="issue_created_by" />
+            <result property="updatedBy" column="issue_updated_by" />
+        </collection>
+    </resultMap>
+
     <sql id="selectQualityInspectionsVo">
         select id, project_id, schedule_id, inspection_type, title, description, result, inspection_date, images, remarks, created_at, updated_at, created_by, updated_by from quality_inspections
     </sql>
 
+    <!-- 使用LEFT JOIN一次性获取质检记录和对应问题（解决N+1查询问题） -->
+    <sql id="selectQualityInspectionsWithIssuesVo">
+        select
+            i.id, i.project_id, i.schedule_id, i.inspection_type, i.title, i.description, i.result, i.inspection_date, i.images, i.remarks, i.created_at, i.updated_at, i.created_by, i.updated_by,
+            q.id as issue_id, q.project_id as issue_project_id, q.quality_inspection_id as issue_quality_inspection_id, q.title as issue_title, q.description as issue_description,
+            q.category as issue_category, q.location as issue_location, q.images as issue_images, q.status as issue_status, q.resolved_at as issue_resolved_at,
+            q.due_date as issue_due_date, q.created_at as issue_created_at, q.updated_at as issue_updated_at, q.created_by as issue_created_by, q.updated_by as issue_updated_by
+        from quality_inspections i
+        left join quality_issues q on i.id = q.quality_inspection_id
+    </sql>
+
     <select id="selectQualityInspectionsList" parameterType="QualityInspections" resultMap="QualityInspectionsResult">
         <include refid="selectQualityInspectionsVo"/>
-        <where>  
+        <where>
             <if test="inspectionType != null  and inspectionType != ''"> and inspection_type = #{inspectionType}</if>
             <if test="title != null  and title != ''"> and title = #{title}</if>
             <if test="result != null  and result != ''"> and result = #{result}</if>
         </where>
+    </select>
+
+    <!-- 按项目ID查询质检记录及对应的问题（使用JOIN查询） -->
+    <select id="selectQualityInspectionsWithIssuesByProjectId" parameterType="String" resultMap="QualityInspectionsWithIssuesResult">
+        <include refid="selectQualityInspectionsWithIssuesVo"/>
+        <where>
+            <if test="projectId != null and projectId != ''"> and i.project_id = #{projectId}</if>
+        </where>
+        order by i.inspection_date desc, q.created_at desc
     </select>
     
     <select id="selectQualityInspectionsById" parameterType="String" resultMap="QualityInspectionsResult">
