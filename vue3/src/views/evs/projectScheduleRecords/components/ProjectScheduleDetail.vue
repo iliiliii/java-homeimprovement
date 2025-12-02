@@ -99,102 +99,40 @@
                 </div>
 
                 <!-- 验收记录展示 -->
-                <div v-if="getAcceptanceRecords(item.id).length > 0" class="acceptance-records-section">
+                <div class="acceptance-records-section">
                   <div class="acceptance-records-header">
                     <span class="acceptance-label">验收记录</span>
-                    <el-tag size="small" type="success">{{ getAcceptanceRecords(item.id).length }} 次验收</el-tag>
+                    <el-tag v-if="getAcceptanceRecords(item.id).length > 0" size="small" type="success">
+                      {{ getAcceptanceRecords(item.id).length }} 次验收
+                    </el-tag>
+                    <span v-else class="no-acceptance-text">暂无验收</span>
                   </div>
-                  <div class="acceptance-records-list">
-                    <div
-                      v-for="(record, index) in getAcceptanceRecords(item.id)"
-                      :key="record.id"
-                      class="acceptance-record-item"
-                      :class="{ 'unqualified': record.acceptanceResult === 'UNQUALIFIED' }"
-                    >
-                      <div class="record-header">
-                        <div class="record-info">
-                          <el-icon class="record-icon" :class="record.acceptanceResult">
-                            <Check v-if="record.acceptanceResult === 'QUALIFIED'" />
-                            <Close v-else />
-                          </el-icon>
-                          <span class="record-title">
-                            {{ record.acceptanceTitle || ('验收 #' + (getAcceptanceRecords(item.id).length - index)) }}
-                          </span>
-                          <el-tag
-                            :type="record.acceptanceResult === 'QUALIFIED' ? 'success' : 'danger'"
-                            size="small"
-                          >
-                            {{ record.acceptanceResult === 'QUALIFIED' ? '合格' : '不合格' }}
-                          </el-tag>
-                        </div>
-                        <div class="record-actions">
-                          <div class="record-meta">
-                            <div class="time-info">
-                              <el-icon><Clock /></el-icon>
-                              验收时间: {{ parseTime(record.acceptanceTime, '{y}-{m}-{d} {h}:{i}') }}
-                            </div>
-                            <div class="acceptor-info" v-if="record.acceptor">
-                              <el-icon><User /></el-icon>
-                              验收人: {{ record.acceptor }}
-                            </div>
-                          </div>
-                          <el-button
-                            type="primary"
-                            link
-                            size="small"
-                            @click="$emit('edit-acceptance', record)"
-                          >
-                            <el-icon><Edit /></el-icon>
-                            编辑
-                          </el-button>
-                          <el-button
-                            type="danger"
-                            link
-                            size="small"
-                            @click="handleDeleteAcceptance(record)"
-                          >
-                            <el-icon><Delete /></el-icon>
-                            删除
-                          </el-button>
-                        </div>
-                      </div>
-                      <div class="record-content">{{ record.acceptanceContent }}</div>
-                      <div v-if="record.images && getParsedRecordImages(record.images).length > 0" class="record-images">
-                          <!-- 图片数量指示器 -->
-                          <div class="record-images-header">
-                            <el-icon class="record-images-icon"><Picture /></el-icon>
-                            <span class="record-images-count">{{ getParsedRecordImages(record.images).length }} 张图片</span>
-                          </div>
-                          <!-- 使用图片预览容器 -->
-                          <div class="record-images-grid">
-                            <div
-                              v-viewer="getImageViewerOptions(record.images)"
-                              class="vue-viewer"
-                            >
-                              <img
-                                v-for="(img, imgIndex) in getParsedRecordImages(record.images)"
-                                :key="imgIndex"
-                                :src="getImageUrl(img)"
-                                :alt="`验收图片 ${imgIndex + 1}`"
-                                :style="{ width: '80px', height: '80px' }"
-                                class="record-image-item-img"
-                              />
-                            </div>
-                          </div>
-                      </div>
+                  <div class="acceptance-records-summary">
+                    <div v-if="getAcceptanceRecords(item.id).length > 0" class="acceptance-stats">
+                      <el-icon class="acceptance-icon"><DocumentChecked /></el-icon>
+                      <span class="acceptance-text">最近验收：{{ parseTime(getLatestAcceptanceTime(item.id), '{m}-{d} {h}:{i}') }}</span>
+                    </div>
+                    <div class="acceptance-actions">
+                      <el-button
+                        type="primary"
+                        size="small"
+                        text
+                        @click="handleViewAcceptanceRecords(item)"
+                      >
+                        <el-icon><View /></el-icon>
+                        查看详情
+                      </el-button>
+                      <el-button
+                        type="primary"
+                        size="small"
+                        @click="$emit('acceptance-report', item)"
+                      >
+                        <el-icon><Plus /></el-icon>
+                        验收上报
+                      </el-button>
                     </div>
                   </div>
                 </div>
-
-                <el-button
-                  type="primary"
-                  size="small"
-                  style="margin-top: 8px;"
-                  @click="$emit('acceptance-report', item)"
-                >
-                  <el-icon><Plus /></el-icon>
-                  验收上报
-                </el-button>
               </div>
             </el-timeline-item>
           </el-timeline>
@@ -207,13 +145,24 @@
     <el-card shadow="never" v-else class="project-detail-card project-detail-card-empty">
       <el-empty description="请从左侧选择一个项目查看详情" :image-size="120" />
     </el-card>
+
+    <!-- 验收记录抽屉 -->
+    <AcceptanceRecordsDrawer
+      v-model:visible="acceptanceDrawerVisible"
+      :schedule-item="selectedScheduleItem"
+      :upload-url="uploadUrl"
+      @acceptance-success="handleAcceptanceSuccess"
+      @acceptance-error="handleAcceptanceError"
+    />
   </el-col>
 </template>
 
 <script setup name="ProjectScheduleDetail">
-import { Calendar, Plus, Check, Close, Edit, Delete, Picture, Clock, User } from "@element-plus/icons-vue"
+import { Calendar, Plus, Check, Close, Edit, Delete, Picture, Clock, User, DocumentChecked, View } from "@element-plus/icons-vue"
 import { parseTime } from "@/utils/ruoyi"
 import { listProjectScheduleRecords, delProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
+import { getCurrentInstance } from "vue"
+import AcceptanceRecordsDrawer from "./AcceptanceRecordsDrawer.vue"
 
 const { proxy } = getCurrentInstance()
 const { decoration_project_status, decoration_construction_stage } = proxy.useDict('decoration_project_status', 'decoration_construction_stage')
@@ -238,6 +187,11 @@ const emit = defineEmits(['acceptance-report', 'edit-acceptance', 'delete-accept
 // 验收记录数据
 const acceptanceRecords = ref([])
 const recordsLoading = ref(false)
+
+// 验收记录抽屉相关数据
+const acceptanceDrawerVisible = ref(false)
+const selectedScheduleItem = ref(null)
+const uploadUrl = import.meta.env.VITE_APP_BASE_API + '/common/upload'
 
 // 工具函数
 function getProjectSchedules(project) {
@@ -373,33 +327,13 @@ function getAcceptanceRecords(scheduleId) {
   const records = acceptanceRecords.value
     .filter(record => record.scheduleId === scheduleId)
     .sort((a, b) => new Date(b.acceptanceTime) - new Date(a.acceptanceTime))
-  // ✅ 增强调试日志：每次都输出，帮助定位问题
-  console.log(`[验收记录调试] 查询进度ID: ${scheduleId}`)
-  console.log(`[验收记录调试] 总验收记录数: ${acceptanceRecords.value.length}`)
-  console.log(`[验收记录调试] 所有验收记录的ID映射:`, acceptanceRecords.value.map(r => ({
-    id: r.id,
-    scheduleId: r.scheduleId,
-    title: r.acceptanceTitle || '无标题'
-  })))
-  console.log(`[验收记录调试] 匹配到记录数: ${records.length}`)
-
-  if (records.length === 0) {
-    console.log(`[验收记录调试] ❌ 未找到匹配的验收记录`)
-    console.log(`[验收记录调试] 🔍 详细对比:`, {
-      查询的scheduleId: scheduleId,
-      验收记录中的scheduleId集合: [...new Set(acceptanceRecords.value.map(r => r.scheduleId))],
-      是否存在匹配的scheduleId: acceptanceRecords.value.some(r => r.scheduleId === scheduleId)
-    })
-  } else {
-    console.log(`[验收记录调试] ✅ 匹配的验收记录:`, records.map(r => ({
-      id: r.id,
-      scheduleId: r.scheduleId,
-      title: r.acceptanceTitle,
-      time: r.acceptanceTime
-    })))
-  }
-
   return records
+}
+
+/** 获取指定进度的最新验收时间 */
+function getLatestAcceptanceTime(scheduleId) {
+  const records = getAcceptanceRecords(scheduleId)
+  return records.length > 0 ? records[0].acceptanceTime : null
 }
 
 /** 获取图片URL */
@@ -597,6 +531,26 @@ watch(() => props.project?.id, (newVal, oldVal) => {
     acceptanceRecords.value = []
   }
 }, { immediate: true })
+
+// 查看验收记录详情
+function handleViewAcceptanceRecords(scheduleItem) {
+  selectedScheduleItem.value = scheduleItem
+  acceptanceDrawerVisible.value = true
+}
+
+// 验收记录成功回调
+function handleAcceptanceSuccess(acceptanceData) {
+  console.log('验收记录成功:', acceptanceData)
+  // 重新加载验收记录
+  if (props.project?.id) {
+    loadAcceptanceRecords(props.project.id)
+  }
+}
+
+// 验收记录错误回调
+function handleAcceptanceError(error) {
+  console.error('验收记录失败:', error)
+}
 
 // 暴露给父组件使用
 defineExpose({
@@ -909,7 +863,7 @@ defineExpose({
         margin-bottom: 8px;
       }
 
-      // 验收记录样式
+      // 验收记录简化样式
       .acceptance-records-section {
         margin-top: 12px;
         padding-top: 12px;
@@ -919,166 +873,62 @@ defineExpose({
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
 
           .acceptance-label {
             font-size: 14px;
             font-weight: 600;
             color: #303133;
           }
+
+          .no-acceptance-text {
+            font-size: 12px;
+            color: #999;
+            font-style: italic;
+          }
         }
 
-        .acceptance-records-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
+        .acceptance-records-summary {
+          background: #fff;
+          border: 1px solid #e8e8e8;
+          border-radius: 6px;
+          padding: 12px;
+          transition: all 0.3s;
 
-          .acceptance-record-item {
-            background: #fff;
-            border: 1px solid #e8e8e8;
-            border-radius: 6px;
-            padding: 12px;
-            transition: all 0.3s;
+          &:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-color: #1677ff;
+          }
 
-            &:hover {
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          .acceptance-stats {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+
+            .acceptance-icon {
+              color: #52c41a;
+              font-size: 16px;
             }
 
-            &.unqualified {
-              border-color: #ff7875;
-              background: #fff2f0;
-
-              .record-icon.QUALIFIED {
-                color: #52c41a;
-              }
-
-              .record-icon.UNQUALIFIED {
-                color: #ff4d4f;
-              }
-            }
-
-            .record-header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 8px;
-
-              .record-info {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-
-                .record-icon {
-                  font-size: 16px;
-                  color: #52c41a;
-
-                  &.UNQUALIFIED {
-                    color: #ff4d4f;
-                  }
-                }
-
-                .record-title {
-                  font-size: 13px;
-                  font-weight: 500;
-                  color: #303133;
-                }
-              }
-
-              .record-actions {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-
-                .record-meta {
-                  display: flex;
-                  align-items: center;
-                  gap: 16px;
-
-                  .time-info, .acceptor-info {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 12px;
-                    color: #999;
-
-                    .el-icon {
-                      font-size: 13px;
-                    }
-                  }
-                }
-
-                .el-button {
-                  padding: 0;
-                  height: auto;
-                  line-height: 1;
-                }
-              }
-            }
-
-            .record-content {
+            .acceptance-text {
               font-size: 13px;
-              color: #666;
-              line-height: 1.6;
-              margin-bottom: 8px;
-              white-space: pre-wrap;
+              color: #303133;
             }
+          }
 
-            .record-images {
-              margin-top: 8px;
-              background: #fafafa;
-              border-radius: 6px;
-              padding: 12px;
-              border: 1px solid #f0f0f0;
+          .acceptance-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
 
-              .record-images-header {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                margin-bottom: 8px;
+            .el-button {
+              padding: 4px 12px;
+              height: auto;
+              line-height: 1.2;
 
-                .record-images-icon {
-                  font-size: 14px;
-                  color: #1677ff;
-                }
-
-                .record-images-count {
-                  font-size: 12px;
-                  color: #666;
-                  font-weight: 500;
-                }
-              }
-
-              .record-images-grid {
-                .vue-viewer {
-                  display: flex;
-                  gap: 8px;
-                  flex-wrap: wrap;
-                  align-items: flex-start;
-
-                  .record-image-item-img {
-                    border-radius: 6px;
-                    overflow: hidden;
-                    border: 1px solid #e8e8e8;
-                    transition: all 0.3s ease;
-                    cursor: pointer;
-                    background: #fff;
-                    object-fit: cover;
-
-                    &:hover {
-                      border-color: #1677ff;
-                      box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
-                      transform: translateY(-1px) scale(1.05);
-                    }
-
-                    // 第一张图片突出显示
-                    &:first-child {
-                      &:hover {
-                        z-index: 10;
-                      }
-                    }
-                  }
-                }
+              &:hover {
+                transform: translateY(-1px);
               }
             }
           }
