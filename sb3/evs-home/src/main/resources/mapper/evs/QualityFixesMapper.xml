@@ -38,10 +38,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into quality_fixes
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
-            <if test="qualityIssuesId != null and qualityIssuesId != ''">quality_issues_id,</if>
-            <if test="fixDescription != null and fixDescription != ''">fix_description,</if>
-            <if test="images != null and images != ''">images,</if>
-            <if test="status != null and status != ''">status,</if>
+            <if test="qualityIssuesId != null">quality_issues_id,</if>
+            <if test="fixDescription != null">fix_description,</if>
+            <if test="images != null">images,</if>
+            <if test="status != null">status,</if>
             <if test="fixedAt != null">fixed_at,</if>
             <if test="verifiedAt != null">verified_at,</if>
             <if test="createdAt != null">created_at,</if>
@@ -51,10 +51,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
-            <if test="qualityIssuesId != null and qualityIssuesId != ''">#{qualityIssuesId},</if>
-            <if test="fixDescription != null and fixDescription != ''">#{fixDescription},</if>
-            <if test="images != null and images != ''">#{images},</if>
-            <if test="status != null and status != ''">#{status},</if>
+            <if test="qualityIssuesId != null">#{qualityIssuesId},</if>
+            <if test="fixDescription != null">#{fixDescription},</if>
+            <if test="images != null">#{images},</if>
+            <if test="status != null">#{status},</if>
             <if test="fixedAt != null">#{fixedAt},</if>
             <if test="verifiedAt != null">#{verifiedAt},</if>
             <if test="createdAt != null">#{createdAt},</if>
