@@ -42,3 +42,11 @@ export function delQualityInspections(id) {
     method: 'delete'
   })
 }
+
+// 按项目ID查询质检记录及对应问题（使用JOIN查询，解决N+1问题）
+export function getQualityInspectionsWithIssues(projectId) {
+  return request({
+    url: '/evs/qualityInspections/withIssues/' + projectId,
+    method: 'get'
+  })
+}
