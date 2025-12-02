@@ -48,19 +48,37 @@ public class QualityFixesServiceImpl implements IQualityFixesService
 
     /**
      * 新增问题修复
-     * 
+     *
      * @param qualityFixes 问题修复
      * @return 结果
      */
     @Override
     public int insertQualityFixes(QualityFixes qualityFixes)
     {
+        // 🔍 后端调试：记录接收到的数据
+        System.out.println("🔍 [BACKEND] 接收到的问题修复数据:");
+        System.out.println("  - qualityIssuesId: " + qualityFixes.getQualityIssuesId());
+        System.out.println("  - fixDescription: " + qualityFixes.getFixDescription() + " (类型: " +
+            (qualityFixes.getFixDescription() != null ? qualityFixes.getFixDescription().getClass().getSimpleName() : "null") + ")");
+        System.out.println("  - status: " + qualityFixes.getStatus());
+        System.out.println("  - images: " + qualityFixes.getImages());
+        System.out.println("  - fixedAt: " + qualityFixes.getFixedAt());
+        System.out.println("  - verifiedAt: " + qualityFixes.getVerifiedAt());
+
         if (qualityFixes.getId() == null || qualityFixes.getId().isEmpty()) {
             qualityFixes.setId(IdUtils.fastSimpleUUID());
+            System.out.println("🔍 [BACKEND] 生成新ID: " + qualityFixes.getId());
         }
         qualityFixes.setCreatedAt(DateUtils.getNowDate());
         qualityFixes.setCreatedBy(SecurityUtils.getUsername());
-        return qualityFixesMapper.insertQualityFixes(qualityFixes);
+
+        System.out.println("🔍 [BACKEND] 准备插入到数据库的完整对象: " + qualityFixes.toString());
+
+        int result = qualityFixesMapper.insertQualityFixes(qualityFixes);
+
+        System.out.println("🔍 [BACKEND] 数据库插入结果: " + result);
+
+        return result;
     }
 
     /**

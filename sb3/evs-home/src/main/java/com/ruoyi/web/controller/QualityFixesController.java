@@ -70,6 +70,19 @@ public class QualityFixesController extends BaseController
     }
 
     /**
+     * 根据问题ID获取整改记录列表
+     */
+    @PreAuthorize("@ss.hasPermi('evs:qualityFixes:query')")
+    @GetMapping(value = "/byIssue/{issueId}")
+    public AjaxResult getFixesByIssueId(@PathVariable("issueId") String issueId)
+    {
+        QualityFixes query = new QualityFixes();
+        query.setQualityIssuesId(issueId);
+        List<QualityFixes> list = qualityFixesService.selectQualityFixesList(query);
+        return success(list);
+    }
+
+    /**
      * 新增问题修复
      */
     @PreAuthorize("@ss.hasPermi('evs:qualityFixes:add')")

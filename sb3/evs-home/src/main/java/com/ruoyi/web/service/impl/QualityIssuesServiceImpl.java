@@ -65,16 +65,29 @@ public class QualityIssuesServiceImpl implements IQualityIssuesService
 
     /**
      * 修改质量问题
-     * 
+     *
      * @param qualityIssues 质量问题
      * @return 结果
      */
     @Override
     public int updateQualityIssues(QualityIssues qualityIssues)
     {
+        // 🔍 后端调试：记录问题状态更新数据
+        System.out.println("🔍 [BACKEND] 接收到的问题状态更新数据:");
+        System.out.println("  - id: " + qualityIssues.getId());
+        System.out.println("  - status: " + qualityIssues.getStatus());
+        System.out.println("  - resolvedAt: " + qualityIssues.getResolvedAt());
+
         qualityIssues.setUpdatedAt(DateUtils.getNowDate());
         qualityIssues.setUpdatedBy(SecurityUtils.getUsername());
-        return qualityIssuesMapper.updateQualityIssues(qualityIssues);
+
+        System.out.println("🔍 [BACKEND] 准备更新的完整问题对象: " + qualityIssues.toString());
+
+        int result = qualityIssuesMapper.updateQualityIssues(qualityIssues);
+
+        System.out.println("🔍 [BACKEND] 问题状态更新结果: " + result);
+
+        return result;
     }
 
     /**
