@@ -17,6 +17,14 @@ export function getQualityFixes(id) {
   })
 }
 
+// 根据问题ID获取整改记录列表
+export function getQualityFixesByIssueId(issueId) {
+  return request({
+    url: '/evs/qualityFixes/byIssue/' + issueId,
+    method: 'get'
+  })
+}
+
 // 新增问题修复
 export function addQualityFixes(data) {
   return request({

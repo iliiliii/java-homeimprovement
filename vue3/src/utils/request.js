@@ -22,6 +22,18 @@ const service = axios.create({
 
 // request拦截器
 service.interceptors.request.use(config => {
+  // 🔍 增强调试：记录请求配置和数据
+  if (config.url && config.url.includes('/qualityFixes')) {
+    console.log('🔍 [REQUEST INTERCEPTOR] 请求配置:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      dataType: typeof config.data,
+      data: config.data,
+      params: config.params
+    })
+  }
+
   // 是否需要设置 token
   const isToken = (config.headers || {}).isToken === false
   // 是否需要防止数据重复提交
@@ -31,10 +43,24 @@ service.interceptors.request.use(config => {
   }
   // get请求映射params参数
   if (config.method === 'get' && config.params) {
+    console.log('🔍 [GET REQUEST] 处理前params:', config.params)
     let url = config.url + '?' + tansParams(config.params)
     url = url.slice(0, -1)
+    console.log('🔍 [GET REQUEST] 处理后url:', url)
     config.params = {}
     config.url = url
+  }
+
+  // 🔍 增强调试：POST/PUT请求数据处理跟踪
+  if ((config.method === 'post' || config.method === 'put') && config.url && config.url.includes('/qualityFixes')) {
+    console.log('🔍 [POST/PUT REQUEST] 原始数据:', config.data)
+    console.log('🔍 [POST/PUT REQUEST] 数据类型:', typeof config.data)
+    if (typeof config.data === 'object') {
+      console.log('🔍 [POST/PUT REQUEST] 数据字段:', Object.keys(config.data))
+      Object.keys(config.data).forEach(key => {
+        console.log(`🔍 [POST/PUT REQUEST] ${key}:`, JSON.stringify(config.data[key]), `(${typeof config.data[key]})`)
+      })
+    }
   }
   if (!isRepeatSubmit && (config.method === 'post' || config.method === 'put')) {
     const requestObj = {
