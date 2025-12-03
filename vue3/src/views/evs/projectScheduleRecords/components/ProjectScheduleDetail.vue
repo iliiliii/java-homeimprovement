@@ -51,9 +51,8 @@
               </div>
             </el-card>
           </el-col>
-        </el-row> -->
+        </el-row> 
 
-        <!-- 整体进度条 -->
         <div class="overall-progress-section">
           <div class="progress-header">
             <span class="progress-label">整体进度</span>
@@ -69,6 +68,7 @@
             <span>{{ getProjectProgress(project) }}%</span>
           </div>
         </div>
+      -->
       </div>
 
       <!-- 滚动区域：施工进度时间轴 -->
@@ -101,25 +101,24 @@
                 <!-- 验收记录展示 -->
                 <div class="acceptance-records-section">
                   <div class="acceptance-records-header">
-                    <span class="acceptance-label">验收记录</span>
-                    <el-tag v-if="getAcceptanceRecords(item.id).length > 0" size="small" type="success">
-                      {{ getAcceptanceRecords(item.id).length }} 次验收
-                    </el-tag>
-                    <span v-else class="no-acceptance-text">暂无验收</span>
-                  </div>
-                  <div class="acceptance-records-summary">
-                    <div v-if="getAcceptanceRecords(item.id).length > 0" class="acceptance-stats">
-                      <el-icon class="acceptance-icon"><DocumentChecked /></el-icon>
-                      <span class="acceptance-text">最近验收：{{ parseTime(getLatestAcceptanceTime(item.id), '{m}-{d} {h}:{i}') }}</span>
+                    <!-- 左侧：标题和统计 -->
+                    <div class="header-left">
+                      <span class="acceptance-label">验收记录</span>
+                      <el-tag v-if="getAcceptanceRecords(item.id).length > 0" size="small" type="success">
+                        {{ getAcceptanceRecords(item.id).length }} 次验收
+                      </el-tag>
+                      <span v-else class="no-acceptance-text">暂无验收</span>
                     </div>
-                    <div class="acceptance-actions">
+
+                    <!-- 右侧：操作按钮，与标签平级 -->
+                    <div class="header-actions">
                       <el-button
                         type="primary"
                         size="small"
                         text
                         @click="handleViewAcceptanceRecords(item)"
                       >
-                        <el-icon><View /></el-icon>
+                        <el-icon style="margin-right: 2px;"><View /></el-icon>
                         查看详情
                       </el-button>
                       <el-button
@@ -127,10 +126,16 @@
                         size="small"
                         @click="$emit('acceptance-report', item)"
                       >
-                        <el-icon><Plus /></el-icon>
+                        <el-icon style="margin-right: 2px;"><Upload /></el-icon>
                         验收上报
                       </el-button>
                     </div>
+                  </div>
+
+                  <!-- 简化的统计信息 -->
+                  <div v-if="getAcceptanceRecords(item.id).length > 0" class="acceptance-stats">
+                    <el-icon class="acceptance-icon"><DocumentChecked /></el-icon>
+                    <span class="acceptance-text">最近验收：{{ parseTime(getLatestAcceptanceTime(item.id), '{m}-{d} {h}:{i}') }}</span>
                   </div>
                 </div>
               </div>
@@ -158,7 +163,7 @@
 </template>
 
 <script setup name="ProjectScheduleDetail">
-import { Calendar, Plus, Check, Close, Edit, Delete, Picture, Clock, User, DocumentChecked, View } from "@element-plus/icons-vue"
+import { Calendar, Plus, Check, Close, Edit, Delete, Picture, Clock, User, DocumentChecked, View, Upload } from "@element-plus/icons-vue"
 import { parseTime } from "@/utils/ruoyi"
 import { listProjectScheduleRecords, delProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
 import { getCurrentInstance } from "vue"
@@ -871,69 +876,36 @@ defineExpose({
 
         .acceptance-records-header {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 8px;
           margin-bottom: 8px;
 
-          .acceptance-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: #303133;
-          }
-
-          .no-acceptance-text {
-            font-size: 12px;
-            color: #999;
-            font-style: italic;
-          }
-        }
-
-        .acceptance-records-summary {
-          background: #fff;
-          border: 1px solid #e8e8e8;
-          border-radius: 6px;
-          padding: 12px;
-          transition: all 0.3s;
-
-          &:hover {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border-color: #1677ff;
-          }
-
-          .acceptance-stats {
+          .header-left {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 8px;
 
-            .acceptance-icon {
-              color: #52c41a;
-              font-size: 16px;
-            }
-
-            .acceptance-text {
-              font-size: 13px;
+            .acceptance-label {
+              font-size: 14px;
+              font-weight: 600;
               color: #303133;
             }
-          }
 
-          .acceptance-actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-
-            .el-button {
-              padding: 4px 12px;
-              height: auto;
-              line-height: 1.2;
-
-              &:hover {
-                transform: translateY(-1px);
-              }
+            .no-acceptance-text {
+              font-size: 12px;
+              color: #999;
+              font-style: italic;
             }
           }
+
+          .header-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+          }
         }
-      }
+
+        }
     }
   }
 }

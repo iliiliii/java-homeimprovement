@@ -34,9 +34,10 @@
           <span>进度节点信息</span>
         </div>
         <div class="schedule-card">
-          <div class="schedule-title-row">
-            <h3 class="schedule-title">{{ currentScheduleItem.taskName || '进度节点' }}</h3>
-            <div class="schedule-meta">
+          <!-- 头部：标题 + 状态标签 -->
+          <div class="card-header">
+            <h3 class="card-title">{{ currentScheduleItem.taskName || '进度节点' }}</h3>
+            <div class="card-tags">
               <el-tag :type="getScheduleStatusType(currentScheduleItem.status)" size="small">
                 {{ getScheduleStatusText(currentScheduleItem.status) }}
               </el-tag>
@@ -46,41 +47,42 @@
             </div>
           </div>
 
-          <div class="schedule-description">
-            <!-- 第一行：任务描述 -->
-            <div class="detail-item detail-item-full">
-              <span class="detail-label">描述：</span>
-              <span class="detail-value">{{ currentScheduleItem.description || '暂无描述' }}</span>
-            </div>
-
-            <!-- 第二行：计划时间 · 实际时间 -->
-            <div class="detail-item detail-item-inline">
-              <div class="detail-chunk">
-                <span class="detail-label">计划：</span>
-                <span class="detail-value">{{ proxy.parseTime(currentScheduleItem.startDate, '{m}-{d}') }} - {{ proxy.parseTime(currentScheduleItem.endDate, '{m}-{d}') }}</span>
+          <!-- 基本信息区块 -->
+          <div class="info-section">
+            <div class="section-title">基本信息</div>
+            <div class="field-grid">
+              <div class="field-item full-width">
+                <span class="field-label">任务描述</span>
+                <span class="field-value">{{ currentScheduleItem.description || '暂无描述' }}</span>
               </div>
-              <div class="detail-separator">·</div>
-              <div class="detail-chunk">
-                <span class="detail-label">实际：</span>
-                <span class="detail-value">{{ currentScheduleItem.actualStartDate ? proxy.parseTime(currentScheduleItem.actualStartDate, '{m}-{d}') : '未开始' }} - {{ currentScheduleItem.actualEndDate ? proxy.parseTime(currentScheduleItem.actualEndDate, '{m}-{d}') : '进行中' }}</span>
+              <div class="field-item">
+                <span class="field-label">计划时间</span>
+                <span class="field-value">{{ formatDateTimeRange(currentScheduleItem.startDate, currentScheduleItem.endDate) }}</span>
+              </div>
+              <div class="field-item">
+                <span class="field-label">实际时间</span>
+                <span class="field-value">{{ formatDateTimeRange(currentScheduleItem.actualStartDate, currentScheduleItem.actualEndDate) }}</span>
               </div>
             </div>
+          </div>
 
-            <!-- 第三行：负责人 · 进度 -->
-            <div class="detail-item detail-item-inline">
-              <div class="detail-chunk">
-                <span class="detail-label">负责人：</span>
-                <span class="detail-value">{{ currentScheduleItem.responsible || '未指定' }}</span>
+          <!-- 执行信息区块 -->
+          <div class="info-section">
+            <div class="section-title">执行信息</div>
+            <div class="field-grid">
+              <div class="field-item">
+                <span class="field-label">负责人</span>
+                <span class="field-value">{{ currentScheduleItem.responsible || '未指定' }}</span>
               </div>
-              <div class="detail-separator">·</div>
-              <div class="detail-chunk">
-                <span class="detail-label">进度：</span>
-                <el-progress
-                  :percentage="currentScheduleItem.progress || 0"
-                  :color="getProgressColor(currentScheduleItem.progress)"
-                  size="small"
-                  style="width: 80px;"
-                />
+              <div class="field-item">
+                <span class="field-label">进度</span>
+                <div class="progress-wrapper">
+                  <el-progress
+                    :percentage="currentScheduleItem.progress || 0"
+                    :color="getProgressColor(currentScheduleItem.progress)"
+                    size="small"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -139,13 +141,12 @@
                   <span class="acceptance-creator" v-if="record.acceptor">{{ record.acceptor }}</span>
                   <span class="acceptance-time">{{ proxy.parseTime(record.acceptanceTime, '{m}-{d} {h}:{i}') }}</span>
                   <!-- 管理员操作按钮 -->
-                  <div v-if="isAdmin" class="acceptance-actions">
+                  <div v-if="isAdmin" class="timeline-actions">
                     <el-button
                       type="primary"
                       size="small"
                       text
                       @click="handleEditAcceptance(record)"
-                      style="padding: 2px 6px;"
                     >
                       <el-icon style="margin-right: 2px;"><Edit /></el-icon>
                       编辑
@@ -155,7 +156,6 @@
                       size="small"
                       text
                       @click="handleDeleteAcceptance(record)"
-                      style="padding: 2px 6px; margin-left: 4px;"
                     >
                       <el-icon style="margin-right: 2px;"><Delete /></el-icon>
                       删除
@@ -583,6 +583,23 @@ function handleClose() {
   acceptanceRecords.value = []
 }
 
+// 格式化时间范围
+function formatDateTimeRange(startDate, endDate) {
+  if (!startDate && !endDate) {
+    return '未设定'
+  }
+
+  if (!startDate) {
+    return `至 ${proxy.parseTime(endDate, '{y}-{m}-{d}')}`
+  }
+
+  if (!endDate) {
+    return `从 ${proxy.parseTime(startDate, '{y}-{m}-{d}')} 开始`
+  }
+
+  return `${proxy.parseTime(startDate, '{y}-{m}-{d}')} 至 ${proxy.parseTime(endDate, '{y}-{m}-{d}')}`
+}
+
 // 窗口大小变化处理
 function handleWindowResize() {
   windowWidth.value = window.innerWidth
@@ -644,81 +661,77 @@ onUnmounted(() => {
     background: #fff;
     border: 1px solid #e8e8e8;
     border-radius: 8px;
-    padding: 14px;
+    padding: 16px;
 
-    .schedule-title-row {
+    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 10px;
+      margin-bottom: 16px;
 
-      .schedule-title {
+      .card-title {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
         color: #303133;
         flex: 1;
-        margin-right: 12px;
       }
 
-      .schedule-meta {
+      .card-tags {
         display: flex;
-        align-items: center;
+        gap: 6px;
         flex-shrink: 0;
       }
     }
 
-    .schedule-description {
-      .detail-item {
-        margin-bottom: 6px;
-        font-size: 13px;
+    .info-section {
+      margin-bottom: 12px;
 
-        &.detail-item-full {
-          display: flex;
+      &:last-child {
+        margin-bottom: 0;
+      }
 
-          .detail-label {
-            color: #666;
-            margin-right: 8px;
-            min-width: 50px;
-            flex-shrink: 0;
-          }
+      .section-title {
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #f0f0f0;
+      }
 
-          .detail-value {
-            color: #303133;
-            flex: 1;
-          }
-        }
+      .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
 
-        &.detail-item-inline {
+        .field-item {
           display: flex;
           align-items: center;
-          flex-wrap: wrap;
-          gap: 6px;
 
-          .detail-chunk {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            flex-shrink: 0;
-
-            .detail-label {
-              color: #666;
-              font-size: 12px;
-              white-space: nowrap;
-            }
-
-            .detail-value {
-              color: #303133;
-              font-size: 12px;
-              font-weight: 500;
-            }
+          &.full-width {
+            grid-column: 1 / -1;
           }
 
-          .detail-separator {
-            color: #ccc;
-            font-size: 14px;
-            margin: 0 2px;
+          .field-label {
+            width: 80px;
             flex-shrink: 0;
+            font-size: 13px;
+            color: #666;
+            text-align: right;
+            margin-right: 12px;
+          }
+
+          .field-value {
+            flex: 1;
+            font-size: 13px;
+            color: #303133;
+            font-weight: 500;
+          }
+
+          .progress-wrapper {
+            flex: 1;
+            min-width: 0; // 允许进度条自适应宽度
           }
         }
       }
@@ -784,11 +797,10 @@ onUnmounted(() => {
         font-size: 12px;
         color: #666;
 
-        .acceptance-actions {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          margin-top: 2px;
+        .timeline-actions {
+
+          .el-button {
+          }
         }
       }
     }
@@ -840,11 +852,11 @@ onUnmounted(() => {
 }
 
 .drawer-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
   padding: 16px;
   border-top: 1px solid #e8e8e8;
+
+  .el-button {
+  }
 }
 
 // 响应式设计
@@ -859,42 +871,48 @@ onUnmounted(() => {
     .schedule-card {
       padding: 12px;
 
-      .schedule-title-row {
-        margin-bottom: 8px;
+      .card-header {
+        margin-bottom: 12px;
 
-        .schedule-title {
+        .card-title {
           font-size: 15px;
+        }
+
+        .card-tags {
+          gap: 4px;
         }
       }
 
-      .schedule-description {
-        .detail-item {
-          font-size: 12px;
-          margin-bottom: 4px;
+      .info-section {
+        margin-bottom: 10px;
 
-          &.detail-item-full {
-            .detail-label {
-              min-width: 45px;
-            }
-          }
+        .section-title {
+          font-size: 11px;
+          margin-bottom: 6px;
+        }
 
-          &.detail-item-inline {
+        .field-grid {
+          gap: 8px;
+          grid-template-columns: 1fr; // 移动端改为单列布局
+
+          .field-item {
             flex-direction: column;
             align-items: flex-start;
-            gap: 3px;
+            gap: 4px;
 
-            .detail-chunk {
-              .detail-label {
-                font-size: 11px;
-              }
-
-              .detail-value {
-                font-size: 11px;
-              }
+            .field-label {
+              width: auto;
+              text-align: left;
+              margin-right: 0;
+              font-size: 12px;
             }
 
-            .detail-separator {
-              display: none; // 在移动端隐藏分隔符
+            .field-value {
+              font-size: 12px;
+            }
+
+            .progress-wrapper {
+              width: 100%;
             }
           }
         }
@@ -941,29 +959,59 @@ onUnmounted(() => {
 
   .drawer-footer {
     padding: 12px;
-    gap: 6px;
   }
 }
 
 @media (max-width: 480px) {
-  .schedule-card {
-    .schedule-description {
-      .detail-item-inline {
-        .detail-chunk {
-          .detail-value {
-            font-size: 10px;
+  .schedule-info-section {
+    .schedule-card {
+      padding: 10px;
+
+      .card-header {
+        margin-bottom: 10px;
+
+        .card-title {
+          font-size: 14px;
+        }
+
+        .card-tags {
+          gap: 3px;
+        }
+      }
+
+      .info-section {
+        margin-bottom: 8px;
+
+        .section-title {
+          font-size: 10px;
+          margin-bottom: 4px;
+        }
+
+        .field-grid {
+          gap: 6px;
+
+          .field-item {
+            .field-label {
+              font-size: 11px;
+            }
+
+            .field-value {
+              font-size: 11px;
+            }
           }
         }
       }
     }
   }
 
-  .acceptance-timeline-content {
-    .acceptance-images {
-      .images-grid {
-        .preview-image {
-          width: 40px !important;
-          height: 40px !important;
+  .acceptance-section {
+    .acceptance-timeline-content {
+      .acceptance-images {
+        .images-grid {
+          .preview-image {
+            width: 40px !important;
+            height: 40px !important;
+          }
         }
       }
     }
