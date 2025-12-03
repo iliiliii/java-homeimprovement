@@ -107,23 +107,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- 质检概览 -->
-            <div class="inspection-overview-section">
-              <div class="overview-header">
-                <span class="overview-label">质检概览</span>
-                <span class="overview-percentage">{{ getPassRate(selectedProject) }}%</span>
-              </div>
-              <el-progress
-                :percentage="getPassRate(selectedProject)"
-                :stroke-width="12"
-                :show-text="false"
-                style="margin-bottom: 8px;"
-              />
-              <div class="overview-footer">
-                <span>{{ getPassRate(selectedProject) }}% 通过率 · 已检查 {{ getTotalInspections(selectedProject) }} · 不通过 {{ getFailedInspections(selectedProject) }} · 问题 {{ getPendingIssuesCount(selectedProject) }}</span>
-              </div>
-            </div>
           </div>
 
           <!-- 滚动区域：质检记录时间轴 -->
@@ -140,10 +123,28 @@
                 >
                   <div class="timeline-item-content">
                     <div class="timeline-item-header">
-                      <span class="timeline-item-title">{{ item.inspectionType || item.title }}</span>
-                      <el-tag :type="getTimelineTagType(item.result)" size="small">
-                        {{ getTimelineStatusLabel(item.result) }}
-                      </el-tag>
+                      <!-- 左侧：标题和状态 -->
+                      <div class="header-left">
+                        <span class="timeline-item-title">{{ item.inspectionType || item.title }}</span>
+                        <el-tag :type="getTimelineTagType(item.result)" size="small">
+                          {{ getTimelineStatusLabel(item.result) }}
+                        </el-tag>
+                      </div>
+
+                      <!-- 右侧：所有操作按钮 -->
+                      <div class="header-actions">
+
+                        <!-- 查看详情按钮（始终显示） -->
+                        <el-button
+                          type="primary"
+                          size="small"
+                          text
+                          @click="handleViewDetails(item)"
+                        >
+                          <el-icon style="margin-right: 2px;"><View /></el-icon>
+                          查看详情
+                        </el-button>
+                      </div>
                     </div>
                     <div class="timeline-item-date">
                       <el-icon><Calendar /></el-icon>
@@ -157,10 +158,7 @@
                       <div class="result-text">质量检查通过</div>
                       <div class="result-description">{{ item.description || '施工质量符合标准,可进入下一阶段' }}</div>
                     </div>
-                    <div v-else-if="item.result === 'UNQUALIFIED'" class="inspection-result-box inspection-result-fail">
-                      <div class="result-text">发现{{ getIssuesCount(item) }}个质量问题</div>
-                      <!-- 问题列表 - 简化显示 -->
-                      <div v-if="getIssuesList(item).length > 0" class="issues-list">
+                    <div v-if="getIssuesList(item).length > 0" class="issues-list">
                         <div
                           v-for="(issue, index) in getIssuesList(item)"
                           :key="issue.id || index"
@@ -180,27 +178,8 @@
                               </span>
                             </div>
                           </div>
-                          <div class="issue-actions">
-                            <el-button
-                              v-if="issue.status === 'OPEN' || issue.status === 'IN_PROGRESS'"
-                              type="primary"
-                              size="small"
-                              @click="handleSubmitFix(issue)"
-                            >
-                              提交整改
-                            </el-button>
-                            <el-button
-                              type="default"
-                              size="small"
-                              @click="handleViewDetails(issue)"
-                              style="margin-left: 8px;"
-                            >
-                              查看详情
-                            </el-button>
-                          </div>
                         </div>
                       </div>
-                    </div>
                   </div>
                 </el-timeline-item>
               </el-timeline>
@@ -362,7 +341,7 @@ import { listProjectSchedules } from "@/api/evs/projectSchedules"
 import { addQualityInspections } from "@/api/evs/qualityInspections"
 import { addQualityIssues, listQualityIssues } from "@/api/evs/qualityIssues"
 import { addQualityFixes, getQualityFixesByIssueId } from "@/api/evs/qualityFixes"
-import { Calendar, Location, CircleCheck, Warning, WarningFilled, Plus, User, Check, Loading } from "@element-plus/icons-vue"
+import { Calendar, Location, CircleCheck, Warning, WarningFilled, Plus, User, Check, Loading, View, Edit, Delete, Tools } from "@element-plus/icons-vue"
 import { getToken } from "@/utils/auth"
 import { useProjectAuth } from '@/utils/projectAuth'
 import { onMounted } from 'vue'
@@ -1385,10 +1364,34 @@ onMounted(() => {
         align-items: center;
         margin-bottom: 8px;
 
-        .timeline-item-title {
-          font-size: 15px;
-          font-weight: 600;
-          color: #303133;
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+          min-width: 0;
+
+          .timeline-item-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #303133;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 4px;
+          flex-shrink: 0;
+          margin-left: auto;
+
+          .el-button {
+            margin: 0;
+            padding: 4px 8px;
+            font-size: 12px;
+          }
         }
       }
 
@@ -1426,6 +1429,22 @@ onMounted(() => {
         &.inspection-result-fail {
           background: #fff1f0;
           border: 1px solid #ffccc7;
+
+          .issues-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ffccc7;
+
+            .issues-title {
+              font-size: 14px;
+              font-weight: 600;
+              color: #ff4d4f;
+              flex: 1;
+            }
+          }
 
           .result-text {
             font-size: 14px;
@@ -1484,11 +1503,13 @@ onMounted(() => {
             }
           }
 
-          .issue-actions {
+          .timeline-actions {
             flex-shrink: 0;
-            display: flex;
-            align-items: center;
             margin-left: 16px;
+
+            .el-button {
+              margin: 0;
+            }
           }
         }
       }

@@ -34,9 +34,10 @@
           <span>问题信息</span>
         </div>
         <div class="issue-card">
-          <div class="issue-title-row">
-            <h3 class="issue-title">{{ currentIssue.title || '质量问题' }}</h3>
-            <div class="issue-meta">
+          <!-- 头部：标题 + 状态标签 -->
+          <div class="card-header">
+            <h3 class="card-title">{{ currentIssue.title || '质量问题' }}</h3>
+            <div class="card-tags">
               <el-tag :type="getIssueStatusType(currentIssue.status)" size="small">
                 {{ getIssueStatusText(currentIssue.status) }}
               </el-tag>
@@ -46,60 +47,46 @@
             </div>
           </div>
 
-          <div class="issue-description">
-            <!-- 第一行：问题描述 -->
-            <div class="detail-item detail-item-full">
-              <span class="detail-label">描述：</span>
-              <span class="detail-value">{{ currentIssue.description || '暂无描述' }}</span>
-            </div>
-
-            <!-- 第二行：位置 · 上报人 · 上报时间 -->
-            <div class="detail-item detail-item-inline">
-              <div class="detail-chunk">
-                <span class="detail-label">位置：</span>
-                <span class="detail-value">{{ currentIssue.location || '未指定' }}</span>
+          <!-- 基本信息区块 -->
+          <div class="info-section">
+            <div class="section-title">基本信息</div>
+            <div class="field-grid">
+              <div class="field-item full-width">
+                <span class="field-label">问题描述</span>
+                <span class="field-value">{{ currentIssue.description || '暂无描述' }}</span>
               </div>
-              <div class="detail-separator">·</div>
-              <div class="detail-chunk">
-                <span class="detail-label">上报人：</span>
-                <span class="detail-value">{{ getReportedBy(currentIssue) }}</span>
+              <div class="field-item">
+                <span class="field-label">问题位置</span>
+                <span class="field-value">{{ currentIssue.location || '未指定' }}</span>
               </div>
-              <div class="detail-separator">·</div>
-              <div class="detail-chunk">
-                <span class="detail-label">时间：</span>
-                <span class="detail-value">{{ proxy.parseTime(currentIssue.createdAt, '{m}-{d} {h}:{i}') }}</span>
+              <div class="field-item">
+                <span class="field-label">上报人</span>
+                <span class="field-value">{{ getReportedBy(currentIssue) }}</span>
               </div>
             </div>
+          </div>
 
-            <!-- 第三行：分类 · 状态 · 期限 -->
-            <div class="detail-item detail-item-inline">
-              <div class="detail-chunk">
-                <span class="detail-label">分类：</span>
-                <el-tag :type="getIssueCategoryType(currentIssue.category)" size="small">
-                  {{ getIssueCategoryText(currentIssue.category) }}
-                </el-tag>
+          <!-- 时间信息区块 -->
+          <div class="info-section">
+            <div class="section-title">时间信息</div>
+            <div class="field-grid">
+              <div class="field-item">
+                <span class="field-label">上报时间</span>
+                <span class="field-value">{{ proxy.parseTime(currentIssue.createdAt, '{y}-{m}-{d} {h}:{i}') }}</span>
               </div>
-              <div class="detail-separator">·</div>
-              <div class="detail-chunk">
-                <span class="detail-label">状态：</span>
-                <el-tag :type="getIssueStatusType(currentIssue.status)" size="small">
-                  {{ getIssueStatusText(currentIssue.status) }}
-                </el-tag>
-              </div>
-              <div class="detail-separator" v-if="currentIssue.dueDate">·</div>
-              <div class="detail-chunk" v-if="currentIssue.dueDate">
-                <span class="detail-label">期限：</span>
-                <span class="detail-value" :class="{ 'overdue': isOverdue(currentIssue.dueDate) }">
-                  {{ proxy.parseTime(currentIssue.dueDate, '{m}-{d}') }}
+              <div class="field-item">
+                <span class="field-label">整改期限</span>
+                <span class="field-value" :class="{ 'overdue': isOverdue(currentIssue.dueDate) }">
+                  {{ currentIssue.dueDate ? proxy.parseTime(currentIssue.dueDate, '{y}-{m}-{d}') : '未设定' }}
                   <el-tag v-if="isOverdue(currentIssue.dueDate)" type="danger" size="small" style="margin-left: 4px;">已逾期</el-tag>
                 </span>
               </div>
             </div>
           </div>
 
-          <!-- 问题图片 -->
-          <div class="issue-images" v-if="hasIssueImages">
-            <div class="images-title">现场照片：</div>
+          <!-- 现场图片 -->
+          <div class="info-section" v-if="hasIssueImages">
+            <div class="section-title">现场照片</div>
             <div class="images-preview">
               <el-image
                 v-for="(img, index) in getIssueImages()"
@@ -757,98 +744,79 @@ onUnmounted(() => {
     background: #fff;
     border: 1px solid #e8e8e8;
     border-radius: 8px;
-    padding: 14px;
+    padding: 16px;
 
-    .issue-title-row {
+    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 10px;
+      margin-bottom: 16px;
 
-      .issue-title {
+      .card-title {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
         color: #303133;
         flex: 1;
-        margin-right: 12px;
       }
 
-      .issue-meta {
+      .card-tags {
         display: flex;
-        align-items: center;
+        gap: 6px;
         flex-shrink: 0;
       }
     }
 
-    .issue-description {
-      .detail-item {
-        margin-bottom: 6px;
-        font-size: 13px;
+    .info-section {
+      margin-bottom: 12px;
 
-        &.detail-item-full {
-          display: flex;
+      &:last-child {
+        margin-bottom: 0;
+      }
 
-          .detail-label {
-            color: #666;
-            margin-right: 8px;
-            min-width: 50px;
-            flex-shrink: 0;
-          }
+      .section-title {
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #f0f0f0;
+      }
 
-          .detail-value {
-            color: #303133;
-            flex: 1;
-          }
-        }
+      .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
 
-        &.detail-item-inline {
+        .field-item {
           display: flex;
           align-items: center;
-          flex-wrap: wrap;
-          gap: 6px;
 
-          .detail-chunk {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            flex-shrink: 0;
-
-            .detail-label {
-              color: #666;
-              font-size: 12px;
-              white-space: nowrap;
-            }
-
-            .detail-value {
-              color: #303133;
-              font-size: 12px;
-              font-weight: 500;
-
-              &.overdue {
-                color: #ff4d4f;
-                font-weight: 600;
-              }
-            }
+          &.full-width {
+            grid-column: 1 / -1;
           }
 
-          .detail-separator {
-            color: #ccc;
-            font-size: 14px;
-            margin: 0 2px;
+          .field-label {
+            width: 80px;
             flex-shrink: 0;
+            font-size: 13px;
+            color: #666;
+            text-align: right;
+            margin-right: 12px;
+          }
+
+          .field-value {
+            flex: 1;
+            font-size: 13px;
+            color: #303133;
+            font-weight: 500;
+
+            &.overdue {
+              color: #ff4d4f;
+              font-weight: 600;
+            }
           }
         }
-      }
-    }
-
-    .issue-images {
-      margin-top: 10px;
-
-      .images-title {
-        font-size: 13px;
-        color: #666;
-        margin-bottom: 6px;
       }
 
       .images-preview {
@@ -1010,49 +978,47 @@ onUnmounted(() => {
     .issue-card {
       padding: 12px;
 
-      .issue-title-row {
-        margin-bottom: 8px;
+      .card-header {
+        margin-bottom: 12px;
 
-        .issue-title {
+        .card-title {
           font-size: 15px;
         }
-      }
 
-      .issue-description {
-        .detail-item {
-          font-size: 12px;
-          margin-bottom: 4px;
-
-          &.detail-item-full {
-            .detail-label {
-              min-width: 45px;
-            }
-          }
-
-          &.detail-item-inline {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 3px;
-
-            .detail-chunk {
-              .detail-label {
-                font-size: 11px;
-              }
-
-              .detail-value {
-                font-size: 11px;
-              }
-            }
-
-            .detail-separator {
-              display: none; // 在移动端隐藏分隔符
-            }
-          }
+        .card-tags {
+          gap: 4px;
         }
       }
 
-      .issue-images {
-        margin-top: 8px;
+      .info-section {
+        margin-bottom: 10px;
+
+        .section-title {
+          font-size: 11px;
+          margin-bottom: 6px;
+        }
+
+        .field-grid {
+          gap: 8px;
+          grid-template-columns: 1fr; // 移动端改为单列布局
+
+          .field-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+
+            .field-label {
+              width: auto;
+              text-align: left;
+              margin-right: 0;
+              font-size: 12px;
+            }
+
+            .field-value {
+              font-size: 12px;
+            }
+          }
+        }
 
         .images-preview {
           .preview-image {
@@ -1108,12 +1074,49 @@ onUnmounted(() => {
 }
 
 @media (max-width: 480px) {
-  .issue-card {
-    .issue-images {
-      .images-preview {
-        .preview-image {
-          width: 50px !important;
-          height: 50px !important;
+  .issue-info-section {
+    .issue-card {
+      padding: 10px;
+
+      .card-header {
+        margin-bottom: 10px;
+
+        .card-title {
+          font-size: 14px;
+        }
+
+        .card-tags {
+          gap: 3px;
+        }
+      }
+
+      .info-section {
+        margin-bottom: 8px;
+
+        .section-title {
+          font-size: 10px;
+          margin-bottom: 4px;
+        }
+
+        .field-grid {
+          gap: 6px;
+
+          .field-item {
+            .field-label {
+              font-size: 11px;
+            }
+
+            .field-value {
+              font-size: 11px;
+            }
+          }
+        }
+
+        .images-preview {
+          .preview-image {
+            width: 50px !important;
+            height: 50px !important;
+          }
         }
       }
     }
