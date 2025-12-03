@@ -1,0 +1,280 @@
+/**
+ * 时间轴组件专用样式
+ * 用于统一时间轴相关组件的按钮、间距和布局
+ */
+
+// 时间轴组件CSS变量
+:root {
+  // 按钮间距系统
+  --timeline-btn-gap-xs: 4px;
+  --timeline-btn-gap-sm: 6px;
+  --timeline-btn-gap-md: 8px;
+  --timeline-btn-gap-lg: 12px;
+
+  // 按钮尺寸系统
+  --timeline-btn-padding-sm: 4px 12px;
+  --timeline-btn-padding-md: 6px 16px;
+  --timeline-btn-height-sm: 28px;
+  --timeline-btn-height-md: 32px;
+
+  // 统一圆角系统
+  --timeline-btn-border-radius: 4px;
+  --timeline-card-border-radius: 6px;
+  --timeline-item-border-radius: 8px;
+
+  // 间距系统
+  --timeline-item-margin: 12px;
+  --timeline-section-gap: 16px;
+  --timeline-content-padding: 16px;
+
+  // 时间轴卡片内容结构间距
+  --timeline-item-date-gap: 8px;        // 统一日期区域间距
+  --timeline-header-margin: 8px;        // 统一头部下边距
+  --timeline-description-margin: 6px;   // 统一描述下边距
+  --timeline-date-margin-bottom: 12px;  // 统一日期下边距
+
+  // 阴影和过渡
+  --timeline-btn-transition: all 0.3s ease;
+  --timeline-btn-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --timeline-btn-shadow-active: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+// 时间轴按钮基础样式Mixin
+@mixin timeline-btn-base {
+  padding: var(--timeline-btn-padding-sm);
+  height: var(--timeline-btn-height-sm);
+  border-radius: var(--timeline-btn-border-radius);
+  font-size: 13px;
+  line-height: 1.2;
+  transition: var(--timeline-btn-transition);
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--timeline-btn-shadow-hover);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--timeline-btn-shadow-active);
+  }
+}
+
+// 时间轴按钮组布局Mixin
+@mixin timeline-btn-group {
+  display: flex;
+  align-items: center;
+  gap: var(--timeline-btn-gap-sm);
+  flex-wrap: wrap;
+}
+
+// 右对齐按钮组Mixin
+@mixin timeline-btn-group-right {
+  @include timeline-btn-group;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+// 时间轴卡片基础样式
+@mixin timeline-card-base {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: var(--timeline-card-border-radius);
+  padding: var(--timeline-content-padding);
+  box-sizing: border-box;
+}
+
+// 时间轴项目基础样式
+@mixin timeline-item-base {
+  margin-bottom: var(--timeline-item-margin);
+  transition: var(--timeline-btn-transition);
+}
+
+// 响应式Mixin
+@mixin timeline-mobile {
+  @media (max-width: 768px) {
+    .timeline-btn-group {
+      flex-wrap: wrap;
+      gap: var(--timeline-btn-gap-xs);
+    }
+
+    .timeline-btn-group-right {
+      margin-left: 0;
+      justify-content: flex-start;
+      margin-top: 8px;
+    }
+
+    .timeline-content {
+      padding: calc(var(--timeline-content-padding) * 0.75);
+    }
+  }
+}
+
+@mixin timeline-small-mobile {
+  @media (max-width: 480px) {
+    .timeline-btn-group {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--timeline-btn-gap-xs);
+
+      .el-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .timeline-content {
+      padding: calc(var(--timeline-content-padding) * 0.6);
+    }
+  }
+}
+
+// 统一按钮样式类
+.timeline-btn-group {
+  display: flex;
+  align-items: center;
+  gap: var(--timeline-btn-gap-sm);
+  flex-wrap: wrap;
+
+  .el-button {
+    padding: var(--timeline-btn-padding-sm);
+    height: var(--timeline-btn-height-sm);
+    border-radius: var(--timeline-btn-border-radius);
+    font-size: 13px;
+    line-height: 1.2;
+    transition: var(--timeline-btn-transition);
+    white-space: nowrap;
+    box-sizing: border-box;
+    margin: 0; // 重置不一致的margin
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--timeline-btn-shadow-hover);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: var(--timeline-btn-shadow-active);
+    }
+  }
+}
+
+.timeline-btn-group-right {
+  display: flex;
+  align-items: center;
+  gap: var(--timeline-btn-gap-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+
+  .el-button {
+    padding: var(--timeline-btn-padding-sm);
+    height: var(--timeline-btn-height-sm);
+    border-radius: var(--timeline-btn-border-radius);
+    font-size: 13px;
+    line-height: 1.2;
+    transition: var(--timeline-btn-transition);
+    white-space: nowrap;
+    box-sizing: border-box;
+    margin: 0;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--timeline-btn-shadow-hover);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: var(--timeline-btn-shadow-active);
+    }
+  }
+}
+
+// 时间轴卡片容器
+.timeline-item-content {
+  @include timeline-item-base;
+  @include timeline-card-base;
+
+  // 统一的头部样式
+  .timeline-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--timeline-header-margin);
+
+    .timeline-item-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #303133;
+    }
+  }
+
+  // 统一的日期区域样式
+  .timeline-item-date {
+    display: flex;
+    align-items: center;
+    gap: var(--timeline-item-date-gap);
+    font-size: 13px;
+    color: #999;
+    margin-bottom: var(--timeline-date-margin-bottom);
+
+    .el-icon {
+      font-size: 14px;
+    }
+  }
+
+  // 统一的描述文本
+  .timeline-item-description {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+    margin-bottom: var(--timeline-description-margin);
+  }
+
+  // 统一的操作按钮组
+  .timeline-actions {
+    @include timeline-btn-group;
+
+    &.timeline-actions-right {
+      @include timeline-btn-group-right;
+    }
+
+    .el-button {
+      @include timeline-btn-base;
+      margin: 0; // 重置不一致的margin
+      transition: all 0.3s ease;
+
+      .el-icon {
+        margin-right: 2px; // 统一图标间距
+      }
+    }
+
+    // 主要操作按钮悬停效果
+    .el-button--primary:not(.is-text):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.3);
+    }
+
+    // 危险操作按钮强化
+    .el-button--danger.is-text:hover {
+      background: rgba(255, 77, 79, 0.06);
+    }
+
+    // 成功操作按钮效果
+    .el-button--success:not(.is-text):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
+    }
+
+    // 警告操作按钮效果
+    .el-button--warning:not(.is-text):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(230, 162, 60, 0.3);
+    }
+  }
+}
+
+// 响应式样式
+@include timeline-mobile;
+@include timeline-small-mobile;
