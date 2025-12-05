@@ -405,6 +405,12 @@ function handleSaveBudget(updateData) {
     proxy.$modal.msgSuccess("预算已保存")
     budgetOpen.value = false
     getList() // 刷新项目列表
+    
+    // 如果项目详情对话框打开，刷新详情中的预算数据
+    if (projectDetailRef.value && projectDetailRef.value.currentProject.id === updateData.id) {
+      console.log('[项目卡片] 预算已更新，刷新详情数据')
+      projectDetailRef.value.loadBudgetData()
+    }
   }).catch(error => {
     proxy.$modal.msgError("保存失败：" + (error.message || "未知错误"))
   })
@@ -422,6 +428,12 @@ function handleSaveProgress(updateData) {
     proxy.$modal.msgSuccess("进度已保存")
     progressOpen.value = false
     getList() // 刷新项目列表
+    
+    // 如果项目详情对话框打开，刷新详情中的进度数据
+    if (projectDetailRef.value && projectDetailRef.value.currentProject.id === updateData.id) {
+      console.log('[项目卡片] 进度已更新，刷新详情数据')
+      projectDetailRef.value.loadProgressData()
+    }
   }).catch(error => {
     proxy.$modal.msgError("保存失败：" + (error.message || "未知错误"))
   })

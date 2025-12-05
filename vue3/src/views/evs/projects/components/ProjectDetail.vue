@@ -70,16 +70,11 @@
                       <el-descriptions-item label="工地面积" :span="2">
               {{ currentProject.area ? currentProject.area + '㎡' : '-' }}
             </el-descriptions-item>
-            <el-descriptions-item label="关联客户">
-              <el-link
-                v-if="getCustomerName(currentProject.customerId)"
-                type="primary"
-                :underline="false"
-                @click="goToCustomer(currentProject.customerId)"
-              >
+            <el-descriptions-item label="客户">
+              <span v-if="getCustomerName(currentProject.customerId)">
                 {{ getCustomerName(currentProject.customerId) }}
-              </el-link>
-              <span v-else style="color: #999;">未关联客户</span>
+              </span>
+              <span v-else style="color: #999;">-</span>
             </el-descriptions-item>
             <el-descriptions-item label="工地地址" :span="3">
               {{ currentProject.address || '-' }}
@@ -100,7 +95,7 @@
         </el-card>
 
         <!-- 项目预算 -->
-        <el-card size="small" shadow="never" style="width: 100%; padding: 8px;">
+        <el-card size="small" shadow="never" style="width: 100%; padding: 8px;" v-loading="loadingBudget" element-loading-text="正在加载预算数据...">
           <template #header>
             <div style="display: flex; align-items: center; gap: 10px;">
               <el-icon style="color: #faad14; font-size: 18px;"><Coin /></el-icon>
@@ -142,75 +137,27 @@
               </el-col>
             </el-row>
 
-            <!-- 预算明细表格 -->
-            <div v-if="currentProject.budgetItems && currentProject.budgetItems.length > 0">
-              <el-table
-                :data="currentProject.budgetItems"
-                size="small"
-                style="margin-bottom: 16px;"
-                :show-header="true"
-              >
-                <el-table-column prop="category" label="预算类别" width="30%" />
-                <el-table-column prop="amount" label="预算金额" width="30%">
-                  <template #default="scope">
-                    <span style="color: #faad14; font-weight: bold;">
-                      ¥{{ scope.row.amount.toLocaleString() }}
-                    </span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="description" label="说明" width="40%">
-                  <template #default="scope">
-                    <span v-if="scope.row.description">{{ scope.row.description }}</span>
-                    <span v-else style="color: #999;">-</span>
-                  </template>
-                </el-table-column>
-              </el-table>
-
-              <!-- 预算执行情况 -->
-              <el-card size="small" shadow="never" style="background: #fff7e6; border-color: #faad14; padding: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <span style="font-size: 16px; font-weight: 600;">预算执行情况</span>
-                  <span style="color: #faad14; font-size: 20px; font-weight: 600;">
-                    ¥{{ formatBudget(currentProject.budget) }}万
-                  </span>
-                </div>
-                <el-progress
-                  :percentage="calculateProgress(currentProject.actualCost || 0, currentProject.budget)"
-                  :stroke-width="14"
-                  :show-text="false"
-                  style="margin-bottom: 12px;"
-                />
-                <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                  <span style="color: #666;">剩余预算</span>
-                  <span :style="{ color: (currentProject.budget - (currentProject.actualCost || 0)) >= 0 ? '#52c41a' : '#ff4d4f', fontWeight: 600, fontSize: '15px' }">
-                    ¥{{ formatBudget((currentProject.budget || 0) - (currentProject.actualCost || 0)) }}万
-                  </span>
-                </div>
-              </el-card>
-            </div>
-            <div v-else>
-              <!-- 没有预算明细时的执行情况显示 -->
-              <el-card size="small" shadow="never" style="background: #fff7e6; border-color: #faad14; padding: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <span style="font-size: 16px; font-weight: 600;">预算执行情况</span>
-                  <span style="color: #faad14; font-size: 20px; font-weight: 600;">
-                    ¥{{ formatBudget(currentProject.budget) }}万
-                  </span>
-                </div>
-                <el-progress
-                  :percentage="calculateProgress(currentProject.actualCost || 0, currentProject.budget)"
-                  :stroke-width="14"
-                  :show-text="false"
-                  style="margin-bottom: 12px;"
-                />
-                <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                  <span style="color: #666;">剩余预算</span>
-                  <span :style="{ color: (currentProject.budget - (currentProject.actualCost || 0)) >= 0 ? '#52c41a' : '#ff4d4f', fontWeight: 600, fontSize: '15px' }">
-                    ¥{{ formatBudget((currentProject.budget || 0) - (currentProject.actualCost || 0)) }}万
-                  </span>
-                </div>
-              </el-card>
-            </div>
+            <!-- 预算执行情况 -->
+            <el-card size="small" shadow="never" style="background: #fff7e6; border-color: #faad14; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 16px; font-weight: 600;">预算执行情况</span>
+                <span style="color: #faad14; font-size: 20px; font-weight: 600;">
+                  ¥{{ formatBudget(currentProject.budget) }}万
+                </span>
+              </div>
+              <el-progress
+                :percentage="calculateProgress(currentProject.actualCost || 0, currentProject.budget)"
+                :stroke-width="14"
+                :show-text="false"
+                style="margin-bottom: 12px;"
+              />
+              <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                <span style="color: #666;">剩余预算</span>
+                <span :style="{ color: (currentProject.budget - (currentProject.actualCost || 0)) >= 0 ? '#52c41a' : '#ff4d4f', fontWeight: 600, fontSize: '15px' }">
+                  ¥{{ formatBudget((currentProject.budget || 0) - (currentProject.actualCost || 0)) }}万
+                </span>
+              </div>
+            </el-card>
           </div>
           <div v-else style="text-align: center; padding: 20px 0;">
             <span style="color: #999;">暂无预算信息</span>
@@ -218,7 +165,7 @@
         </el-card>
 
         <!-- 项目进度 -->
-        <el-card size="small" shadow="never" v-if="currentProject.progress !== undefined" style="width: 100%; padding: 8px;">
+        <el-card size="small" shadow="never" v-if="currentProject.progress !== undefined" style="width: 100%; padding: 8px;" v-loading="loadingProgress" element-loading-text="正在加载进度数据...">
           <template #header>
             <div style="display: flex; align-items: center; gap: 10px;">
               <el-icon style="color: #52c41a; font-size: 18px;"><TrendCharts /></el-icon>
@@ -328,14 +275,14 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
 import { User, Setting, Wallet, Clock, Edit, Picture } from '@element-plus/icons-vue'
 import ProjectMember from './ProjectMember.vue'
 import ProjectDesignDrafts from './ProjectDesignDrafts.vue'
+import { listProjectBudgets } from '@/api/evs/projectBudgets'
+import { listProjectSchedules } from '@/api/evs/projectSchedules'
 
 const { proxy } = getCurrentInstance()
-const router = useRouter()
-const { decoration_project_status } = proxy.useDict('decoration_project_status')
+const { decoration_project_status, decoration_construction_stage } = proxy.useDict('decoration_project_status', 'decoration_construction_stage')
 
 const props = defineProps({
   // 无需接收 props，对外暴露方法
@@ -346,6 +293,8 @@ const emit = defineEmits(['update', 'budget', 'progress', 'design-drafts-updated
 // 响应式数据
 const detailOpen = ref(false)
 const currentProject = ref({})
+const loadingBudget = ref(false) // 预算加载状态
+const loadingProgress = ref(false) // 进度加载状态
 
 // 团队成员分配相关
 const teamAllocationOpen = ref(false)
@@ -415,33 +364,114 @@ function calculateDaysRemaining(endDate, actualEndDate) {
 
 /** 获取客户名称 */
 function getCustomerName(customerId) {
-  // 优先从当前项目数据中获取客户信息
+  // 从当前项目数据中获取客户信息
   if (currentProject.value.customer && currentProject.value.customer.name) {
     return currentProject.value.customer.name
   }
-  // 如果有客户ID但没有客户信息，返回客户ID
-  if (customerId) {
-    return `客户ID: ${customerId}`
-  }
-  // 默认返回值
-  return '未关联客户'
+  // 没有客户信息时返回空
+  return ''
 }
 
-/** 跳转到客户详情页 */
-function goToCustomer(customerId) {
-  if (customerId) {
-    // 使用Vue Router跳转到客户管理页面，并传递客户ID参数
-    router.push({
-      path: '/evs/customers',
-      query: { id: customerId }
+/** 加载项目预算数据 - 只加载汇总信息 */
+async function loadBudgetData() {
+  if (!currentProject.value.id) return
+  
+  loadingBudget.value = true
+  try {
+    const res = await listProjectBudgets({ 
+      projectId: currentProject.value.id,
+      pageNum: 1,
+      pageSize: 100
     })
+    
+    if (res.code === 200) {
+      const budgetItems = res.rows || []
+      
+      // 计算总预算（汇总所有预算项的计划金额）
+      const totalBudget = budgetItems.reduce((sum, item) => {
+        return sum + (item.plannedAmount || 0)
+      }, 0)
+      
+      // 只更新总预算，不存储明细
+      currentProject.value.budget = totalBudget
+      
+      console.log(`[项目详情] 加载预算数据成功: ${budgetItems.length}项, 总预算: ¥${totalBudget}`)
+    }
+  } catch (error) {
+    console.error('[项目详情] 加载预算数据失败:', error)
+    proxy.$modal.msgError('加载预算数据失败')
+  } finally {
+    loadingBudget.value = false
   }
+}
+
+/** 加载项目进度数据 */
+async function loadProgressData() {
+  if (!currentProject.value.id) return
+  
+  loadingProgress.value = true
+  try {
+    const res = await listProjectSchedules({ 
+      projectId: currentProject.value.id,
+      pageNum: 1,
+      pageSize: 100
+    })
+    
+    if (res.code === 200) {
+      const schedules = res.rows || []
+      
+      // 转换为时间轴格式
+      const timeline = schedules.map(item => ({
+        id: item.id,
+        title: item.stage,
+        description: item.description || '',
+        date: item.planStartDate || item.actualStartDate || '未设置',
+        status: mapStatusFromBackend(item.status),
+        stageOrder: item.stageOrder,
+        completionRate: item.completionRate || 0
+      })).sort((a, b) => (a.stageOrder || 0) - (b.stageOrder || 0))
+      
+      // 计算完成度
+      const completedCount = timeline.filter(t => t.status === 'completed').length
+      const progress = timeline.length > 0 
+        ? Math.round((completedCount / timeline.length) * 100) 
+        : 0
+      
+      // 更新项目数据
+      currentProject.value.timeline = timeline
+      currentProject.value.progress = progress
+      
+      console.log(`[项目详情] 加载进度数据成功: ${timeline.length}个阶段, 完成度: ${progress}%`)
+    }
+  } catch (error) {
+    console.error('[项目详情] 加载进度数据失败:', error)
+    proxy.$modal.msgError('加载进度数据失败')
+  } finally {
+    loadingProgress.value = false
+  }
+}
+
+/** 状态映射：后端状态 → 组件状态 */
+function mapStatusFromBackend(backendStatus) {
+  const statusMap = {
+    'PLANNED': 'pending',
+    'IN_PROGRESS': 'inProgress',
+    'COMPLETED': 'completed'
+  }
+  return statusMap[backendStatus] || 'pending'
 }
 
 /** 打开详情对话框 */
-function handleView(project) {
+async function handleView(project) {
   currentProject.value = project
   detailOpen.value = true
+  
+  // 异步加载预算和进度数据
+  console.log(`[项目详情] 打开项目 ${project.id} (${project.name}) 的详情`)
+  await Promise.all([
+    loadBudgetData(),
+    loadProgressData()
+  ])
 }
 
 /** 预算管理 */
@@ -501,7 +531,10 @@ function handleDesignsUpdated(data) {
 
 // 暴露方法给父组件
 defineExpose({
-  handleView
+  handleView,
+  loadBudgetData,
+  loadProgressData,
+  currentProject
 })
 </script>
 
