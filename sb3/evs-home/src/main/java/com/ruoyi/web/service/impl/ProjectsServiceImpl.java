@@ -201,15 +201,19 @@ public class ProjectsServiceImpl implements IProjectsService
             return selectProjectsList(projects);
         }
 
+        // 设置权限信息
+        Projects query = setCurrentUser(projects);
+
         List<Projects> projectList;
 
+        // 优先处理 customer 关联查询
         if (includeRelations.contains("customer")) {
-            projectList = projectsMapper.selectProjectsWithCustomer(projects);
+            projectList = projectsMapper.selectProjectsWithCustomer(query);
         } else if (includeRelations.contains("projectMembers")) {
             // 通过 projectMembers 关联查询
-            projectList = projectsMapper.selectProjectsWithMembers(projects, memberUserId, isAdmin);
+            projectList = projectsMapper.selectProjectsWithMembers(query, memberUserId, isAdmin);
         } else {
-            projectList = selectProjectsList(projects);
+            projectList = selectProjectsList(query);
         }
 
         return projectList;
