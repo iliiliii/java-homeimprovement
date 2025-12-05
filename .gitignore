@@ -107,3 +107,8 @@ vue3/.env.development
 **/application-*.yml
 !**/application.yml.example
 !**/application-druid.yml.example
+
+# === 本地配置文件 - 不提交到远程 ===
+**/application-druid.yml
+**/application.yml
+**/vite.config.js
