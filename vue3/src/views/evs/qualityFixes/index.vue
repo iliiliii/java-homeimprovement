@@ -66,12 +66,12 @@
       <el-table-column label="修复状态(OPEN:未解决、IN_PROGRESS:解决中、RESOLVED:已解决)" align="center" prop="status" />
       <el-table-column label="修复时间" align="center" prop="fixedAt" width="180">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.fixedAt, '{y}-{m}-{d}') }}</span>
+          <span>{{ parseTime(scope.row.fixedAt, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="验收时间" align="center" prop="verifiedAt" width="180">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.verifiedAt, '{y}-{m}-{d}') }}</span>
+          <span>{{ parseTime(scope.row.verifiedAt, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">

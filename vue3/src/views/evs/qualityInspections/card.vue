@@ -65,10 +65,6 @@
                 <el-icon><Location /></el-icon>
                 <span>{{ project.address || '未设置地址' }}</span>
               </div>
-              <!-- 简化显示：移除需要预加载的统计信息 -->
-              <div class="project-status-hint">
-                <el-tag size="small" type="info">点击查看详情</el-tag>
-              </div>
             </div>
             <el-empty v-if="inProgressProjects.length === 0" description="暂无进行中的项目" :image-size="100" />
           </div>
@@ -109,82 +105,15 @@
             </div>
           </div>
 
-          <!-- 滚动区域：质检记录时间轴 -->
-          <div class="timeline-section timeline-scrollable">
-            <div class="timeline-title">质检记录时间轴</div>
-            <div v-loading="inspectionLoading" class="timeline-content">
-              <el-timeline v-if="inspectionItems.length > 0">
-                <el-timeline-item
-                  v-for="item in inspectionItems"
-                  :key="item.id"
-                  :color="getTimelineColor(item.result)"
-                  :icon="getTimelineIcon(item.result)"
-                  size="large"
-                >
-                  <div class="timeline-item-content">
-                    <div class="timeline-item-header">
-                      <!-- 左侧：标题和状态 -->
-                      <div class="header-left">
-                        <span class="timeline-item-title">{{ item.inspectionType || item.title }}</span>
-                        <el-tag :type="getTimelineTagType(item.result)" size="small">
-                          {{ getTimelineStatusLabel(item.result) }}
-                        </el-tag>
-                      </div>
-
-                      <!-- 右侧：所有操作按钮 -->
-                      <div class="header-actions">
-
-                        <!-- 查看详情按钮（始终显示） -->
-                        <el-button
-                          type="primary"
-                          size="small"
-                          text
-                          @click="handleViewDetails(item)"
-                        >
-                          <el-icon style="margin-right: 2px;"><View /></el-icon>
-                          查看详情
-                        </el-button>
-                      </div>
-                    </div>
-                    <div class="timeline-item-date">
-                      <el-icon><Calendar /></el-icon>
-                      <span>{{ proxy.parseTime(item.inspectionDate, '{y}-{m}-{d}') }}</span>
-                      <span v-if="item.createdBy" style="margin-left: 16px;">
-                        <el-icon><User /></el-icon>
-                        <span>{{ item.createdBy }}</span>
-                      </span>
-                    </div>
-                    <div v-if="item.result === 'QUALIFIED'" class="inspection-result-box inspection-result-pass">
-                      <div class="result-text">质量检查通过</div>
-                      <div class="result-description">{{ item.description || '施工质量符合标准,可进入下一阶段' }}</div>
-                    </div>
-                    <div v-if="getIssuesList(item).length > 0" class="issues-list">
-                        <div
-                          v-for="(issue, index) in getIssuesList(item)"
-                          :key="issue.id || index"
-                          class="issue-item"
-                        >
-                          <div class="issue-info">
-                            <div class="issue-title">
-                              <el-icon :style="{ color: getIssueIconColor(issue.status) }" style="margin-right: 6px;"><WarningFilled /></el-icon>
-                              <span>{{ issue.title || '质量问题' }}</span>
-                            </div>
-                            <div class="issue-meta">
-                              <el-tag :type="getIssueStatusType(issue.status)" size="small">
-                                {{ getIssueStatusText(issue.status) }}
-                              </el-tag>
-                              <span v-if="issue.dueDate" class="issue-due-date">
-                                期限：{{ proxy.parseTime(issue.dueDate, '{m}-{d}') }}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                  </div>
-                </el-timeline-item>
-              </el-timeline>
-              <el-empty v-else description="暂无质检记录" :image-size="100" />
-            </div>
+          <!-- 质量问题面板 -->
+          <div class="quality-issues-section">
+            <QualityIssuesPanel
+              :issues="allIssues"
+              :issue-fixes-map="issueFixesMap"
+              :loading="inspectionLoading"
+              @submit-fix="handleSubmitFix"
+              @refresh="loadProjectInspections(selectedProject?.id)"
+            />
           </div>
         </el-card>
 
@@ -341,13 +270,14 @@ import { listProjectSchedules } from "@/api/evs/projectSchedules"
 import { addQualityInspections } from "@/api/evs/qualityInspections"
 import { addQualityIssues, listQualityIssues } from "@/api/evs/qualityIssues"
 import { addQualityFixes, getQualityFixesByIssueId } from "@/api/evs/qualityFixes"
-import { Calendar, Location, CircleCheck, Warning, WarningFilled, Plus, User, Check, Loading, View, Edit, Delete, Tools } from "@element-plus/icons-vue"
+import { Calendar, Location, CircleCheck, Plus, Check, Loading } from "@element-plus/icons-vue"
 import { getToken } from "@/utils/auth"
 import { useProjectAuth } from '@/utils/projectAuth'
 import { onMounted } from 'vue'
 import FixSubmissionDialog from './components/FixSubmissionDialog.vue'
 import QualityFixesDrawer from './components/QualityFixesDrawer.vue'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
+import QualityIssuesPanel from './components/QualityIssuesPanel.vue'
 import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
@@ -381,6 +311,16 @@ const projectInspectionsMap = ref(new Map()) // 存储每个项目的质检数�
 const expandedIssues = ref([])
 const inspectionIssuesMap = ref(new Map()) // 存储质检对应的问题列表
 const issueFixesMap = ref(new Map()) // 存储问题对应的整改记录列表
+
+// 计算所有问题列表（从所有质检记录中提取）
+const allIssues = computed(() => {
+  const issues = []
+  inspectionIssuesMap.value.forEach((issueList) => {
+    issues.push(...issueList)
+  })
+  // 按创建时间倒序排序
+  return issues.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+})
 
 // 问题上报相关
 const issueDialogOpen = ref(false)
@@ -500,6 +440,13 @@ function loadProjectInspectionsForList(projectId) {
 /** 选择项目 */
 function selectProject(project) {
   selectedProject.value = project
+  
+  // 清空之前项目的数据
+  inspectionItems.value = []
+  inspectionIssuesMap.value.clear()
+  issueFixesMap.value.clear()
+  
+  // 加载新项目的数据
   loadProjectInspections(project.id)
 }
 
@@ -649,45 +596,7 @@ function getIssuesList(inspection) {
   return inspectionIssuesMap.value.get(inspection.id) || []
 }
 
-/** 获取时间轴颜色 */
-function getTimelineColor(result) {
-  const colorMap = {
-    'QUALIFIED': '#52c41a',
-    'UNQUALIFIED': '#ff4d4f',
-    'PENDING': '#d9d9d9'
-  }
-  return colorMap[result] || '#d9d9d9'
-}
 
-/** 获取时间轴图标 */
-function getTimelineIcon(result) {
-  if (result === 'QUALIFIED') {
-    return 'Check'
-  } else if (result === 'UNQUALIFIED') {
-    return 'Close'
-  }
-  return ''
-}
-
-/** 获取时间轴标签类型 */
-function getTimelineTagType(result) {
-  const typeMap = {
-    'QUALIFIED': 'success',
-    'UNQUALIFIED': 'danger',
-    'PENDING': 'info'
-  }
-  return typeMap[result] || 'info'
-}
-
-/** 获取时间轴状态标签 */
-function getTimelineStatusLabel(result) {
-  const labelMap = {
-    'QUALIFIED': '√ 通过',
-    'UNQUALIFIED': '× 不通过',
-    'PENDING': '待检查'
-  }
-  return labelMap[result] || '待检查'
-}
 
 /** 问题上报 */
 function handleReportIssue() {
@@ -1136,7 +1045,6 @@ onMounted(() => {
     flex: 1;
     min-height: 0;
     position: relative;
-    padding: 16px;
   }
 
   .project-item {
@@ -1182,7 +1090,7 @@ onMounted(() => {
       gap: 4px;
       font-size: 13px;
       color: #666;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .project-status-hint {
@@ -1303,7 +1211,7 @@ onMounted(() => {
     }
   }
 
-  .timeline-section {
+  .quality-issues-section {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -1311,209 +1219,6 @@ onMounted(() => {
     overflow: hidden;
     position: relative;
     height: 0;
-
-    &.timeline-scrollable {
-      .timeline-title {
-        flex-shrink: 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: #303133;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #e8e8e8;
-      }
-
-      .timeline-content {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        min-height: 0;
-        padding-right: 8px;
-        margin-top: 0;
-        height: 100%;
-        
-        &::-webkit-scrollbar {
-          width: 6px;
-        }
-        
-        &::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 3px;
-        }
-        
-        &::-webkit-scrollbar-thumb {
-          background: #c1c1c1;
-          border-radius: 3px;
-          
-          &:hover {
-            background: #a8a8a8;
-          }
-        }
-      }
-    }
-
-    .timeline-item-content {
-      background: #fafafa;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-
-      .timeline-item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-
-        .header-left {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex: 1;
-          min-width: 0;
-
-          .timeline-item-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #303133;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-        }
-
-        .header-actions {
-          display: flex;
-          gap: 4px;
-          flex-shrink: 0;
-          margin-left: auto;
-
-          .el-button {
-            margin: 0;
-            padding: 4px 8px;
-            font-size: 12px;
-          }
-        }
-      }
-
-      .timeline-item-date {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 13px;
-        color: #999;
-        margin-bottom: 12px;
-      }
-
-      .inspection-result-box {
-        padding: 12px;
-        border-radius: 6px;
-        margin-top: 8px;
-
-        &.inspection-result-pass {
-          background: #f6ffed;
-          border: 1px solid #b7eb8f;
-
-          .result-text {
-            font-size: 14px;
-            font-weight: 600;
-            color: #52c41a;
-            margin-bottom: 4px;
-          }
-
-          .result-description {
-            font-size: 13px;
-            color: #666;
-          }
-        }
-
-        &.inspection-result-fail {
-          background: #fff1f0;
-          border: 1px solid #ffccc7;
-
-          .issues-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #ffccc7;
-
-            .issues-title {
-              font-size: 14px;
-              font-weight: 600;
-              color: #ff4d4f;
-              flex: 1;
-            }
-          }
-
-          .result-text {
-            font-size: 14px;
-            font-weight: 600;
-            color: #ff4d4f;
-            margin-bottom: 8px;
-          }
-        }
-      }
-
-      .issues-list {
-        margin-top: 12px;
-
-        .issue-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 12px 16px;
-          margin-bottom: 8px;
-          background: #fff;
-          border: 1px solid #e8e8e8;
-          border-radius: 6px;
-          transition: all 0.3s ease;
-
-          &:hover {
-            border-color: #1677ff;
-            box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
-          }
-
-          .issue-info {
-            flex: 1;
-            min-width: 0;
-
-            .issue-title {
-              display: flex;
-              align-items: center;
-              margin-bottom: 6px;
-              font-size: 14px;
-              font-weight: 500;
-              color: #303133;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
-
-            .issue-meta {
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              font-size: 12px;
-
-              .issue-due-date {
-                color: #666;
-                white-space: nowrap;
-              }
-            }
-          }
-
-          .timeline-actions {
-            flex-shrink: 0;
-            margin-left: 16px;
-
-            .el-button {
-              margin: 0;
-            }
-          }
-        }
-      }
-    }
   }
 }
 

@@ -1,0 +1,423 @@
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.drawer-content {
+  padding: 0 16px;
+  height: 100%;
+  overflow-y: auto;
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e8e8e8;
+  }
+}
+
+.issue-info-section {
+  margin-bottom: 20px;
+
+  .issue-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 16px;
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+
+      .card-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+        flex: 1;
+      }
+
+      .card-tags {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+    }
+
+    .info-section {
+      margin-bottom: 12px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+
+        .field-item {
+          display: flex;
+          align-items: center;
+
+          &.full-width {
+            grid-column: 1 / -1;
+          }
+
+          .field-label {
+            width: 80px;
+            flex-shrink: 0;
+            font-size: 13px;
+            color: #666;
+            text-align: right;
+            margin-right: 12px;
+          }
+
+          .field-value {
+            flex: 1;
+            font-size: 13px;
+            color: #303133;
+            font-weight: 500;
+
+            &.overdue {
+              color: #ff4d4f;
+              font-weight: 600;
+            }
+          }
+        }
+      }
+
+      .images-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .preview-image {
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border-radius: 6px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+
+          &:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+          }
+        }
+      }
+    }
+  }
+}
+
+.fixes-section {
+  .empty-fixes {
+    padding: 20px 0;
+    text-align: center;
+
+    .empty-description {
+      .empty-text {
+        margin: 8px 0 4px 0;
+        font-size: 14px;
+        color: #606266;
+        font-weight: 500;
+      }
+
+      .empty-hint {
+        margin: 0 0 16px 0;
+        font-size: 12px;
+        color: #909399;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .fix-timeline-content {
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 6px;
+
+    .fix-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+
+      .fix-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: #303133;
+
+        .fix-id {
+          font-size: 12px;
+          color: #999;
+          background: #f0f0f0;
+          padding: 2px 6px;
+          border-radius: 3px;
+        }
+      }
+
+      .fix-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        font-size: 12px;
+        color: #666;
+      }
+    }
+
+    .fix-description {
+      font-size: 13px;
+      color: #303133;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .fix-completed-time {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: #52c41a;
+      margin-bottom: 6px;
+    }
+
+    .fix-images {
+      margin-top: 6px;
+
+      .images-label {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      .images-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .preview-image {
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border-radius: 6px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+
+          &:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+          }
+        }
+      }
+    }
+  }
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .drawer-content {
+    padding: 0 12px;
+  }
+
+  .issue-info-section {
+    margin-bottom: 16px;
+
+    .issue-card {
+      padding: 12px;
+
+      .card-header {
+        margin-bottom: 12px;
+
+        .card-title {
+          font-size: 15px;
+        }
+
+        .card-tags {
+          gap: 4px;
+        }
+      }
+
+      .info-section {
+        margin-bottom: 10px;
+
+        .section-title {
+          font-size: 11px;
+          margin-bottom: 6px;
+        }
+
+        .field-grid {
+          gap: 8px;
+          grid-template-columns: 1fr;
+
+          .field-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+
+            .field-label {
+              width: auto;
+              text-align: left;
+              margin-right: 0;
+              font-size: 12px;
+            }
+
+            .field-value {
+              font-size: 12px;
+            }
+          }
+        }
+
+        .images-preview {
+          .preview-image {
+            width: 60px !important;
+            height: 60px !important;
+          }
+        }
+      }
+    }
+  }
+
+  .fixes-section {
+    .fix-timeline-content {
+      padding: 8px;
+
+      .fix-header {
+        margin-bottom: 4px;
+
+        .fix-title {
+          font-size: 13px;
+        }
+
+        .fix-meta {
+          font-size: 11px;
+        }
+      }
+
+      .fix-description {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .fix-completed-time {
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .fix-images {
+        .images-grid {
+          .preview-image {
+            width: 50px !important;
+            height: 50px !important;
+          }
+        }
+      }
+    }
+  }
+
+  .drawer-footer {
+    padding: 12px;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .issue-info-section {
+    .issue-card {
+      padding: 10px;
+
+      .card-header {
+        margin-bottom: 10px;
+
+        .card-title {
+          font-size: 14px;
+        }
+
+        .card-tags {
+          gap: 3px;
+        }
+      }
+
+      .info-section {
+        margin-bottom: 8px;
+
+        .section-title {
+          font-size: 10px;
+          margin-bottom: 4px;
+        }
+
+        .field-grid {
+          gap: 6px;
+
+          .field-item {
+            .field-label {
+              font-size: 11px;
+            }
+
+            .field-value {
+              font-size: 11px;
+            }
+          }
+        }
+
+        .images-preview {
+          .preview-image {
+            width: 50px !important;
+            height: 50px !important;
+          }
+        }
+      }
+    }
+  }
+
+  .fix-timeline-content {
+    .fix-images {
+      .images-grid {
+        .preview-image {
+          width: 40px !important;
+          height: 40px !important;
+        }
+      }
+    }
+  }
+}
