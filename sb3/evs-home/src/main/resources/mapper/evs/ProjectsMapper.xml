@@ -349,11 +349,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             <if test="isAdmin == false">
                 <!-- 非管理员只能查看指定用户参与的项目 -->
-                AND p.id IN (
-                    SELECT DISTINCT pm.project_id
-                    FROM project_members pm
-                    WHERE pm.user_id = #{memberUserId} AND pm.is_active = 1
-                )
+                <if test="memberUserId != null and memberUserId != ''">
+                    AND p.id IN (
+                        SELECT DISTINCT pm.project_id
+                        FROM project_members pm
+                        WHERE pm.user_id = #{memberUserId} AND pm.is_active = 1
+                    )
+                </if>
+                <if test="memberUserId == null or memberUserId == ''">
+                    <!-- 未提供用户ID，无法查看任何项目 -->
+                    1=0
+                </if>
             </if>
             <!-- 查询条件过滤 -->
             <if test="projects.projectType != null and projects.projectType != ''"> AND p.project_type = #{projects.projectType}</if>

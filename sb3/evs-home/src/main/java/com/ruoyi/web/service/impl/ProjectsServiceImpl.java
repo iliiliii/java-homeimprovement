@@ -38,10 +38,12 @@ public class ProjectsServiceImpl implements IProjectsService
 
         if (currentUserId != null) {
             projects.setCurrentUserId(String.valueOf(currentUserId));
-            projects.setIsAdmin(isAdmin);
-            System.out.println("设置权限参数 - currentUserId: " + currentUserId + ", isAdmin: " + isAdmin);
+            // 确保 isAdmin 始终有明确的布尔值，处理 null 的情况
+            projects.setIsAdmin(isAdmin != null ? isAdmin : false);
+            System.out.println("设置权限参数 - currentUserId: " + currentUserId + ", isAdmin: " + projects.getIsAdmin());
         } else {
             System.out.println("⚠️ 警告：未获取到当前用户ID");
+            projects.setIsAdmin(false);
         }
         return projects;
     }
@@ -70,11 +72,13 @@ public class ProjectsServiceImpl implements IProjectsService
     @Override
     public List<Projects> selectProjectsList(Projects projects)
     {
-        System.out.println("\n=== 项目列表查询调试 ===");
+        System.out.println("\n=== selectProjectsList 调试 ===");
         System.out.println("原始查询参数: " + projects);
+        System.out.println("projects.getStatus(): " + projects.getStatus());
 
         Projects query = setCurrentUser(projects);
         System.out.println("设置权限后参数: currentUserId=" + query.getCurrentUserId() + ", isAdmin=" + query.getIsAdmin());
+        System.out.println("query.getStatus(): " + query.getStatus());
 
         List<Projects> result = projectsMapper.selectProjectsList(query);
         System.out.println("查询结果数量: " + result.size());
@@ -243,8 +247,17 @@ public class ProjectsServiceImpl implements IProjectsService
     @Override
     public List<Projects> selectProjectsListWithScheduleInfo(Projects projects)
     {
+        System.out.println("\n=== selectProjectsListWithScheduleInfo 调试 ===");
+        System.out.println("接收到的参数 projects: " + projects);
+        System.out.println("projects.getStatus(): " + projects.getStatus());
+
         // 设置权限信息（自动应用权限控制）
         Projects query = setCurrentUser(projects);
+
+        System.out.println("设置权限后 query: " + query);
+        System.out.println("query.getStatus(): " + query.getStatus());
+        System.out.println("query.getCurrentUserId(): " + query.getCurrentUserId());
+        System.out.println("query.getIsAdmin(): " + query.getIsAdmin());
 
         // 1. 查询项目列表（带权限过滤）
         List<Projects> projectsList = projectsMapper.selectProjectsList(query);
