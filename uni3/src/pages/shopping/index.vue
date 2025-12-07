@@ -1,13 +1,10 @@
 <template>
   <view class="shopping-page">
-    <!-- 头部 -->
-    <view class="header">
-      <view class="back-btn" @click="goBack">
-        <u-icon name="arrow-left" size="48" />
-      </view>
-      <text class="page-title">物料清单</text>
-      <view style="width: 48rpx;"></view>
-    </view>
+    <!-- 统一导航栏 -->
+    <NavBar title="物料清单" />
+    
+    <!-- 导航栏占位 -->
+    <view :style="{ height: navHeight + 'px' }"></view>
     
     <!-- 分类标签 -->
     <view class="category-tabs">
@@ -64,8 +61,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import NavBar from '@/components/NavBar.vue'
+import { getTotalNavHeight } from '@/utils/system.js'
 
+const navHeight = ref(0)
 const currentCategory = ref('all')
 
 const categories = ref([
@@ -130,6 +130,10 @@ const filteredProducts = computed(() => {
   return products.value.filter(p => p.category === currentCategory.value)
 })
 
+onMounted(() => {
+  navHeight.value = getTotalNavHeight()
+})
+
 const switchCategory = (key) => {
   currentCategory.value = key
 }
@@ -150,29 +154,13 @@ const toggleSelect = (product) => {
 const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
-
-const goBack = () => {
-  uni.navigateBack()
-}
 </script>
 
 <style lang="scss" scoped>
 .shopping-page {
   min-height: 100vh;
-}
-
-// 头部
-.header {
-  padding: 100rpx 48rpx 32rpx;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.back-btn {
-  width: 48rpx;
-  display: flex;
-  align-items: center;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 // 分类标签
@@ -315,4 +303,3 @@ const goBack = () => {
   color: $glass-text-muted;
 }
 </style>
-

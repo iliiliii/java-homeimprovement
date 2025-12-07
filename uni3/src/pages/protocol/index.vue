@@ -1,7 +1,10 @@
 <template>
   <view class="protocol-container">
-    <!-- 自定义导航栏 -->
+    <!-- 统一导航栏 -->
     <NavBar title="用户协议" />
+    
+    <!-- 导航栏占位 -->
+    <view :style="{ height: navHeight + 'px' }"></view>
 
     <!-- 协议内容 -->
     <view class="protocol-content">
@@ -72,34 +75,6 @@ onMounted(() => {
 .protocol-container {
   min-height: 100vh;
   background: $glass-bg;
-}
-
-.custom-nav {
-  position: sticky;
-  top: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20rpx);
-  -webkit-backdrop-filter: blur(20rpx);
-  padding: 24rpx 32rpx;
-  display: flex;
-  align-items: center;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
-  z-index: 100;
-}
-
-.nav-back {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16rpx;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: $glass-text-main;
 }
 
 .protocol-content {

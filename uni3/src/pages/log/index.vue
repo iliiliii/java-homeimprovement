@@ -1,9 +1,14 @@
 <template>
   <view class="log-page">
-    <!-- 头部 -->
-    <view class="header">
-      <text class="page-title">施工日志</text>
+    <!-- 固定头部 -->
+    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="header-title">
+        <text class="page-title">施工日志</text>
+      </view>
     </view>
+    
+    <!-- 头部占位 -->
+    <view :style="{ height: headerHeight + 'px' }"></view>
     
     <!-- 日志时间线 -->
     <view class="timeline">
@@ -70,8 +75,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import { getStatusBarHeight } from '@/utils/system.js'
+
+const statusBarHeight = ref(0)
+const headerHeight = ref(0)
 
 const logs = ref([
   {
@@ -122,6 +131,18 @@ const logs = ref([
   }
 ])
 
+onMounted(() => {
+  statusBarHeight.value = getStatusBarHeight()
+  nextTick(() => {
+    const query = uni.createSelectorQuery()
+    query.select('.fixed-header').boundingClientRect(rect => {
+      if (rect) {
+        headerHeight.value = rect.height
+      }
+    }).exec()
+  })
+})
+
 const getTypeText = (type) => {
   const map = {
     inspection: '验收',
@@ -161,12 +182,19 @@ const loadMore = () => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// 头部
-.header {
-  padding: 100rpx 48rpx 32rpx;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+// 固定头部
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: $glass-bg;
+}
+
+.header-title {
+  padding: 24rpx 48rpx;
+  text-align: center;
 }
 
 .page-title {

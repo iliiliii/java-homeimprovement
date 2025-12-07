@@ -1,13 +1,10 @@
 <template>
   <view class="schedule-page">
-    <!-- 头部 -->
-    <view class="header">
-      <view class="back-btn" @click="goBack">
-        <u-icon name="arrow-left" size="48" />
-      </view>
-      <text class="page-title">全案排期</text>
-      <view style="width: 48rpx;"></view>
-    </view>
+    <!-- 统一导航栏 -->
+    <NavBar title="全案排期" />
+    
+    <!-- 导航栏占位 -->
+    <view :style="{ height: navHeight + 'px' }"></view>
     
     <!-- 阶段列表 -->
     <view class="phase-list">
@@ -49,18 +46,15 @@
         </view>
       </view>
     </view>
-    
-    <!-- 底部占位 -->
-    <view class="tab-bar-placeholder"></view>
-    
-    <!-- 自定义TabBar -->
-    <CustomTabBar :current="1" />
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import CustomTabBar from '@/components/CustomTabBar.vue'
+import { ref, onMounted } from 'vue'
+import NavBar from '@/components/NavBar.vue'
+import { getTotalNavHeight } from '@/utils/system.js'
+
+const navHeight = ref(0)
 
 const phases = ref([
   {
@@ -99,6 +93,10 @@ const phases = ref([
   }
 ])
 
+onMounted(() => {
+  navHeight.value = getTotalNavHeight()
+})
+
 const getStatusText = (status) => {
   const map = {
     done: '已完成',
@@ -106,10 +104,6 @@ const getStatusText = (status) => {
     pending: '待开始'
   }
   return map[status] || ''
-}
-
-const goBack = () => {
-  uni.navigateBack()
 }
 
 const viewPhaseDetail = (phase) => {
@@ -127,23 +121,9 @@ const viewPhaseDetail = (phase) => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// 头部
-.header {
-  padding: 100rpx 48rpx 32rpx;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.back-btn {
-  width: 48rpx;
-  display: flex;
-  align-items: center;
-}
-
 // 阶段列表
 .phase-list {
-  padding: 0 48rpx;
+  padding: 32rpx 48rpx;
 }
 
 .phase-card {
@@ -246,4 +226,3 @@ const viewPhaseDetail = (phase) => {
   font-weight: 600;
 }
 </style>
-

@@ -1,89 +1,114 @@
 <template>
   <view class="profile-page">
-    <!-- 头部用户信息 -->
-    <view class="user-header">
-      <view class="user-avatar">
-        <u-icon name="account" size="80" color="#2D5BFF" />
+    <!-- 固定头部区域 -->
+    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <!-- 标题 -->
+      <view class="header-title">
+        <text class="page-title">我的</text>
       </view>
-      <view class="user-info">
-        <text class="user-phone">{{ userInfo.phone }}</text>
-        <text class="user-project">项目编号: {{ userInfo.projectCode }}</text>
+      
+      <!-- 用户信息 -->
+      <view class="user-header">
+        <view class="user-avatar">
+          <u-icon name="account" size="80" color="#2D5BFF" />
+        </view>
+        <view class="user-info">
+          <text class="user-phone">{{ userInfo.phone }}</text>
+          <text class="user-project">项目编号: {{ currentProject.code }}</text>
+        </view>
+      </view>
+      
+      <!-- 项目切换卡片 -->
+      <view class="project-switcher">
+        <scroll-view scroll-x class="projects-scroll" :scroll-left="scrollLeft">
+          <view class="projects-container">
+            <view 
+              class="project-card"
+              :class="{ active: currentProjectIndex === index }"
+              v-for="(project, index) in projects"
+              :key="project.id"
+              @click="switchProject(index)"
+            >
+              <view class="project-card-header">
+                <text class="project-card-name">{{ project.name }}</text>
+                <text class="project-card-status" :class="project.statusClass">{{ project.status }}</text>
+              </view>
+              <view class="project-card-detail">
+                <text class="project-card-info">{{ project.area }}㎡ · {{ project.style }}</text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+        
+        <!-- 项目指示器 -->
+        <view v-if="projects.length > 1" class="project-indicator">
+          <view 
+            class="indicator-dot"
+            :class="{ active: currentProjectIndex === index }"
+            v-for="(_, index) in projects"
+            :key="index"
+          ></view>
+        </view>
       </view>
     </view>
     
-    <!-- 项目信息卡片 -->
-    <view class="glass-card project-card">
-      <view class="project-header">
-        <text class="project-name">{{ projectInfo.name }}</text>
-        <text class="project-status">{{ projectInfo.status }}</text>
-      </view>
-      <view class="project-detail">
-        <view class="detail-item">
-          <text class="detail-label">面积</text>
-          <text class="detail-value">{{ projectInfo.area }}㎡</text>
-        </view>
-        <view class="detail-item">
-          <text class="detail-label">风格</text>
-          <text class="detail-value">{{ projectInfo.style }}</text>
-        </view>
-        <view class="detail-item">
-          <text class="detail-label">预算</text>
-          <text class="detail-value">¥{{ projectInfo.budget }}</text>
-        </view>
-      </view>
-    </view>
+    <!-- 头部占位 -->
+    <view :style="{ height: headerHeight + 'px' }"></view>
     
-    <!-- 功能菜单 -->
-    <view class="menu-list">
-      <view class="menu-item" @click="handleMenu('contract')">
-        <view class="menu-icon">
-          <u-icon name="file-text" size="44" color="#2D5BFF" />
+    <!-- 可滚动内容 -->
+    <view class="scroll-content">
+      <!-- 功能菜单 -->
+      <view class="menu-list">
+        <view class="menu-item" @click="handleMenu('contract')">
+          <view class="menu-icon" style="background: rgba(45, 91, 255, 0.1);">
+            <u-icon name="file-text" size="40" color="#2D5BFF" />
+          </view>
+          <text class="menu-text">合同文件</text>
+          <u-icon name="arrow-right" size="28" color="#ccc" />
         </view>
-        <text class="menu-text">合同文件</text>
-        <u-icon name="arrow-right" size="32" color="#ccc" />
+        
+        <view class="menu-item" @click="handleMenu('payment')">
+          <view class="menu-icon" style="background: rgba(255, 176, 32, 0.1);">
+            <u-icon name="rmb-circle" size="40" color="#FFB020" />
+          </view>
+          <text class="menu-text">付款记录</text>
+          <u-icon name="arrow-right" size="28" color="#ccc" />
+        </view>
+        
+        <view class="menu-item" @click="handleMenu('feedback')">
+          <view class="menu-icon" style="background: rgba(78, 205, 196, 0.1);">
+            <u-icon name="chat" size="40" color="#4ECDC4" />
+          </view>
+          <text class="menu-text">意见反馈</text>
+          <u-icon name="arrow-right" size="28" color="#ccc" />
+        </view>
+        
+        <view class="menu-item" @click="handleMenu('service')">
+          <view class="menu-icon" style="background: rgba(255, 107, 107, 0.1);">
+            <u-icon name="kefu-ermai" size="40" color="#FF6B6B" />
+          </view>
+          <text class="menu-text">联系客服</text>
+          <u-icon name="arrow-right" size="28" color="#ccc" />
+        </view>
+        
+        <view class="menu-item" @click="handleMenu('about')">
+          <view class="menu-icon" style="background: rgba(100, 116, 139, 0.1);">
+            <u-icon name="info-circle" size="40" color="#64748B" />
+          </view>
+          <text class="menu-text">关于我们</text>
+          <u-icon name="arrow-right" size="28" color="#ccc" />
+        </view>
       </view>
       
-      <view class="menu-item" @click="handleMenu('payment')">
-        <view class="menu-icon">
-          <u-icon name="rmb-circle" size="44" color="#FFB020" />
-        </view>
-        <text class="menu-text">付款记录</text>
-        <u-icon name="arrow-right" size="32" color="#ccc" />
+      <!-- 退出登录 -->
+      <view class="logout-btn" @click="handleLogout">
+        <text>退出登录</text>
       </view>
       
-      <view class="menu-item" @click="handleMenu('feedback')">
-        <view class="menu-icon">
-          <u-icon name="chat" size="44" color="#4ECDC4" />
-        </view>
-        <text class="menu-text">意见反馈</text>
-        <u-icon name="arrow-right" size="32" color="#ccc" />
+      <!-- 版本信息 -->
+      <view class="version-info">
+        <text>{{ APP_CONFIG.name }} {{ APP_CONFIG.version.name }}</text>
       </view>
-      
-      <view class="menu-item" @click="handleMenu('service')">
-        <view class="menu-icon">
-          <u-icon name="kefu-ermai" size="44" color="#FF6B6B" />
-        </view>
-        <text class="menu-text">联系客服</text>
-        <u-icon name="arrow-right" size="32" color="#ccc" />
-      </view>
-      
-      <view class="menu-item" @click="handleMenu('about')">
-        <view class="menu-icon">
-          <u-icon name="info-circle" size="44" color="#64748B" />
-        </view>
-        <text class="menu-text">关于我们</text>
-        <u-icon name="arrow-right" size="32" color="#ccc" />
-      </view>
-    </view>
-    
-    <!-- 退出登录 -->
-    <view class="logout-btn" @click="handleLogout">
-      <text>退出登录</text>
-    </view>
-    
-    <!-- 版本信息 -->
-    <view class="version-info">
-      <text>{{ APP_CONFIG.name }} {{ APP_CONFIG.version.name }}</text>
     </view>
     
     <!-- 底部占位 -->
@@ -95,39 +120,93 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import { APP_CONFIG } from '@/config/app.js'
+import { getStatusBarHeight } from '@/utils/system.js'
+
+const statusBarHeight = ref(0)
+const headerHeight = ref(0)
+const scrollLeft = ref(0)
 
 const userInfo = ref({
-  phone: '138****3967',
-  projectCode: 'PJ-20251125-01'
+  phone: '138****3967'
 })
 
-const projectInfo = ref({
-  name: '御景壹号',
-  status: '施工中',
-  area: 150,
-  style: '现代简约',
-  budget: '500,000'
+// 多项目支持
+const projects = ref([
+  {
+    id: 1,
+    code: 'PJ-20251125-01',
+    name: '御景壹号',
+    status: '施工中',
+    statusClass: 'active',
+    area: 150,
+    style: '现代简约',
+    budget: '500,000'
+  },
+  {
+    id: 2,
+    code: 'PJ-20251201-02',
+    name: '翡翠湾别墅',
+    status: '设计中',
+    statusClass: 'design',
+    area: 320,
+    style: '新中式',
+    budget: '1,200,000'
+  }
+])
+
+const currentProjectIndex = ref(0)
+
+const currentProject = computed(() => {
+  return projects.value[currentProjectIndex.value] || projects.value[0]
 })
+
+const switchProject = (index) => {
+  currentProjectIndex.value = index
+  // 保存当前选择的项目
+  uni.setStorageSync('currentProjectIndex', index)
+}
 
 onMounted(() => {
+  statusBarHeight.value = getStatusBarHeight()
+  
+  // 恢复上次选择的项目
+  const savedIndex = uni.getStorageSync('currentProjectIndex')
+  if (savedIndex !== '' && savedIndex < projects.value.length) {
+    currentProjectIndex.value = savedIndex
+  }
+  
   // 读取用户信息
   const storedInfo = uni.getStorageSync('userInfo')
   if (storedInfo) {
     userInfo.value.phone = storedInfo.phone || userInfo.value.phone
-    userInfo.value.projectCode = storedInfo.projectCode || userInfo.value.projectCode
   }
+  
+  nextTick(() => {
+    const query = uni.createSelectorQuery()
+    query.select('.fixed-header').boundingClientRect(rect => {
+      if (rect) {
+        headerHeight.value = rect.height
+      }
+    }).exec()
+  })
 })
 
 const handleMenu = (type) => {
+  if (type === 'about') {
+    uni.navigateTo({
+      url: '/pages/brand/index'
+    })
+    return
+  }
+  
   const titles = {
     contract: '合同文件',
     payment: '付款记录',
     feedback: '意见反馈',
-    service: '联系客服',
-    about: '关于我们'
+    service: '联系客服'
   }
   
   uni.showToast({
@@ -159,22 +238,44 @@ const handleLogout = () => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+// 固定头部
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: $glass-bg;
+}
+
+.header-title {
+  padding: 24rpx 48rpx 16rpx;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: $glass-text-main;
+}
+
 // 用户头部
 .user-header {
   display: flex;
   align-items: center;
-  padding: 100rpx 48rpx 48rpx;
-  gap: 32rpx;
+  padding: 16rpx 48rpx;
+  gap: 24rpx;
 }
 
 .user-avatar {
-  width: 140rpx;
-  height: 140rpx;
+  width: 100rpx;
+  height: 100rpx;
   background: $glass-accent-light;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .user-info {
@@ -183,68 +284,118 @@ const handleLogout = () => {
 
 .user-phone {
   display: block;
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: 700;
   color: $glass-text-main;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
 }
 
 .user-project {
   display: block;
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: $glass-text-muted;
 }
 
-// 项目卡片
-.project-card {
-  margin: 0 48rpx 48rpx;
+// 项目切换
+.project-switcher {
+  padding: 16rpx 0 24rpx;
 }
 
-.project-header {
+.projects-scroll {
+  white-space: nowrap;
+  padding: 0 48rpx;
+}
+
+.projects-container {
+  display: inline-flex;
+  gap: 24rpx;
+}
+
+.project-card {
+  width: 280rpx;
+  background: white;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  box-shadow: $shadow-card;
+  border: 2rpx solid transparent;
+  flex-shrink: 0;
+  
+  &.active {
+    border-color: $glass-accent;
+    background: rgba(45, 91, 255, 0.05);
+  }
+}
+
+.project-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24rpx;
-}
-
-.project-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: $glass-text-main;
-}
-
-.project-status {
-  font-size: 24rpx;
-  color: $glass-accent;
-  background: $glass-accent-light;
-  padding: 8rpx 24rpx;
-  border-radius: 100rpx;
-}
-
-.project-detail {
-  display: flex;
-  justify-content: space-between;
-}
-
-.detail-item {
-  text-align: center;
-}
-
-.detail-label {
-  display: block;
-  font-size: 24rpx;
-  color: $glass-text-muted;
   margin-bottom: 8rpx;
 }
 
-.detail-value {
-  display: block;
+.project-card-name {
   font-size: 28rpx;
   font-weight: 600;
   color: $glass-text-main;
 }
 
-// 功能菜单
+.project-card-status {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 100rpx;
+  
+  &.active {
+    background: rgba(45, 91, 255, 0.1);
+    color: $glass-accent;
+  }
+  
+  &.design {
+    background: rgba(255, 176, 32, 0.1);
+    color: $glass-warning;
+  }
+  
+  &.done {
+    background: rgba(0, 194, 178, 0.1);
+    color: $glass-success;
+  }
+}
+
+.project-card-detail {
+  margin-top: 8rpx;
+}
+
+.project-card-info {
+  font-size: 22rpx;
+  color: $glass-text-muted;
+}
+
+// 项目指示器
+.project-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.indicator-dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: #ddd;
+  border-radius: 50%;
+  
+  &.active {
+    background: $glass-accent;
+    width: 24rpx;
+    border-radius: 6rpx;
+  }
+}
+
+// 可滚动内容
+.scroll-content {
+  padding-top: 16rpx;
+}
+
+// 功能菜单 - 修复水平布局
 .menu-list {
   margin: 0 48rpx;
   background: white;
@@ -255,8 +406,9 @@ const handleLogout = () => {
 
 .menu-item {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  padding: 32rpx;
+  padding: 28rpx 32rpx;
   border-bottom: 1rpx solid $glass-bg;
   
   &:last-child {
@@ -267,17 +419,17 @@ const handleLogout = () => {
 .menu-icon {
   width: 72rpx;
   height: 72rpx;
-  background: $glass-bg;
-  border-radius: 16rpx;
+  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 24rpx;
+  flex-shrink: 0;
 }
 
 .menu-text {
   flex: 1;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: $glass-text-main;
 }
 
@@ -307,4 +459,3 @@ const handleLogout = () => {
   }
 }
 </style>
-

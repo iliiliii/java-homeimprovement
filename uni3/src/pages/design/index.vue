@@ -1,26 +1,32 @@
 <template>
   <view class="design-page">
-    <!-- 头部 -->
-    <view class="header">
-      <text class="page-title">设计方案</text>
+    <!-- 固定头部区域 -->
+    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <!-- 标题 -->
+      <view class="header-title">
+        <text class="page-title">设计方案</text>
+      </view>
+      
+      <!-- 空间分类 -->
+      <view class="space-tabs">
+        <scroll-view scroll-x class="tabs-scroll">
+          <view class="tabs-container">
+            <view 
+              class="tab-item"
+              :class="{ active: currentSpace === space.key }"
+              v-for="space in spaces"
+              :key="space.key"
+              @click="switchSpace(space.key)"
+            >
+              {{ space.name }}
+            </view>
+          </view>
+        </scroll-view>
+      </view>
     </view>
     
-    <!-- 空间分类 -->
-    <view class="space-tabs">
-      <scroll-view scroll-x class="tabs-scroll">
-        <view class="tabs-container">
-          <view 
-            class="tab-item"
-            :class="{ active: currentSpace === space.key }"
-            v-for="space in spaces"
-            :key="space.key"
-            @click="switchSpace(space.key)"
-          >
-            {{ space.name }}
-          </view>
-        </view>
-      </scroll-view>
-    </view>
+    <!-- 头部占位 -->
+    <view :style="{ height: headerHeight + 'px' }"></view>
     
     <!-- 设计图展示 -->
     <view class="design-gallery">
@@ -70,10 +76,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
+import { getStatusBarHeight } from '@/utils/system.js'
 
+const statusBarHeight = ref(0)
+const headerHeight = ref(0)
 const currentSpace = ref('all')
 const viewerVisible = ref(false)
 const viewerIndex = ref(0)
@@ -136,6 +145,18 @@ const currentDesigns = computed(() => {
 // 用于查看器的图片列表
 const viewerImages = computed(() => currentDesigns.value)
 
+onMounted(() => {
+  statusBarHeight.value = getStatusBarHeight()
+  nextTick(() => {
+    const query = uni.createSelectorQuery()
+    query.select('.fixed-header').boundingClientRect(rect => {
+      if (rect) {
+        headerHeight.value = rect.height
+      }
+    }).exec()
+  })
+})
+
 const switchSpace = (key) => {
   currentSpace.value = key
 }
@@ -163,12 +184,19 @@ const openViewer = (index) => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// 头部
-.header {
-  padding: 100rpx 48rpx 32rpx;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+// 固定头部
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: $glass-bg;
+}
+
+.header-title {
+  padding: 24rpx 48rpx;
+  text-align: center;
 }
 
 .page-title {
@@ -179,8 +207,7 @@ const openViewer = (index) => {
 
 // 空间分类
 .space-tabs {
-  padding: 0 48rpx;
-  margin-bottom: 32rpx;
+  padding: 0 48rpx 24rpx;
 }
 
 .tabs-scroll {

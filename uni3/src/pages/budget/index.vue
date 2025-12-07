@@ -1,13 +1,10 @@
 <template>
   <view class="budget-page">
-    <!-- 头部 -->
-    <view class="header">
-      <view class="back-btn" @click="goBack">
-        <u-icon name="arrow-left" size="48" />
-      </view>
-      <text class="page-title">预算详情</text>
-      <view style="width: 48rpx;"></view>
-    </view>
+    <!-- 统一导航栏 -->
+    <NavBar title="预算详情" />
+    
+    <!-- 导航栏占位 -->
+    <view :style="{ height: navHeight + 'px' }"></view>
     
     <!-- 总预算卡片 -->
     <view class="budget-summary">
@@ -71,8 +68,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import NavBar from '@/components/NavBar.vue'
+import { getTotalNavHeight } from '@/utils/system.js'
 
+const navHeight = ref(0)
 const totalBudget = ref(500000)
 
 const categories = ref([
@@ -114,12 +114,12 @@ const usedBudget = computed(() => {
   return categories.value.reduce((sum, item) => sum + item.spent, 0)
 })
 
+onMounted(() => {
+  navHeight.value = getTotalNavHeight()
+})
+
 const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-}
-
-const goBack = () => {
-  uni.navigateBack()
 }
 
 const viewCategory = (item) => {
@@ -133,25 +133,13 @@ const viewCategory = (item) => {
 <style lang="scss" scoped>
 .budget-page {
   min-height: 100vh;
-}
-
-// 头部
-.header {
-  padding: 100rpx 48rpx 32rpx;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.back-btn {
-  width: 48rpx;
-  display: flex;
-  align-items: center;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 // 总预算卡片
 .budget-summary {
-  margin: 0 48rpx 48rpx;
+  margin: 32rpx 48rpx 48rpx;
   background: white;
   border-radius: 40rpx;
   padding: 48rpx;
@@ -196,6 +184,14 @@ const viewCategory = (item) => {
 // 费用明细
 .category-section {
   padding: 0 48rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: $glass-text-main;
+  margin-bottom: 32rpx;
 }
 
 .category-row {
@@ -262,4 +258,3 @@ const viewCategory = (item) => {
   color: $glass-text-muted;
 }
 </style>
-

@@ -1,19 +1,20 @@
 <template>
   <view class="dashboard-page">
-    <!-- 头部 -->
-    <view class="header">
-      <view class="header-info">
-        <text class="project-name">{{ projectInfo.name }} · {{ projectInfo.area }}㎡</text>
-        <text class="project-status">{{ isDesignPhase ? '方案设计中' : '施工进行中' }}</text>
+    <!-- 固定头部区域 -->
+    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <!-- 头部信息 -->
+      <view class="header-content">
+        <view class="header-info">
+          <text class="project-name">{{ projectInfo.name }} · {{ projectInfo.area }}㎡</text>
+          <text class="project-status">{{ isDesignPhase ? '方案设计中' : '施工进行中' }}</text>
+        </view>
+        <view class="header-icon" @click="goToNotification">
+          <u-icon name="bell" size="40" />
+          <view v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</view>
+        </view>
       </view>
-      <view class="header-icon" @click="goToNotification">
-        <u-icon name="bell" size="40" />
-        <view v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</view>
-      </view>
-    </view>
-    
-    <!-- 进度卡片 -->
-    <view class="hero-section">
+      
+      <!-- 进度卡片 -->
       <view class="progress-card">
         <view class="progress-info">
           <view class="flex-between">
@@ -31,86 +32,92 @@
       </view>
     </view>
     
-    <!-- 功能菜单 -->
-    <view class="menu-section">
-      <view class="menu-grid">
-        <!-- 设计阶段专属 -->
-        <view v-if="isDesignPhase" class="menu-item" @click="navigateTo('/pages/design/index')">
-          <view class="menu-icon-box" style="color: #FF6B6B;">
-            <u-icon name="photo" size="48" color="#FF6B6B" />
-          </view>
-          <text class="menu-text">设计图</text>
-        </view>
-        
-        <!-- 施工阶段专属 -->
-        <view v-if="!isDesignPhase" class="menu-item" @click="navigateTo('/pages/schedule/index')">
-          <view class="menu-icon-box" style="color: #4ECDC4;">
-            <u-icon name="calendar" size="48" color="#4ECDC4" />
-          </view>
-          <text class="menu-text">排期</text>
-        </view>
-        
-        <view v-if="!isDesignPhase" class="menu-item" @click="navigateTo('/pages/log/index')">
-          <view class="menu-icon-box" style="color: #45B7D1;">
-            <u-icon name="file-text" size="48" color="#45B7D1" />
-          </view>
-          <text class="menu-text">日志</text>
-        </view>
-        
-        <!-- 通用菜单 -->
-        <view class="menu-item" @click="navigateTo('/pages/shopping/index')">
-          <view class="menu-icon-box" style="color: #96CEB4;">
-            <u-icon name="bag" size="48" color="#96CEB4" />
-          </view>
-          <text class="menu-text">清单</text>
-        </view>
-        
-        <view class="menu-item" @click="navigateTo('/pages/budget/index')">
-          <view class="menu-icon-box" style="color: #FFB020;">
-            <u-icon name="rmb-circle" size="48" color="#FFB020" />
-          </view>
-          <text class="menu-text">预算</text>
-        </view>
-      </view>
-    </view>
+    <!-- 头部占位 -->
+    <view :style="{ height: headerHeight + 'px' }"></view>
     
-    <!-- 设计方案展示（设计阶段） -->
-    <view v-if="isDesignPhase" class="content-section">
-      <text class="section-title">设计方案</text>
-      <view class="glass-card design-preview" @click="navigateTo('/pages/design/index')">
-        <image 
-          class="design-image" 
-          src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-          mode="aspectFill"
-        />
-        <view class="design-info flex-between">
-          <view>
-            <text class="design-title">全屋效果图 v2.0</text>
-            <text class="design-update">更新于 今天 09:30</text>
+    <!-- 可滚动内容区域 -->
+    <view class="scroll-content">
+      <!-- 功能菜单 -->
+      <view class="menu-section">
+        <view class="menu-grid">
+          <!-- 设计阶段专属 -->
+          <view v-if="isDesignPhase" class="menu-item" @click="navigateTo('/pages/design/index')">
+            <view class="menu-icon-box" style="background: rgba(255, 107, 107, 0.1);">
+              <u-icon name="photo" size="48" color="#FF6B6B" />
+            </view>
+            <text class="menu-text">设计图</text>
           </view>
-          <text class="view-link">查看 ></text>
+          
+          <!-- 施工阶段专属 -->
+          <view v-if="!isDesignPhase" class="menu-item" @click="navigateTo('/pages/schedule/index')">
+            <view class="menu-icon-box" style="background: rgba(78, 205, 196, 0.1);">
+              <u-icon name="calendar" size="48" color="#4ECDC4" />
+            </view>
+            <text class="menu-text">排期</text>
+          </view>
+          
+          <view v-if="!isDesignPhase" class="menu-item" @click="navigateTo('/pages/log/index')">
+            <view class="menu-icon-box" style="background: rgba(69, 183, 209, 0.1);">
+              <u-icon name="file-text" size="48" color="#45B7D1" />
+            </view>
+            <text class="menu-text">日志</text>
+          </view>
+          
+          <!-- 通用菜单 -->
+          <view class="menu-item" @click="navigateTo('/pages/shopping/index')">
+            <view class="menu-icon-box" style="background: rgba(150, 206, 180, 0.1);">
+              <u-icon name="bag" size="48" color="#96CEB4" />
+            </view>
+            <text class="menu-text">清单</text>
+          </view>
+          
+          <view class="menu-item" @click="navigateTo('/pages/budget/index')">
+            <view class="menu-icon-box" style="background: rgba(255, 176, 32, 0.1);">
+              <u-icon name="rmb-circle" size="48" color="#FFB020" />
+            </view>
+            <text class="menu-text">预算</text>
+          </view>
         </view>
       </view>
-    </view>
-    
-    <!-- 最新日志（施工阶段） -->
-    <view v-if="!isDesignPhase" class="content-section">
-      <view class="flex-between section-header">
-        <text class="section-title">最新日志</text>
-        <text class="view-all" @click="navigateTo('/pages/log/index')">查看全部</text>
-      </view>
-      <view class="log-preview glass-card" @click="navigateTo('/pages/log/index')">
-        <image 
-          class="log-image" 
-          src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
-          mode="aspectFill"
-        />
-        <view class="log-content">
-          <view class="flex-between log-header">
-            <text class="log-title">水电验收</text>
-            <text class="log-time">今天 10:30</text>
+      
+      <!-- 设计方案展示（设计阶段） -->
+      <view v-if="isDesignPhase" class="content-section">
+        <text class="section-title">设计方案</text>
+        <view class="glass-card design-preview" @click="navigateTo('/pages/design/index')">
+          <image 
+            class="design-image" 
+            src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+            mode="aspectFill"
+          />
+          <view class="design-info flex-between">
+            <view>
+              <text class="design-title">全屋效果图 v2.0</text>
+              <text class="design-update">更新于 今天 09:30</text>
+            </view>
+            <text class="view-link">查看 ></text>
           </view>
-          <text class="log-desc">今日进行水电节点验收，强弱电间距符合标准，水管打压测试8kg保压30分钟无掉压。</text>
+        </view>
+      </view>
+      
+      <!-- 最新日志（施工阶段） -->
+      <view v-if="!isDesignPhase" class="content-section">
+        <view class="flex-between section-header">
+          <text class="section-title">最新日志</text>
+          <text class="view-all" @click="navigateTo('/pages/log/index')">查看全部</text>
+        </view>
+        <view class="log-preview glass-card" @click="navigateTo('/pages/log/index')">
+          <image 
+            class="log-image" 
+            src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
+            mode="aspectFill"
+          />
+          <view class="log-content">
+            <view class="flex-between log-header">
+              <text class="log-title">水电验收</text>
+              <text class="log-time">今天 10:30</text>
+            </view>
+            <text class="log-desc">今日进行水电节点验收，强弱电间距符合标准，水管打压测试8kg保压30分钟无掉压。</text>
+          </view>
         </view>
       </view>
     </view>
@@ -124,8 +131,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import { getStatusBarHeight, getNavBarHeight } from '@/utils/system.js'
+
+const statusBarHeight = ref(0)
+const headerHeight = ref(0)
 
 // 项目信息
 const projectInfo = ref({
@@ -142,6 +153,19 @@ const nextMilestone = ref('12.10')
 
 // 通知数量
 const notificationCount = ref(3)
+
+onMounted(() => {
+  statusBarHeight.value = getStatusBarHeight()
+  // 计算固定头部高度
+  nextTick(() => {
+    const query = uni.createSelectorQuery()
+    query.select('.fixed-header').boundingClientRect(rect => {
+      if (rect) {
+        headerHeight.value = rect.height
+      }
+    }).exec()
+  })
+})
 
 // 页面导航
 const navigateTo = (url) => {
@@ -160,12 +184,22 @@ const goToNotification = () => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// 头部
-.header {
-  padding: 100rpx 48rpx 32rpx;
+// 固定头部
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: $glass-bg;
+  padding: 0 48rpx 32rpx;
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 24rpx 0;
 }
 
 .header-info {
@@ -213,11 +247,6 @@ const goToNotification = () => {
 }
 
 // 进度卡片
-.hero-section {
-  padding: 0 48rpx;
-  margin-bottom: 48rpx;
-}
-
 .progress-info {
   position: relative;
   z-index: 1;
@@ -244,10 +273,39 @@ const goToNotification = () => {
   opacity: 0.8;
 }
 
+// 可滚动内容
+.scroll-content {
+  padding-top: 32rpx;
+}
+
 // 功能菜单
 .menu-section {
   padding: 0 48rpx;
   margin-bottom: 48rpx;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24rpx;
+}
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.menu-icon-box {
+  width: 100rpx;
+  height: 100rpx;
+  background: white;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: $shadow-card;
 }
 
 .menu-text {
@@ -352,4 +410,3 @@ const goToNotification = () => {
   line-height: 1.6;
 }
 </style>
-

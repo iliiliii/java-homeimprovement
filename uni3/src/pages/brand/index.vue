@@ -1,5 +1,14 @@
 <template>
   <view class="brand-page">
+    <!-- 统一导航栏 - 透明背景 -->
+    <NavBar 
+      title="关于我们" 
+      background="transparent" 
+      titleColor="#fff" 
+      iconColor="#fff"
+      :showBorder="false"
+    />
+    
     <!-- 英雄区域 -->
     <view class="hero-section">
       <image 
@@ -38,7 +47,7 @@
           <text class="brand-card-title">我们的理念</text>
         </view>
         <text class="brand-card-content">
-          {{ APP_CONFIG.name }} 致力于为每一个家庭打造充满智慧与温度的居住空间。我们坚持“设计以人为本”，将美学与功能完美融合，通过精细化的施工管理和全流程的贴心服务，让装修变得简单、透明、愉悦。
+          {{ APP_CONFIG.name }} 致力于为每一个家庭打造充满智慧与温度的居住空间。我们坚持"设计以人为本"，将美学与功能完美融合，通过精细化的施工管理和全流程的贴心服务，让装修变得简单、透明、愉悦。
         </text>
       </view>
       
@@ -59,17 +68,14 @@
       </view>
     </view>
     
-    <!-- 底部占位 -->
-    <view class="tab-bar-placeholder"></view>
-    
-    <!-- 自定义TabBar -->
-    <CustomTabBar :current="3" />
+    <!-- 底部安全区占位 -->
+    <view class="safe-area-bottom"></view>
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import CustomTabBar from '@/components/CustomTabBar.vue'
+import NavBar from '@/components/NavBar.vue'
 import { APP_CONFIG } from '@/config/app.js'
 
 const teamMembers = ref([
@@ -153,6 +159,14 @@ const promises = ref([
   margin-bottom: 48rpx;
 }
 
+.section-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: $glass-text-main;
+  margin-bottom: 32rpx;
+}
+
 // 团队网格
 .team-grid {
   display: grid;
@@ -196,7 +210,7 @@ const promises = ref([
 
 // 品牌区块
 .brand-section {
-  padding-bottom: 200rpx;
+  padding-bottom: 48rpx;
 }
 
 .brand-card {
@@ -254,5 +268,10 @@ const promises = ref([
   font-size: 28rpx;
   color: $glass-text-main;
 }
-</style>
 
+// 底部安全区
+.safe-area-bottom {
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+}
+</style>

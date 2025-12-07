@@ -219,8 +219,8 @@ const handleWechatLogin = (e) => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   padding: 64rpx;
+  padding-top: 120rpx;
   position: relative;
   overflow: hidden;
 }
@@ -368,10 +368,10 @@ const handleWechatLogin = (e) => {
 
 // 版权信息
 .copyright {
-  position: absolute;
-  bottom: 60rpx;
-  left: 0;
-  right: 0;
+  margin-top: auto;
+  padding: 60rpx 0;
+  padding-bottom: calc(60rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
   text-align: center;
   font-size: 24rpx;
   color: $glass-text-muted;

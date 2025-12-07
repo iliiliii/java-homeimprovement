@@ -1,12 +1,10 @@
 <template>
   <view class="privacy-container">
-    <!-- 自定义导航栏 -->
-    <view class="custom-nav">
-      <view class="nav-back" @click="goBack">
-        <u-icon name="arrow-left" color="#1A2B3C" size="24" />
-      </view>
-      <text class="nav-title">隐私政策</text>
-    </view>
+    <!-- 统一导航栏 -->
+    <NavBar title="隐私政策" />
+    
+    <!-- 导航栏占位 -->
+    <view :style="{ height: navHeight + 'px' }"></view>
 
     <!-- 隐私政策内容 -->
     <view class="privacy-content">
@@ -17,7 +15,7 @@
 
       <view class="section">
         <text class="section-title">引言</text>
-        <text class="section-text">{{ APP_CONFIG.name }}（以下简称“我们”）深知个人信息对您的重要性，并会尽全力保护您的个人信息安全可靠。我们致力于维持您对我们的信任，恪守以下原则，保护您的个人信息：权责一致原则、目的明确原则、选择同意原则、最少够用原则、确保安全原则、主体参与原则、公开透明原则等。</text>
+        <text class="section-text">{{ APP_CONFIG.name }}（以下简称"我们"）深知个人信息对您的重要性，并会尽全力保护您的个人信息安全可靠。我们致力于维持您对我们的信任，恪守以下原则，保护您的个人信息：权责一致原则、目的明确原则、选择同意原则、最少够用原则、确保安全原则、主体参与原则、公开透明原则等。</text>
       </view>
 
       <view class="section">
@@ -87,45 +85,22 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { APP_CONFIG } from '@/config/app.js'
+import { getTotalNavHeight } from '@/utils/system.js'
+import NavBar from '@/components/NavBar.vue'
 
-const goBack = () => {
-  uni.navigateBack()
-}
+const navHeight = ref(0)
+
+onMounted(() => {
+  navHeight.value = getTotalNavHeight()
+})
 </script>
 
 <style lang="scss" scoped>
 .privacy-container {
   min-height: 100vh;
   background: $glass-bg;
-}
-
-.custom-nav {
-  position: sticky;
-  top: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20rpx);
-  -webkit-backdrop-filter: blur(20rpx);
-  padding: 24rpx 32rpx;
-  display: flex;
-  align-items: center;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
-  z-index: 100;
-}
-
-.nav-back {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16rpx;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: $glass-text-main;
 }
 
 .privacy-content {

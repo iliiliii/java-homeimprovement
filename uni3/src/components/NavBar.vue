@@ -72,6 +72,11 @@ onMounted(() => {
   navBarHeight.value = getNavBarHeight()
 })
 
+// 导航栏总高度（状态栏 + 导航栏）
+const totalHeight = computed(() => {
+  return statusBarHeight.value + navBarHeight.value
+})
+
 const navBarStyle = computed(() => {
   return {
     background: props.background,
@@ -81,11 +86,15 @@ const navBarStyle = computed(() => {
 
 const handleBack = () => {
   emit('back')
-  // 如果没有自定义返回事件，默认返回上一页
-  if (!emit('back')) {
-    uni.navigateBack()
-  }
+  uni.navigateBack()
 }
+
+// 暴露给父组件使用
+defineExpose({
+  totalHeight,
+  statusBarHeight,
+  navBarHeight
+})
 </script>
 
 <style lang="scss" scoped>
