@@ -241,8 +241,8 @@
 </template>
 
 <script setup name="Projects">
-import { listProjects, updateProjects, delProjects, listProjectsWithCustomer, listProjectsWithMembers } from "@/api/evs/projects"
-import { useRouter } from 'vue-router'
+import { listProjects, updateProjects, delProjects, listProjectsWithCustomer, listProjectsWithMembers, getProjectWithCustomer } from "@/api/evs/projects"
+import { useRouter, useRoute } from 'vue-router'
 import userStore from '@/store/modules/user'
 import ProjectProgress from './components/ProjectProgress.vue'
 import ProjectBudget from './components/ProjectBudget.vue'
@@ -250,6 +250,7 @@ import ProjectDetail from './components/ProjectDetail.vue'
 import ProjectEdit from './components/ProjectEdit.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { proxy } = getCurrentInstance()
 const { decoration_project_status } = proxy.useDict('decoration_project_status')
 
@@ -439,8 +440,41 @@ function handleSaveProgress(updateData) {
   })
 }
 
+/** 处理路由参数 */
+function handleRouteQuery() {
+  const { id, status } = route.query
+  
+  // 如果有状态参数，设置筛选条件
+  if (status) {
+    queryParams.value.status = status
+    getList()
+  }
+  
+  // 如果有id参数，直接打开项目详情
+  if (id) {
+    getProjectWithCustomer(id).then(response => {
+      if (response.data) {
+        projectDetailRef.value?.handleView(response.data)
+      }
+    }).catch(() => {
+      proxy.$modal.msgWarning('未找到该项目信息')
+    })
+  }
+}
+
 // 初始化
 getList()
+// 延迟处理路由参数，确保组件已挂载
+nextTick(() => {
+  handleRouteQuery()
+})
+
+// 监听路由变化
+watch(() => route.query, (newQuery) => {
+  if (newQuery.id || newQuery.status) {
+    handleRouteQuery()
+  }
+}, { deep: true })
 </script>
 
 <style scoped lang="scss">

@@ -287,7 +287,9 @@
 <script setup name="Customers">
 import { listCustomers, getCustomers, delCustomers, addCustomers, updateCustomers } from "@/api/evs/customers"
 import { UserFilled, Phone, Message, Location, Calendar, FolderOpened, CopyDocument, InfoFilled } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const { proxy } = getCurrentInstance()
 const { user_level } = proxy.useDict('user_level')
 
@@ -536,7 +538,32 @@ function getLevelTagType(level) {
   return typeMap[level] || ''
 }
 
+/** 处理路由参数 */
+function handleRouteQuery() {
+  const { id } = route.query
+  if (id) {
+    // 如果有id参数，直接打开客户详情
+    getCustomers(id).then(response => {
+      if (response.data) {
+        currentCustomer.value = response.data
+        detailOpen.value = true
+      }
+    }).catch(() => {
+      proxy.$modal.msgWarning('未找到该客户信息')
+    })
+  }
+}
+
+// 初始化
 getList()
+handleRouteQuery()
+
+// 监听路由变化
+watch(() => route.query, (newQuery) => {
+  if (newQuery.id) {
+    handleRouteQuery()
+  }
+}, { deep: true })
 </script>
 
 <style lang="scss" scoped>
