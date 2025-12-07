@@ -21,6 +21,18 @@ export function listProjectsWithCustomer(query) {
   })
 }
 
+// 查询项目信息列表（包含进度信息）
+export function listProjectsWithScheduleInfo(query) {
+  return request({
+    url: '/evs/projects/list',
+    method: 'get',
+    params: {
+      ...query,
+      includeScheduleInfo: true
+    }
+  })
+}
+
 // 通过项目成员关联查询项目列表（支持管理员权限筛选）
 export function listProjectsWithMembers(query) {
   return request({

@@ -79,7 +79,7 @@
 </template>
 
 <script setup name="ProjectScheduleRecords">
-import { listProjects } from "@/api/evs/projects"
+import { listProjectsWithMembers } from "@/api/evs/projects"
 import { listProjectSchedules } from "@/api/evs/projectSchedules"
 import { listProjectScheduleRecords, addProjectScheduleRecords, delProjectScheduleRecords, updateProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
 import ProjectScheduleList from "./components/ProjectScheduleList.vue"
@@ -120,7 +120,7 @@ const data = reactive({
     pageNum: 1,
     pageSize: 100,
     name: null,
-    status: 'IN_PROGRESS' // 默认只显示进行中的项目
+    status: null // 不在后端过滤状态，由前端过滤（确保普通用户能获取到自己参与的项目）
   }
 })
 
@@ -176,13 +176,21 @@ function resetAllLoadingStates() {
 function getList() {
   loading.value = true
 
-  listProjects({
-    ...queryParams.value,
-    includeScheduleInfo: true
-  }).then(response => {
-    inProgressProjects.value = (response.rows || []).filter(project => {
-      return project.status === 'IN_PROGRESS' || project.status === 'PLANNED'
+  // 使用带成员权限过滤的API，确保普通用户只能看到自己参与的项目
+  listProjectsWithMembers(queryParams.value).then(response => {
+    // 兼容不同的返回格式（rows 或 data）
+    const rows = response.rows || response.data || []
+    console.log('[进度记录] 获取到项目列表:', rows.length, '条记录')
+    if (rows.length > 0) {
+      console.log('[进度记录] 项目状态分布:', rows.map(p => ({ name: p.name, status: p.status })))
+    }
+    
+    // 筛选进行中的项目（忽略大小写）
+    inProgressProjects.value = rows.filter(project => {
+      const status = (project.status || '').toUpperCase()
+      return status === 'IN_PROGRESS' || status === 'PLANNED'
     })
+    console.log('[进度记录] 过滤后进行中的项目:', inProgressProjects.value.length, '条')
     loading.value = false
 
     if (selectedProject.value && !inProgressProjects.value.find(p => p.id === selectedProject.value.id)) {

@@ -265,15 +265,12 @@
 <script setup name="QualityInspections">
 import { listQualityInspections } from "@/api/evs/qualityInspections"
 import { getQualityInspectionsWithIssues } from "@/api/evs/qualityInspections"
-import { listProjectsWithCustomer } from "@/api/evs/projects"
-import { listProjectSchedules } from "@/api/evs/projectSchedules"
+import { listProjectsWithMembers } from "@/api/evs/projects"
 import { addQualityInspections } from "@/api/evs/qualityInspections"
 import { addQualityIssues, listQualityIssues } from "@/api/evs/qualityIssues"
 import { addQualityFixes, getQualityFixesByIssueId } from "@/api/evs/qualityFixes"
 import { Calendar, Location, CircleCheck, Plus, Check, Loading } from "@element-plus/icons-vue"
 import { getToken } from "@/utils/auth"
-import { useProjectAuth } from '@/utils/projectAuth'
-import { onMounted } from 'vue'
 import FixSubmissionDialog from './components/FixSubmissionDialog.vue'
 import QualityFixesDrawer from './components/QualityFixesDrawer.vue'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
@@ -282,9 +279,6 @@ import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
 const { decoration_project_status } = proxy.useDict('decoration_project_status')
-
-// 权限控制
-const { isAdmin, getUserProjectIds } = useProjectAuth()
 
 // 用户存储
 const userStore = useUserStore()
@@ -377,34 +371,31 @@ const data = reactive({
     pageNum: 1,
     pageSize: 100,
     name: null,
-    status: 'IN_PROGRESS', // 默认只显示进行中的项目
-    includeCustomer: true
+    status: null // 不在后端过滤状态，由前端过滤（确保普通用户能获取到自己参与的项目）
   }
 })
 
 const { queryParams } = toRefs(data)
 
-/** 查询项目列表（带权限控制） */
-async function getList() {
+/** 查询项目列表（采用项目管理架构） */
+function getList() {
   loading.value = true
 
-  try {
-    // 根据用户权限构建查询参数
-    const query_params = { ...queryParams.value }
-
-    if (!isAdmin.value) {
-      // 非管理员：只能查看自己关联的项目
-      const userProjectIds = await getUserProjectIds()
-      query_params.userProjectIds = userProjectIds
+  // 调用带成员权限过滤的项目API，后端自动处理权限过滤
+  listProjectsWithMembers(queryParams.value).then(response => {
+    // 兼容不同的返回格式（rows 或 data）
+    const rows = response.rows || response.data || []
+    console.log('[质量检测] 获取到项目列表:', rows.length, '条记录')
+    if (rows.length > 0) {
+      console.log('[质量检测] 项目状态分布:', rows.map(p => ({ name: p.name, status: p.status })))
     }
-
-    // 使用带客户信息的API
-    const response = await listProjectsWithCustomer(query_params)
-
-    // 筛选进行中的项目
-    inProgressProjects.value = (response.rows || []).filter(project => {
-      return project.status === 'IN_PROGRESS' || project.status === 'PLANNED'
+    
+    // 筛选进行中的项目（忽略大小写）
+    inProgressProjects.value = rows.filter(project => {
+      const status = (project.status || '').toUpperCase()
+      return status === 'IN_PROGRESS' || status === 'PLANNED'
     })
+    console.log('[质量检测] 过滤后进行中的项目:', inProgressProjects.value.length, '条')
 
     // 如果当前选中的项目不在列表中，清空选择
     if (selectedProject.value && !inProgressProjects.value.find(p => p.id === selectedProject.value.id)) {
@@ -412,17 +403,15 @@ async function getList() {
       inspectionItems.value = []
     }
 
-    // 注意：不再为每个项目预加载质检数据，只在点击项目时加载
-
-  } catch (error) {
+    loading.value = false
+  }).catch(error => {
     console.error('获取项目列表失败:', error)
     proxy.$modal.msgError('获取项目列表失败')
     inProgressProjects.value = []
     selectedProject.value = null
     inspectionItems.value = []
-  } finally {
     loading.value = false
-  }
+  })
 }
 
 /** 为列表加载项目质检数据（用于显示在左侧）- 当前未使用，保留以备将来扩展 */
