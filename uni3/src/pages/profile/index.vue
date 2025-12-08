@@ -10,7 +10,7 @@
       <!-- 用户信息 -->
       <view class="user-header">
         <view class="user-avatar">
-          <u-icon name="account" size="80" color="#2D5BFF" />
+          <SvgIcon name="account" size="80rpx" color="#C9B0D4" />
         </view>
         <view class="user-info">
           <text class="user-phone">{{ userInfo.phone }}</text>
@@ -60,43 +60,43 @@
       <!-- 功能菜单 -->
       <view class="menu-list">
         <view class="menu-item" @click="handleMenu('contract')">
-          <view class="menu-icon" style="background: rgba(45, 91, 255, 0.1);">
-            <u-icon name="file-text" size="40" color="#2D5BFF" />
+          <view class="menu-icon" style="background: rgba(201, 176, 212, 0.15);">
+            <SvgIcon name="file-text" size="40rpx" color="#C9B0D4" />
           </view>
           <text class="menu-text">合同文件</text>
-          <u-icon name="arrow-right" size="28" color="#ccc" />
+          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
         </view>
         
         <view class="menu-item" @click="handleMenu('payment')">
-          <view class="menu-icon" style="background: rgba(255, 176, 32, 0.1);">
-            <u-icon name="rmb-circle" size="40" color="#FFB020" />
+          <view class="menu-icon" style="background: rgba(232, 180, 76, 0.15);">
+            <SvgIcon name="rmb-circle" size="40rpx" color="#E8B44C" />
           </view>
           <text class="menu-text">付款记录</text>
-          <u-icon name="arrow-right" size="28" color="#ccc" />
+          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
         </view>
         
         <view class="menu-item" @click="handleMenu('feedback')">
-          <view class="menu-icon" style="background: rgba(78, 205, 196, 0.1);">
-            <u-icon name="chat" size="40" color="#4ECDC4" />
+          <view class="menu-icon" style="background: rgba(157, 193, 131, 0.15);">
+            <SvgIcon name="chat" size="40rpx" color="#9DC183" />
           </view>
           <text class="menu-text">意见反馈</text>
-          <u-icon name="arrow-right" size="28" color="#ccc" />
+          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
         </view>
         
         <view class="menu-item" @click="handleMenu('service')">
-          <view class="menu-icon" style="background: rgba(255, 107, 107, 0.1);">
-            <u-icon name="kefu-ermai" size="40" color="#FF6B6B" />
+          <view class="menu-icon" style="background: rgba(167, 185, 211, 0.15);">
+            <SvgIcon name="kefu-ermai" size="40rpx" color="#A7B9D3" />
           </view>
           <text class="menu-text">联系客服</text>
-          <u-icon name="arrow-right" size="28" color="#ccc" />
+          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
         </view>
         
         <view class="menu-item" @click="handleMenu('about')">
           <view class="menu-icon" style="background: rgba(100, 116, 139, 0.1);">
-            <u-icon name="info-circle" size="40" color="#64748B" />
+            <SvgIcon name="info-circle" size="40rpx" color="#64748B" />
           </view>
           <text class="menu-text">关于我们</text>
-          <u-icon name="arrow-right" size="28" color="#ccc" />
+          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
         </view>
       </view>
       
@@ -122,8 +122,13 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 import { APP_CONFIG } from '@/config/app.js'
 import { getStatusBarHeight } from '@/utils/system.js'
+import { useUserStore } from '@/store/user.js'
+import { logout as logoutApi } from '@/api/auth.js'
+
+const userStore = useUserStore()
 
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
@@ -219,12 +224,17 @@ const handleLogout = () => {
   uni.showModal({
     title: '提示',
     content: '确定要退出登录吗？',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        uni.clearStorageSync()
-        uni.reLaunch({
-          url: '/pages/login/index'
-        })
+        try {
+          // 调用后端退出登录接口
+          await logoutApi()
+        } catch (error) {
+          // 即使后端调用失败，也继续清除本地状态
+          console.warn('退出登录API调用失败:', error)
+        }
+        // 清除本地状态并跳转登录页
+        userStore.logout()
       }
     }
   })
