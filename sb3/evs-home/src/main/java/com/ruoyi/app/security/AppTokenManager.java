@@ -168,4 +168,20 @@ public class AppTokenManager {
     public long getAccessTokenExpireSeconds() {
         return accessExpireHours * 60 * 60L;
     }
+    
+    /**
+     * 获取Token剩余有效时间（秒）
+     */
+    public long getTokenRemainingSeconds(String token) {
+        try {
+            Claims claims = parseToken(token);
+            if (claims != null && claims.getExpiration() != null) {
+                long remaining = (claims.getExpiration().getTime() - System.currentTimeMillis()) / 1000;
+                return Math.max(0, remaining);
+            }
+        } catch (Exception e) {
+            log.warn("获取Token剩余时间失败: {}", e.getMessage());
+        }
+        return 0;
+    }
 }

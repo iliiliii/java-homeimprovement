@@ -8,6 +8,7 @@ import com.ruoyi.app.mapper.AppProjectMapper;
 import com.ruoyi.app.mapper.AppUserMapper;
 import com.ruoyi.app.security.AppTokenManager;
 import com.ruoyi.app.service.IAppAuthService;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.uuid.UUID;
@@ -19,10 +20,12 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -48,11 +51,26 @@ public class AppAuthServiceImpl implements IAppAuthService {
     @Autowired
     private AppProjectMapper appProjectMapper;
     
-    // 简单的验证码存储（生产环境应使用Redis）
-    private static final Map<String, SmsCodeInfo> smsCodeCache = new ConcurrentHashMap<>();
+    @Autowired
+    private RedisCache redisCache;
     
     // 验证码有效期（分钟）
     private static final int SMS_CODE_EXPIRE_MINUTES = 5;
+    
+    // 验证码错误次数限制
+    private static final int MAX_CODE_ERROR_COUNT = 5;
+    
+    // 账号锁定时间（分钟）
+    private static final int ACCOUNT_LOCK_MINUTES = 30;
+    
+    // Redis Key前缀
+    private static final String SMS_CODE_KEY = "app:sms:code:";
+    private static final String CODE_ERROR_KEY = "app:sms:error:";
+    private static final String ACCOUNT_LOCK_KEY = "app:account:lock:";
+    private static final String TOKEN_BLACKLIST_KEY = "app:token:blacklist:";
+    
+    // 密码加密器
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     
     @Override
     public AppLoginResponse wechatLogin(WechatLoginRequest request, String ipAddress) {
@@ -72,16 +90,28 @@ public class AppAuthServiceImpl implements IAppAuthService {
         String code = request.getCode();
         String deviceId = request.getDeviceId();
         
-        // 验证验证码
-        if (!verifySmsCode(phone, code)) {
-            throw new ServiceException("验证码错误或已过期");
+        // 检查账号是否被锁定
+        if (isAccountLocked(phone)) {
+            throw new ServiceException("账号已被锁定，请" + ACCOUNT_LOCK_MINUTES + "分钟后再试");
         }
         
-        // 查询用户
+        // 查询用户（先查询，用于记录失败日志）
         UserInfo userInfo = findUserByPhone(phone);
         if (userInfo == null) {
             throw new ServiceException("用户不存在，请联系管理员");
         }
+        
+        // 验证验证码
+        if (!verifySmsCode(phone, code)) {
+            // 记录错误次数
+            incrementCodeErrorCount(phone);
+            logLogin(userInfo.getUserType(), userInfo.getUserId(), LoginTypeEnum.SMS, 
+                    ipAddress, deviceId, false, "验证码错误");
+            throw new ServiceException("验证码错误或已过期");
+        }
+        
+        // 验证成功，清除错误计数
+        clearCodeErrorCount(phone);
         
         // 查询用户的项目列表
         List<AppProjectInfo> projects = findUserProjects(userInfo.getUserType(), userInfo.getUserId());
@@ -137,11 +167,13 @@ public class AppAuthServiceImpl implements IAppAuthService {
             throw new ServiceException("用户不存在");
         }
         
-        // TODO: 验证密码（需要使用若依的密码加密方式）
-        // 暂时跳过密码验证，生产环境需要实现
-        // if (!SecurityUtils.matchesPassword(password, sysUser.getPassword())) {
-        //     throw new ServiceException("密码错误");
-        // }
+        // 验证密码（使用BCrypt加密方式）
+        if (!matchesPassword(password, sysUser.getPassword())) {
+            // 记录登录失败
+            logLogin(userInfo.getUserType(), userInfo.getUserId(), LoginTypeEnum.PASSWORD, 
+                    ipAddress, deviceId, false, "密码错误");
+            throw new ServiceException("密码错误");
+        }
         
         // 查询用户的项目列表
         List<AppProjectInfo> projects = findUserProjects(userInfo.getUserType(), userInfo.getUserId());
@@ -176,24 +208,32 @@ public class AppAuthServiceImpl implements IAppAuthService {
     
     @Override
     public void sendCode(String phone, String ipAddress) {
+        // 检查账号是否被锁定
+        if (isAccountLocked(phone)) {
+            throw new ServiceException("账号已被锁定，请" + ACCOUNT_LOCK_MINUTES + "分钟后再试");
+        }
+        
         // 检查发送频率（1分钟内只能发送一次）
-        SmsCodeInfo existingCode = smsCodeCache.get(phone);
-        if (existingCode != null) {
-            long elapsed = System.currentTimeMillis() - existingCode.getCreateTime();
-            if (elapsed < 60 * 1000) {
+        String codeKey = SMS_CODE_KEY + phone;
+        String existingCode = redisCache.getCacheObject(codeKey);
+        if (StringUtils.isNotEmpty(existingCode)) {
+            Long ttl = redisCache.getExpire(codeKey);
+            if (ttl != null && ttl > (SMS_CODE_EXPIRE_MINUTES - 1) * 60) {
                 throw new ServiceException("发送太频繁，请稍后再试");
             }
+        }
+        
+        // 验证手机号是否存在（防止短信轰炸）
+        UserInfo userInfo = findUserByPhone(phone);
+        if (userInfo == null) {
+            throw new ServiceException("该手机号未注册，请联系管理员");
         }
         
         // 生成6位验证码
         String code = String.format("%06d", new Random().nextInt(1000000));
         
-        // 保存验证码
-        SmsCodeInfo codeInfo = new SmsCodeInfo();
-        codeInfo.setCode(code);
-        codeInfo.setCreateTime(System.currentTimeMillis());
-        codeInfo.setExpireTime(System.currentTimeMillis() + SMS_CODE_EXPIRE_MINUTES * 60 * 1000);
-        smsCodeCache.put(phone, codeInfo);
+        // 保存验证码到Redis
+        redisCache.setCacheObject(codeKey, code, SMS_CODE_EXPIRE_MINUTES, TimeUnit.MINUTES);
         
         // TODO: 调用短信服务发送验证码
         // 开发阶段直接打印验证码
@@ -255,13 +295,29 @@ public class AppAuthServiceImpl implements IAppAuthService {
     
     @Override
     public void logout(String token) {
-        // TODO: 将Token加入黑名单（需要Redis支持）
-        log.info("用户退出登录，Token: {}", token.substring(0, Math.min(20, token.length())) + "...");
+        try {
+            // 获取Token的过期时间
+            long expireSeconds = tokenManager.getTokenRemainingSeconds(token);
+            if (expireSeconds > 0) {
+                // 将Token加入黑名单，过期时间与Token剩余有效期一致
+                String blacklistKey = TOKEN_BLACKLIST_KEY + token;
+                redisCache.setCacheObject(blacklistKey, "revoked", expireSeconds, TimeUnit.SECONDS);
+                log.info("Token已加入黑名单，剩余有效期: {}秒", expireSeconds);
+            }
+        } catch (Exception e) {
+            log.warn("退出登录处理异常: {}", e.getMessage());
+        }
     }
     
     @Override
     public boolean validateToken(String token) {
         try {
+            // 检查Token是否在黑名单中
+            String blacklistKey = TOKEN_BLACKLIST_KEY + token;
+            if (redisCache.hasKey(blacklistKey)) {
+                return false;
+            }
+            
             tokenManager.validateToken(token);
             return true;
         } catch (Exception e) {
@@ -367,28 +423,73 @@ public class AppAuthServiceImpl implements IAppAuthService {
     }
     
     /**
-     * 验证短信验证码
+     * 验证短信验证码（使用Redis）
      */
     private boolean verifySmsCode(String phone, String code) {
-        SmsCodeInfo codeInfo = smsCodeCache.get(phone);
-        if (codeInfo == null) {
-            return false;
-        }
+        String codeKey = SMS_CODE_KEY + phone;
+        String cachedCode = redisCache.getCacheObject(codeKey);
         
-        // 检查是否过期
-        if (System.currentTimeMillis() > codeInfo.getExpireTime()) {
-            smsCodeCache.remove(phone);
+        if (StringUtils.isEmpty(cachedCode)) {
             return false;
         }
         
         // 检查验证码是否正确
-        if (!codeInfo.getCode().equals(code)) {
+        if (!cachedCode.equals(code)) {
             return false;
         }
         
         // 验证成功，删除验证码
-        smsCodeCache.remove(phone);
+        redisCache.deleteObject(codeKey);
         return true;
+    }
+    
+    /**
+     * 检查账号是否被锁定
+     */
+    private boolean isAccountLocked(String phone) {
+        String lockKey = ACCOUNT_LOCK_KEY + phone;
+        return redisCache.hasKey(lockKey);
+    }
+    
+    /**
+     * 增加验证码错误次数
+     */
+    private void incrementCodeErrorCount(String phone) {
+        String errorKey = CODE_ERROR_KEY + phone;
+        Integer count = redisCache.getCacheObject(errorKey);
+        if (count == null) {
+            count = 0;
+        }
+        count++;
+        
+        if (count >= MAX_CODE_ERROR_COUNT) {
+            // 锁定账号
+            String lockKey = ACCOUNT_LOCK_KEY + phone;
+            redisCache.setCacheObject(lockKey, "locked", ACCOUNT_LOCK_MINUTES, TimeUnit.MINUTES);
+            redisCache.deleteObject(errorKey);
+            log.warn("账号 {} 因验证码错误次数过多被锁定", phone);
+        } else {
+            // 更新错误次数，30分钟后自动清除
+            redisCache.setCacheObject(errorKey, count, ACCOUNT_LOCK_MINUTES, TimeUnit.MINUTES);
+        }
+    }
+    
+    /**
+     * 清除验证码错误计数
+     */
+    private void clearCodeErrorCount(String phone) {
+        String errorKey = CODE_ERROR_KEY + phone;
+        redisCache.deleteObject(errorKey);
+    }
+    
+    /**
+     * 验证密码
+     */
+    private boolean matchesPassword(String rawPassword, String encodedPassword) {
+        if (StringUtils.isEmpty(rawPassword) || StringUtils.isEmpty(encodedPassword)) {
+            return false;
+        }
+        return passwordEncoder.matches(rawPassword, encodedPassword);
     }
     
     /**
@@ -444,21 +545,5 @@ public class AppAuthServiceImpl implements IAppAuthService {
         public void setPhone(String phone) { this.phone = phone; }
         public String getAvatar() { return avatar; }
         public void setAvatar(String avatar) { this.avatar = avatar; }
-    }
-    
-    /**
-     * 验证码信息内部类
-     */
-    private static class SmsCodeInfo {
-        private String code;
-        private long createTime;
-        private long expireTime;
-        
-        public String getCode() { return code; }
-        public void setCode(String code) { this.code = code; }
-        public long getCreateTime() { return createTime; }
-        public void setCreateTime(long createTime) { this.createTime = createTime; }
-        public long getExpireTime() { return expireTime; }
-        public void setExpireTime(long expireTime) { this.expireTime = expireTime; }
     }
 }
