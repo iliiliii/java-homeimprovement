@@ -58,4 +58,12 @@ public interface IProjectMembersService
      * @return 结果
      */
     public int deleteProjectMembersById(String id);
+    
+    /**
+     * 根据用户ID查询关联的项目列表
+     * 
+     * @param userId 用户ID
+     * @return 项目列表
+     */
+    public List<com.ruoyi.web.domain.Projects> selectProjectsByUserId(Long userId);
 }

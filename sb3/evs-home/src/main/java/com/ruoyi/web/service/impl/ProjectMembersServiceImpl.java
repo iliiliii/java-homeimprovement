@@ -1,10 +1,14 @@
 package com.ruoyi.web.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.web.mapper.ProjectMembersMapper;
+import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.ProjectMembers;
+import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectMembersService;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -21,6 +25,9 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
 {
     @Autowired
     private ProjectMembersMapper projectMembersMapper;
+    
+    @Autowired
+    private ProjectsMapper projectsMapper;
 
     /**
      * 查询项目成员
@@ -100,5 +107,43 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
     public int deleteProjectMembersById(String id)
     {
         return projectMembersMapper.deleteProjectMembersById(id);
+    }
+    
+    /**
+     * 根据用户ID查询关联的项目列表
+     * 
+     * @param userId 用户ID
+     * @return 项目列表
+     */
+    @Override
+    public List<Projects> selectProjectsByUserId(Long userId)
+    {
+        // 查询用户关联的项目成员记录
+        ProjectMembers query = new ProjectMembers();
+        query.setUserId(String.valueOf(userId));
+        List<ProjectMembers> members = projectMembersMapper.selectProjectMembersList(query);
+        
+        if (members == null || members.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 获取项目ID列表
+        List<String> projectIds = members.stream()
+                .map(ProjectMembers::getProjectId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        // 查询项目详情
+        List<Projects> projects = new ArrayList<>();
+        for (String projectId : projectIds) {
+            Projects queryProject = new Projects();
+            queryProject.setId(projectId);
+            Projects project = projectsMapper.selectProjectsById(queryProject);
+            if (project != null && project.getDeletedAt() == null) {
+                projects.add(project);
+            }
+        }
+        
+        return projects;
     }
 }
