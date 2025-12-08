@@ -32,7 +32,7 @@
       <!-- <el-form-item label="客户等级" prop="level">
         <el-select v-model="queryParams.level" placeholder="请选择客户等级" clearable>
           <el-option
-            v-for="dict in user_level"
+            v-for="dict in decoration_customer_level"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -224,7 +224,7 @@
         <el-form-item label="客户等级" prop="level">
           <el-select v-model="form.level" placeholder="请选择客户等级">
             <el-option
-              v-for="dict in user_level"
+              v-for="dict in decoration_customer_level"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -252,7 +252,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const { proxy } = getCurrentInstance()
-const { user_level } = proxy.useDict('user_level')
+const { decoration_customer_level } = proxy.useDict('decoration_customer_level')
 
 const customersList = ref([])
 const open = ref(false)
@@ -486,17 +486,6 @@ function formatDate(date) {
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-/** 获取客户等级标签类型 */
-function getLevelTagType(level) {
-  const typeMap = {
-    'VIP': 'danger',
-    'HIGH': 'warning',
-    'NORMAL': 'info',
-    'LOW': ''
-  }
-  return typeMap[level] || ''
 }
 
 /** 处理路由参数 */

@@ -46,7 +46,7 @@
             </div>
           </div>
         </el-col>
-        <!-- <el-col :xs="12" :sm="12" :md="6">
+        <el-col :xs="12" :sm="12" :md="6">
           <div class="stat-card">
             <div class="stat-icon quality">
               <el-icon><CircleCheck /></el-icon>
@@ -57,7 +57,7 @@
               <div class="stat-extra">不通过 {{ stats.qualityFailCount }} 次</div>
             </div>
           </div>
-        </el-col> -->
+        </el-col>
       </el-row>
 
       <!-- 重点客户管理 -->

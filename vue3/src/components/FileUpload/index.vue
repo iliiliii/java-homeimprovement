@@ -252,7 +252,7 @@ function handleUploadSuccess(res, file) {
     const fileInfo = uploadingFiles.value.get(file.uid) || { name: file.name, size: 0 }
     const fileData = {
       name: res.fileName,
-      url: res.fileName,
+      url: res.fileName,           // ✅ 修复：使用后端返回的fileName字段作为URL
       originalName: fileInfo.name,
       size: fileInfo.size
     }
@@ -319,7 +319,7 @@ async function handleHttpRequest(options) {
       const fileInfo = uploadingFiles.value.get(options.file.uid) || { name: options.file.name, size: 0 }
       const fileData = {
         name: data.fileName,
-        url: data.fileName,
+        url: data.fileName,           // ✅ 修复：使用后端返回的fileName字段作为URL
         originalName: fileInfo.name,
         size: fileInfo.size
       }

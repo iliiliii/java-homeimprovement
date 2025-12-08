@@ -91,7 +91,7 @@
                 v-if="project.customerId && getCustomerName(project) !== '未关联客户'"
                 type="primary"
                 :underline="false"
-                @click="goToCustomer(project.customerId)"
+                @click="showCustomerInfo(project.customerId)"
                 style="margin-left: 4px; font-size: 13px;"
               >
                 {{ getCustomerName(project) }}
@@ -237,6 +237,9 @@
         <ProjectProgress v-if="currentProgressProject" :project="currentProgressProject" @save="handleSaveProgress" />
       </div>
     </el-dialog>
+
+    <!-- 客户信息弹窗 -->
+    <CustomerInfoDialog ref="customerInfoDialogRef" />
   </div>
 </template>
 
@@ -248,6 +251,7 @@ import ProjectProgress from './components/ProjectProgress.vue'
 import ProjectBudget from './components/ProjectBudget.vue'
 import ProjectDetail from './components/ProjectDetail.vue'
 import ProjectEdit from './components/ProjectEdit.vue'
+import CustomerInfoDialog from './components/CustomerInfoDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -262,6 +266,7 @@ const isAdmin = computed(() => {
 // 组件引用
 const projectDetailRef = ref()
 const projectEditRef = ref()
+const customerInfoDialogRef = ref()
 
 const projectsList = ref([])
 const loading = ref(true)
@@ -365,14 +370,10 @@ function getCustomerName(project) {
   return project.customerId || '未关联客户'
 }
 
-/** 跳转到客户详情页 */
-function goToCustomer(customerId) {
+/** 显示客户信息弹窗 */
+function showCustomerInfo(customerId) {
   if (customerId) {
-    // 使用Vue Router跳转到客户管理页面，并传递客户ID参数
-    router.push({
-      path: '/evs/customers',
-      query: { id: customerId }
-    })
+    customerInfoDialogRef.value?.show(customerId)
   }
 }
 

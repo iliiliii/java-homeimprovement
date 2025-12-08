@@ -245,14 +245,24 @@ function handleExceed() {
 
 // 上传成功回调
 function handleUploadSuccess(res, file) {
+  // 添加空值检查，防止 res 为 undefined
+  if (!res) {
+    number.value--
+    proxy.$modal.closeLoading()
+    proxy.$modal.msgError("上传失败：服务器响应异常")
+    proxy.$refs.imageUpload?.handleRemove(file)
+    uploadedSuccessfully()
+    return
+  }
+  
   if (res.code === 200) {
     uploadList.value.push({ name: res.fileName, url: res.fileName })
     uploadedSuccessfully()
   } else {
     number.value--
     proxy.$modal.closeLoading()
-    proxy.$modal.msgError(res.msg)
-    proxy.$refs.imageUpload.handleRemove(file)
+    proxy.$modal.msgError(res.msg || "上传失败")
+    proxy.$refs.imageUpload?.handleRemove(file)
     uploadedSuccessfully()
   }
 }
@@ -302,24 +312,52 @@ async function handleHttpRequest(options) {
       body: formData
     })
 
-    const data = await response.json()
+    // 检查响应状态
+    if (!response.ok) {
+      throw new Error(`上传失败: HTTP ${response.status} ${response.statusText}`)
+    }
+
+    // 解析响应
+    let data
+    try {
+      const text = await response.text()
+      if (!text) {
+        throw new Error('服务器响应为空')
+      }
+      data = JSON.parse(text)
+    } catch (parseError) {
+      throw new Error('服务器响应格式错误: ' + parseError.message)
+    }
+
+    // 验证响应数据结构
+    if (!data || typeof data !== 'object') {
+      throw new Error('服务器响应数据格式异常')
+    }
 
     if (data.code === 200) {
       uploadList.value.push({ name: data.fileName, url: data.fileName })
       // 清空该文件的压缩缓存
       compressedFiles.value.delete(options.file.uid)
-      // 调用el-upload的成功回调
-      options.onSuccess(data, options.file)
+      // 调用el-upload的成功回调，确保传递正确的数据格式
+      if (options.onSuccess) {
+        options.onSuccess(data, options.file)
+      }
       uploadedSuccessfully()
     } else {
       throw new Error(data.msg || '上传失败')
     }
   } catch (error) {
-    ElMessage.error('上传失败: ' + error.message)
-    options.onError(error)
+    proxy.$modal.closeLoading()
+    proxy.$modal.msgError('上传失败: ' + error.message)
+    if (options.onError) {
+      options.onError(error)
+    }
     number.value--
     compressedFiles.value.delete(options.file.uid)
-    proxy.$modal.closeLoading()
+    // 确保调用上传成功回调以清理状态，但传递错误信息
+    if (options.onSuccess) {
+      options.onSuccess(null, options.file)
+    }
   }
 }
 
