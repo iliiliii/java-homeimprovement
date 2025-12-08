@@ -37,9 +37,13 @@ public class AppAuthController {
      */
     @PostMapping("/sms-login")
     public AjaxResult smsLogin(@Validated @RequestBody SmsLoginRequest request) {
-        String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
-        AppLoginResponse response = authService.smsLogin(request, ipAddress);
-        return AjaxResult.success(response);
+        try {
+            String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
+            AppLoginResponse response = authService.smsLogin(request, ipAddress);
+            return AjaxResult.success(response);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
     }
     
     /**
@@ -47,9 +51,13 @@ public class AppAuthController {
      */
     @PostMapping("/password-login")
     public AjaxResult passwordLogin(@Validated @RequestBody PasswordLoginRequest request) {
-        String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
-        AppLoginResponse response = authService.passwordLogin(request, ipAddress);
-        return AjaxResult.success(response);
+        try {
+            String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
+            AppLoginResponse response = authService.passwordLogin(request, ipAddress);
+            return AjaxResult.success(response);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
     }
     
     /**

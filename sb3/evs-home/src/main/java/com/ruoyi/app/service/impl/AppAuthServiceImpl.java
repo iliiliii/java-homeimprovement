@@ -4,12 +4,12 @@ import com.ruoyi.app.dto.request.*;
 import com.ruoyi.app.dto.response.*;
 import com.ruoyi.app.enums.LoginTypeEnum;
 import com.ruoyi.app.enums.UserTypeEnum;
+import com.ruoyi.app.mapper.AppUserMapper;
 import com.ruoyi.app.security.AppTokenManager;
 import com.ruoyi.app.service.IAppAuthService;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.uuid.UUID;
-import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.web.domain.Customers;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.ICustomersService;
@@ -46,7 +46,7 @@ public class AppAuthServiceImpl implements IAppAuthService {
     private IProjectMembersService projectMembersService;
     
     @Autowired
-    private ISysUserService sysUserService;
+    private AppUserMapper appUserMapper;
     
     // 简单的验证码存储（生产环境应使用Redis）
     private static final Map<String, SmsCodeInfo> smsCodeCache = new ConcurrentHashMap<>();
@@ -131,8 +131,8 @@ public class AppAuthServiceImpl implements IAppAuthService {
             throw new ServiceException("客户请使用短信验证码登录");
         }
         
-        // 验证员工密码
-        SysUser sysUser = sysUserService.selectUserById(Long.parseLong(userInfo.getUserId()));
+        // 验证员工密码（使用自定义Mapper绕过数据权限）
+        SysUser sysUser = appUserMapper.selectUserById(Long.parseLong(userInfo.getUserId()));
         if (sysUser == null) {
             throw new ServiceException("用户不存在");
         }
@@ -289,13 +289,10 @@ public class AppAuthServiceImpl implements IAppAuthService {
             return userInfo;
         }
         
-        // 2. 再查询员工表
-        SysUser userQuery = new SysUser();
-        userQuery.setPhonenumber(phone);
-        List<SysUser> users = sysUserService.selectUserList(userQuery);
+        // 2. 再查询员工表（使用自定义Mapper绕过数据权限）
+        SysUser user = appUserMapper.selectUserByPhone(phone);
         
-        if (users != null && !users.isEmpty()) {
-            SysUser user = users.get(0);
+        if (user != null) {
             UserInfo userInfo = new UserInfo();
             userInfo.setUserId(String.valueOf(user.getUserId()));
             userInfo.setUserType(UserTypeEnum.STAFF);
@@ -324,7 +321,7 @@ public class AppAuthServiceImpl implements IAppAuthService {
                 return userInfo;
             }
         } else if (userType == UserTypeEnum.STAFF) {
-            SysUser user = sysUserService.selectUserById(Long.parseLong(userId));
+            SysUser user = appUserMapper.selectUserById(Long.parseLong(userId));
             if (user != null) {
                 UserInfo userInfo = new UserInfo();
                 userInfo.setUserId(String.valueOf(user.getUserId()));
