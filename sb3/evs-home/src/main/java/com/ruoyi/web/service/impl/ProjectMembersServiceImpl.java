@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.app.mapper.AppProjectMapper;
 import com.ruoyi.web.mapper.ProjectMembersMapper;
 import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.ProjectMembers;
@@ -28,6 +29,9 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
     
     @Autowired
     private ProjectsMapper projectsMapper;
+    
+    @Autowired
+    private AppProjectMapper appProjectMapper;
 
     /**
      * 查询项目成员
@@ -133,17 +137,9 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
                 .distinct()
                 .collect(Collectors.toList());
         
-        // 查询项目详情
-        List<Projects> projects = new ArrayList<>();
-        for (String projectId : projectIds) {
-            Projects queryProject = new Projects();
-            queryProject.setId(projectId);
-            Projects project = projectsMapper.selectProjectsById(queryProject);
-            if (project != null && project.getDeletedAt() == null) {
-                projects.add(project);
-            }
-        }
+        // 查询项目详情（使用AppProjectMapper绕过权限控制）
+        List<Projects> projects = appProjectMapper.selectProjectsByIds(projectIds);
         
-        return projects;
+        return projects != null ? projects : new ArrayList<>();
     }
 }
