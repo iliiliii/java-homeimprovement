@@ -4,8 +4,9 @@
     
     <!-- 根据项目ID列表查询项目 -->
     <select id="selectProjectsByIds" resultType="com.ruoyi.web.domain.Projects">
-        SELECT id, project_type, name, customer_id, description, address, area, budget,
-               start_date, end_date, status, priority, progress
+        SELECT id, project_type AS projectType, name, customer_id AS customerId, description, 
+               address, area, budget, start_date AS startDate, end_date AS endDate, 
+               status, priority, progress
         FROM projects 
         WHERE deleted_at IS NULL
         <if test="ids != null and ids.size() > 0">

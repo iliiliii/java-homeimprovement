@@ -16,12 +16,13 @@ public interface AppProjectMapper {
     
     /**
      * 根据客户ID查询项目列表
+     * 使用别名映射到Projects实体类字段
      * 
      * @param customerId 客户ID
      * @return 项目列表
      */
-    @Select("SELECT id, project_type, name, customer_id, description, address, area, budget, " +
-            "start_date, end_date, status, priority, progress " +
+    @Select("SELECT id, project_type AS projectType, name, customer_id AS customerId, description, " +
+            "address, area, budget, start_date AS startDate, end_date AS endDate, status, priority, progress " +
             "FROM projects WHERE customer_id = #{customerId} AND deleted_at IS NULL " +
             "ORDER BY created_at DESC")
     List<Projects> selectProjectsByCustomerId(@Param("customerId") String customerId);
@@ -32,8 +33,8 @@ public interface AppProjectMapper {
      * @param id 项目ID
      * @return 项目信息
      */
-    @Select("SELECT id, project_type, name, customer_id, description, address, area, budget, " +
-            "start_date, end_date, status, priority, progress " +
+    @Select("SELECT id, project_type AS projectType, name, customer_id AS customerId, description, " +
+            "address, area, budget, start_date AS startDate, end_date AS endDate, status, priority, progress " +
             "FROM projects WHERE id = #{id} AND deleted_at IS NULL")
     Projects selectProjectById(@Param("id") String id);
     
