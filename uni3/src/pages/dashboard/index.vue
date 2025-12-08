@@ -8,10 +8,6 @@
           <text class="project-name">{{ projectInfo.name }} · {{ projectInfo.area }}㎡</text>
           <text class="project-status">{{ isDesignPhase ? '方案设计中' : '施工进行中' }}</text>
         </view>
-        <view class="header-icon" @click="goToNotification">
-          <u-icon name="bell" size="40" />
-          <view v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</view>
-        </view>
       </view>
       
       <!-- 进度卡片 -->
@@ -42,38 +38,38 @@
         <view class="menu-grid">
           <!-- 设计阶段专属 -->
           <view v-if="isDesignPhase" class="menu-item" @click="navigateTo('/pages/design/index')">
-            <view class="menu-icon-box" style="background: rgba(255, 107, 107, 0.1);">
-              <u-icon name="photo" size="48" color="#FF6B6B" />
+            <view class="menu-icon-box" style="background: rgba(201, 176, 212, 0.15);">
+              <SvgIcon name="photo" size="48rpx" color="#C9B0D4" />
             </view>
             <text class="menu-text">设计图</text>
           </view>
           
           <!-- 施工阶段专属 -->
           <view v-if="!isDesignPhase" class="menu-item" @click="navigateTo('/pages/schedule/index')">
-            <view class="menu-icon-box" style="background: rgba(78, 205, 196, 0.1);">
-              <u-icon name="calendar" size="48" color="#4ECDC4" />
+            <view class="menu-icon-box" style="background: rgba(167, 185, 211, 0.15);">
+              <SvgIcon name="calendar" size="48rpx" color="#A7B9D3" />
             </view>
             <text class="menu-text">排期</text>
           </view>
           
           <view v-if="!isDesignPhase" class="menu-item" @click="navigateTo('/pages/log/index')">
-            <view class="menu-icon-box" style="background: rgba(69, 183, 209, 0.1);">
-              <u-icon name="file-text" size="48" color="#45B7D1" />
+            <view class="menu-icon-box" style="background: rgba(126, 150, 184, 0.15);">
+              <SvgIcon name="file-text" size="48rpx" color="#7E96B8" />
             </view>
             <text class="menu-text">日志</text>
           </view>
           
-          <!-- 通用菜单 -->
-          <view class="menu-item" @click="navigateTo('/pages/shopping/index')">
-            <view class="menu-icon-box" style="background: rgba(150, 206, 180, 0.1);">
-              <u-icon name="bag" size="48" color="#96CEB4" />
+          <!-- 文档链接 -->
+          <view class="menu-item" @click="openDocLink">
+            <view class="menu-icon-box" style="background: rgba(157, 193, 131, 0.15);">
+              <SvgIcon name="file-text" size="48rpx" color="#9DC183" />
             </view>
-            <text class="menu-text">清单</text>
+            <text class="menu-text">文档</text>
           </view>
           
           <view class="menu-item" @click="navigateTo('/pages/budget/index')">
-            <view class="menu-icon-box" style="background: rgba(255, 176, 32, 0.1);">
-              <u-icon name="rmb-circle" size="48" color="#FFB020" />
+            <view class="menu-icon-box" style="background: rgba(232, 180, 76, 0.15);">
+              <SvgIcon name="rmb-circle" size="48rpx" color="#E8B44C" />
             </view>
             <text class="menu-text">预算</text>
           </view>
@@ -133,6 +129,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight, getNavBarHeight } from '@/utils/system.js'
 
 const statusBarHeight = ref(0)
@@ -151,8 +148,7 @@ const phaseStatus = ref('正常推进')
 const progressPercent = computed(() => isDesignPhase.value ? 40 : 35)
 const nextMilestone = ref('12.10')
 
-// 通知数量
-const notificationCount = ref(3)
+
 
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
@@ -172,9 +168,29 @@ const navigateTo = (url) => {
   uni.navigateTo({ url })
 }
 
-const goToNotification = () => {
-  uni.showToast({ title: '消息通知', icon: 'none' })
+// 打开外部文档链接
+const openDocLink = () => {
+  // 文档链接配置，在这里修改你的文档地址
+  const docUrl = 'https://www.kdocs.cn/l/cgkCcqM3rO5j?from=docs'  // TODO: 替换为你的文档链接
+  
+  // #ifdef H5
+  // H5 环境直接打开新窗口
+  window.open(docUrl, '_blank')
+  // #endif
+  
+  // #ifdef MP-WEIXIN
+  // 微信小程序需要通过 webview 页面打开
+  uni.navigateTo({
+    url: `/pages/webview/index?url=${encodeURIComponent(docUrl)}&title=项目文档`
+  })
+  // #endif
+  
+  // #ifdef APP-PLUS
+  // App 环境直接打开系统浏览器
+  plus.runtime.openURL(docUrl)
+  // #endif
 }
+
 </script>
 
 <style lang="scss" scoped>

@@ -52,7 +52,7 @@
     
     <!-- 空状态 -->
     <view v-if="currentDesigns.length === 0" class="empty-state">
-      <u-icon name="photo" size="100" color="#ccc" />
+      <SvgIcon name="photo" size="100rpx" color="#ccc" />
       <text class="empty-text">暂无设计图</text>
     </view>
     
@@ -77,8 +77,10 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import { onBackPress } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
 
 const statusBarHeight = ref(0)
@@ -170,11 +172,19 @@ const getStatusText = (status) => {
   return map[status] || ''
 }
 
-// 打开图片查看器
 const openViewer = (index) => {
   viewerIndex.value = index
   viewerVisible.value = true
 }
+
+
+// 监听返回键
+onBackPress((e) => {
+  if (viewerVisible.value) {
+    viewerVisible.value = false
+    return true // 阻止默认返回
+  }
+})
 </script>
 
 <style lang="scss" scoped>

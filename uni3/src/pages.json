@@ -9,7 +9,7 @@
   },
   "pages": [
     {
-      "path": "pages/login/index",
+      "path": "pages/login/index-new",
       "style": {
         "navigationBarTitleText": "登录",
         "navigationStyle": "custom"
@@ -83,6 +83,13 @@
       "style": {
         "navigationBarTitleText": "物料清单",
         "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/webview/index",
+      "style": {
+        "navigationBarTitleText": "文档",
+        "navigationStyle": "default"
       }
     }
   ],

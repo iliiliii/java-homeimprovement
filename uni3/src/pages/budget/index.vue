@@ -41,7 +41,7 @@
         @click="viewCategory(item)"
       >
         <view class="cat-icon" :style="{ color: item.color }">
-          <u-icon :name="item.icon" size="40" :color="item.color" />
+          <SvgIcon :name="item.icon" size="40rpx" :color="item.color" />
         </view>
         <view class="cat-content">
           <view class="flex-between">
@@ -70,6 +70,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 import { getTotalNavHeight } from '@/utils/system.js'
 
 const navHeight = ref(0)

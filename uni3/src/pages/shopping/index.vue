@@ -32,7 +32,7 @@
       >
         <view class="checkbox-wrapper" @click="toggleSelect(product)">
           <view class="checkbox" :class="{ checked: product.selected }">
-            <u-icon v-if="product.selected" name="checkmark" size="28" color="#fff" />
+            <SvgIcon v-if="product.selected" name="checkmark" size="28rpx" color="#fff" />
           </view>
         </view>
         <image class="product-img" :src="product.image" mode="aspectFill" />
@@ -54,7 +54,7 @@
     
     <!-- 空状态 -->
     <view v-if="filteredProducts.length === 0" class="empty-state">
-      <u-icon name="bag" size="100" color="#ccc" />
+      <SvgIcon name="bag" size="100rpx" color="#ccc" />
       <text class="empty-text">暂无物料</text>
     </view>
   </view>
@@ -63,6 +63,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 import { getTotalNavHeight } from '@/utils/system.js'
 
 const navHeight = ref(0)

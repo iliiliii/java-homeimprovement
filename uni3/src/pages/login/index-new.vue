@@ -38,10 +38,7 @@
       
       <!-- 短信验证码登录 -->
       <view v-if="loginMode === 'sms'" class="login-mode-content">
-        <view class="mode-title">短信验证码登录</view>
-        
         <view class="form-item">
-          <text class="form-label">手机号码</text>
           <input 
             type="tel" 
             class="glass-input" 
@@ -52,7 +49,6 @@
         </view>
         
         <view class="form-item">
-          <text class="form-label">验证码</text>
           <view class="code-input-wrapper">
             <input 
               type="number" 
@@ -88,10 +84,7 @@
       
       <!-- 密码登录 -->
       <view v-if="loginMode === 'password'" class="login-mode-content">
-        <view class="mode-title">密码登录</view>
-        
         <view class="form-item">
-          <text class="form-label">手机号码</text>
           <input 
             type="tel" 
             class="glass-input" 
@@ -102,7 +95,6 @@
         </view>
         
         <view class="form-item">
-          <text class="form-label">密码</text>
           <input 
             type="password" 
             class="glass-input" 

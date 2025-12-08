@@ -41,8 +41,8 @@
       <!-- 理念卡片 -->
       <view class="brand-card">
         <view class="brand-card-header">
-          <view class="brand-icon" style="background: #2D5BFF;">
-            <u-icon name="star" size="40" color="#fff" />
+          <view class="brand-icon" style="background: #C9B0D4;">
+            <SvgIcon name="star" size="40rpx" color="#fff" />
           </view>
           <text class="brand-card-title">我们的理念</text>
         </view>
@@ -54,14 +54,14 @@
       <!-- 服务承诺卡片 -->
       <view class="brand-card">
         <view class="brand-card-header">
-          <view class="brand-icon" style="background: #4ECDC4;">
-            <u-icon name="checkmark-circle" size="40" color="#fff" />
+          <view class="brand-icon" style="background: #9DC183;">
+            <SvgIcon name="checkmark-circle" size="40rpx" color="#fff" />
           </view>
           <text class="brand-card-title">服务承诺</text>
         </view>
         <view class="promise-list">
           <view class="promise-item" v-for="(promise, index) in promises" :key="index">
-            <u-icon name="checkmark" size="32" color="#4ECDC4" />
+            <SvgIcon name="checkmark" size="32rpx" color="#9DC183" />
             <text class="promise-text">{{ promise }}</text>
           </view>
         </view>
@@ -76,6 +76,7 @@
 <script setup>
 import { ref } from 'vue'
 import NavBar from '@/components/NavBar.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 import { APP_CONFIG } from '@/config/app.js'
 
 const teamMembers = ref([
