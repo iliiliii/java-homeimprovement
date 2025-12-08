@@ -1,53 +1,68 @@
 /**
  * uni.scss - uview-plus 主题定制
- * 此处为 uview-plus 的全局样式变量，会覆盖 uview-plus 默认的样式变量
- * 这些变量需要在 uview-plus 之前定义
+ * 基于 iPhone 17 配色方案
  */
+
+// ==================== iPhone 17 配色 ====================
+
+// 薰衣草紫 Lavender
+$color-lavender: #E5D4ED;
+$color-lavender-dark: #C9B0D4;
+
+// 鼠尾草绿 Sage
+$color-sage: #9DC183;
+
+// 雾蓝 Mist Blue
+$color-mist-blue: #A7B9D3;
+
+// 黑白
+$color-black: #1A1A1A;
+$color-gray: #64748B;
 
 // ==================== uview-plus 必需变量 ====================
 
 // 文字颜色
-$u-main-color: #1A2B3C;
-$u-content-color: #64748B;
+$u-main-color: $color-black;
+$u-content-color: $color-gray;
 $u-tips-color: #94A3B8;
 $u-light-color: #CBD5E1;
 $u-disabled-color: #c8c9cc;
 
 // 边框颜色
-$u-border-color: rgba(255, 255, 255, 0.8);
+$u-border-color: rgba(255, 255, 255, 0.9);
 
 // 背景颜色
-$u-bg-color: #F0F4F8;
+$u-bg-color: #F8F8FA;
 
-// 主题色 - Primary (Electric Blue)
-$u-primary: #2D5BFF;
-$u-primary-dark: #2449CC;
-$u-primary-disabled: #96ADFF;
-$u-primary-light: #E6EEFF;
+// 主题色 - Primary (薰衣草紫)
+$u-primary: $color-lavender-dark;
+$u-primary-dark: #B89BC0;
+$u-primary-disabled: #E5D4ED;
+$u-primary-light: #F2EAF6;
 
-// 主题色 - Warning
-$u-warning: #FFB020;
-$u-warning-dark: #CC8C1A;
-$u-warning-disabled: #FFD899;
-$u-warning-light: #FFF5E6;
+// 主题色 - Warning (柔和金色)
+$u-warning: #E8B44C;
+$u-warning-dark: #D4A03A;
+$u-warning-disabled: #F4D99E;
+$u-warning-light: #FCF5E8;
 
-// 主题色 - Success
-$u-success: #00C2B2;
-$u-success-dark: #009B8E;
-$u-success-disabled: #80E1D9;
-$u-success-light: #E6FAF8;
+// 主题色 - Success (鼠尾草绿)
+$u-success: $color-sage;
+$u-success-dark: #7BA362;
+$u-success-disabled: #C8DDB8;
+$u-success-light: #E3F0DA;
 
-// 主题色 - Error
-$u-error: #FF6B6B;
-$u-error-dark: #CC5555;
-$u-error-disabled: #FFB5B5;
-$u-error-light: #FFEFEF;
+// 主题色 - Error (柔和红)
+$u-error: #D4847A;
+$u-error-dark: #C06B60;
+$u-error-disabled: #E8BAB4;
+$u-error-light: #FAEAE8;
 
-// 主题色 - Info
-$u-info: #64748B;
-$u-info-dark: #505D6E;
-$u-info-disabled: #B1BAC5;
-$u-info-light: #F1F5F9;
+// 主题色 - Info (雾蓝)
+$u-info: $color-mist-blue;
+$u-info-dark: #7E96B8;
+$u-info-disabled: #D0DCE9;
+$u-info-light: #E8EEF5;
 
 // 字体大小
 $u-font-size-xs: 22rpx;
@@ -75,4 +90,3 @@ $u-button-mini-height: 56rpx;
 	/* #endif */
 	flex-direction: $direction;
 }
-

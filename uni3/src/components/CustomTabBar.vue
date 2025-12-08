@@ -12,15 +12,15 @@
         @click="switchTab(item, index)"
       >
         <view class="tab-icon-box">
-          <u-icon 
+          <SvgIcon 
             :name="item.icon" 
-            :size="22" 
-            :color="currentIndex === index ? '#2D5BFF' : '#999999'"
+            size="44rpx"
+            :color="currentIndex === index ? '#C9B0D4' : '#999999'"
           />
         </view>
         <text 
           class="tab-text"
-          :style="{ color: currentIndex === index ? '#2D5BFF' : '#999999' }"
+          :style="{ color: currentIndex === index ? '#C9B0D4' : '#999999' }"
         >{{ item.text }}</text>
       </view>
     </view>
@@ -29,6 +29,8 @@
 
 <script setup>
 import { computed } from 'vue'
+import SvgIcon from '@/components/SvgIcon.vue'
+
 
 const props = defineProps({
   current: {

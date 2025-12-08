@@ -3,18 +3,24 @@
     <!-- 背景遮罩 -->
     <view class="viewer-mask" @click="handleClose"></view>
     
-    <!-- 顶部工具栏 -->
-    <view class="viewer-header">
-      <view class="header-left">
+    <!-- 顶部导航栏 -->
+    <view class="viewer-header" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="header-left" @click="handleClose">
+        <view class="back-btn">
+          <SvgIcon name="chevron-left" size="48rpx" color="#fff" />
+        </view>
+      </view>
+      <view class="header-center">
         <text class="image-index">{{ currentIndex + 1 }} / {{ images.length }}</text>
       </view>
-      <view class="header-right">
-        <view class="header-btn" @click="handleSave">
-          <u-icon name="download" size="44" color="#fff" />
-        </view>
-        <view class="header-btn" @click="handleClose">
-          <u-icon name="close" size="44" color="#fff" />
-        </view>
+      <view class="header-right"></view>
+    </view>
+    
+    <!-- 悬浮操作按钮 -->
+    <view class="viewer-side-actions">
+      <!-- 仅保留下载按钮，因为左上角已有返回/关闭按钮 -->
+      <view class="side-btn" @click="handleSave">
+        <SvgIcon name="download" size="44rpx" color="#fff" />
       </view>
     </view>
     
@@ -51,6 +57,7 @@
               @load="handleImageLoad"
               @error="handleImageError"
               @click="handleImageClick"
+              @longpress="handleLongPress"
             />
           </movable-view>
         </movable-area>
@@ -93,7 +100,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { getStatusBarHeight } from '@/utils/system.js'
+import SvgIcon from '@/components/SvgIcon.vue'
 
 const props = defineProps({
   // 是否显示
@@ -148,6 +157,11 @@ const emit = defineEmits(['update:visible', 'close', 'change', 'save'])
 const currentIndex = ref(0)
 const scaleValue = ref(1)
 const loading = ref({})
+const statusBarHeight = ref(44)
+
+onMounted(() => {
+  statusBarHeight.value = getStatusBarHeight()
+})
 
 // 监听visible变化，重置状态
 watch(() => props.visible, (val) => {
@@ -222,9 +236,22 @@ const handleImageError = () => {
 
 // 图片点击
 const handleImageClick = () => {
-  if (props.closeOnClick && scaleValue.value === 1) {
+  // 无论是否缩放，点击都关闭
+  if (props.closeOnClick) {
     handleClose()
   }
+}
+
+// 长按图片
+const handleLongPress = () => {
+  uni.showActionSheet({
+    itemList: ['保存图片'],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        handleSave()
+      }
+    }
+  })
 }
 
 // 关闭预览
@@ -304,7 +331,8 @@ defineExpose({
   right: 0;
   bottom: 0;
   z-index: 10000;
-  background: #000;
+  background: rgba(10, 10, 10, 0.95); /* 非纯黑背景 */
+  backdrop-filter: blur(20rpx); /* 毛玻璃效果 */
 }
 
 // 遮罩
@@ -316,7 +344,7 @@ defineExpose({
   bottom: 0;
 }
 
-// 顶部工具栏
+// 顶部导航栏
 .viewer-header {
   position: absolute;
   top: 0;
@@ -326,37 +354,41 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 80rpx 32rpx 24rpx;
+  height: 88rpx; /* 导航栏标准高度 */
+  box-sizing: content-box;
   background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
 }
 
-.header-left {
-  flex: 1;
-}
-
-.image-index {
-  font-size: 32rpx;
-  color: #fff;
-  font-weight: 500;
-}
-
-.header-right {
-  display: flex;
-  gap: 24rpx;
-}
-
-.header-btn {
-  width: 72rpx;
-  height: 72rpx;
+.header-left, .header-right {
+  width: 100rpx;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  
-  &:active {
-    background: rgba(255, 255, 255, 0.3);
-  }
+}
+
+.back-btn {
+  width: 88rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-index {
+  font-size: 30rpx;
+  color: #fff;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4rpx 24rpx;
+  border-radius: 100rpx;
 }
 
 // 滑动区域
@@ -473,5 +505,29 @@ defineExpose({
 .thumbnail-image {
   width: 100%;
   height: 100%;
+}
+
+// 左侧操作按钮
+.viewer-side-actions {
+  position: absolute;
+  left: 32rpx;
+  bottom: 240rpx; /* 调整位置，避免遮挡 */
+  z-index: 20;
+}
+
+.side-btn {
+  width: 88rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  backdrop-filter: blur(20rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  
+  &:active {
+    background: rgba(255, 255, 255, 0.25);
+  }
 }
 </style>

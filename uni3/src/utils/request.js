@@ -3,16 +3,30 @@
  */
 import { getDeviceId } from './device'
 
-// API 基础地址
-// #ifdef H5
-const BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:8080' 
-  : 'https://api.yourdomain.com'
-// #endif
+// 判断是否为开发环境
+const isDev = process.env.NODE_ENV === 'development'
 
-// #ifdef MP-WEIXIN
-const BASE_URL = 'https://api.yourdomain.com'  // 小程序必须使用https
-// #endif
+// API 基础地址配置
+const getBaseUrl = () => {
+  // 开发环境使用本地地址
+  if (isDev) {
+    // #ifdef H5
+    return 'http://localhost:8080'
+    // #endif
+    
+    // #ifdef MP-WEIXIN
+    // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
+    return 'http://localhost:8080'
+    // #endif
+  }
+  
+  // 生产环境使用正式域名
+  return 'https://api.yourdomain.com'
+}
+
+const BASE_URL = getBaseUrl()
+
+console.log('[Request] 当前环境:', isDev ? '开发' : '生产', ', API地址:', BASE_URL)
 
 // 是否正在刷新Token
 let isRefreshing = false
@@ -238,4 +252,3 @@ export const del = (url, data, options = {}) => {
 }
 
 export default request
-

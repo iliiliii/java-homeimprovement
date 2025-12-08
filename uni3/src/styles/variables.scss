@@ -1,60 +1,88 @@
 // ===========================================
 // 智享家 Pro - 设计变量定义
-// 基于 Glassmorphism（毛玻璃）风格
+// 基于 iPhone 17 配色方案
 // ===========================================
 
+// ==================== iPhone 17 核心色彩 ====================
+// 薰衣草紫 Lavender - 主题强调色
+$color-lavender: #E5D4ED;
+$color-lavender-dark: #C9B0D4;
+$color-lavender-light: #F2EAF6;
+
+// 鼠尾草绿 Sage - 成功/辅助色
+$color-sage: #9DC183;
+$color-sage-dark: #7BA362;
+$color-sage-light: #E3F0DA;
+
+// 雾蓝 Mist Blue - 信息/次级强调
+$color-mist-blue: #A7B9D3;
+$color-mist-blue-dark: #7E96B8;
+$color-mist-blue-light: #E8EEF5;
+
+// 白色 White
+$color-white: #FFFFFF;
+$color-off-white: #F8F8FA;
+
+// 黑色 Black
+$color-black: #1A1A1A;
+$color-gray-dark: #3D3D3D;
+$color-gray: #64748B;
+$color-gray-light: #94A3B8;
+
+// ==================== 语义化颜色 ====================
 // 主要颜色
-$glass-bg: #F0F4F8;
-$glass-surface: rgba(255, 255, 255, 0.7);
-$glass-surface-strong: rgba(255, 255, 255, 0.9);
-$glass-border: rgba(255, 255, 255, 0.8);
+$glass-bg: $color-off-white;
+$glass-surface: rgba(255, 255, 255, 0.85);
+$glass-surface-strong: rgba(255, 255, 255, 0.95);
+$glass-border: rgba(255, 255, 255, 0.9);
 
 // 文字颜色
-$glass-text-main: #1A2B3C;
-$glass-text-muted: #64748B;
+$glass-text-main: $color-black;
+$glass-text-muted: $color-gray;
 
 // 主题色
-$glass-accent: #2D5BFF;  // Electric Blue
-$glass-accent-light: #E6EEFF;
-$glass-success: #00C2B2;
-$glass-warning: #FFB020;
-$glass-danger: #FF6B6B;
+$glass-accent: $color-lavender-dark;  // 薰衣草紫作为主强调色
+$glass-accent-light: $color-lavender-light;
+$glass-success: $color-sage;          // 鼠尾草绿作为成功色
+$glass-info: $color-mist-blue;        // 雾蓝作为信息色
+$glass-warning: #E8B44C;              // 柔和橙黄
+$glass-danger: #D4847A;               // 柔和红
 
-// 彩色图标
-$color-red: #FF6B6B;
-$color-teal: #4ECDC4;
-$color-blue: #45B7D1;
-$color-green: #96CEB4;
-$color-orange: #FFB020;
+// ==================== 功能图标配色 ====================
+$icon-design: $color-lavender-dark;   // 设计图 - 薰衣草紫
+$icon-schedule: $color-mist-blue;     // 排期 - 雾蓝
+$icon-log: $color-mist-blue-dark;     // 日志 - 雾蓝深色
+$icon-list: $color-sage;              // 清单 - 鼠尾草绿
+$icon-budget: #E8B44C;                // 预算 - 柔和金色
 
-// 效果
+// ==================== 效果 ====================
 $blur-amount: 20px;
-$shadow-glass: 0 8px 32px rgba(45, 91, 255, 0.08);
-$shadow-card: 0 4px 12px rgba(0, 0, 0, 0.03);
-$shadow-btn: 0 4px 12px rgba(45, 91, 255, 0.3);
+$shadow-glass: 0 8px 32px rgba(201, 176, 212, 0.12);
+$shadow-card: 0 4px 16px rgba(0, 0, 0, 0.04);
+$shadow-btn: 0 4px 16px rgba(201, 176, 212, 0.35);
 
-// 字体
+// ==================== 字体 ====================
 $font-main: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 
-// 圆角
+// ==================== 圆角 ====================
 $radius-xl: 32rpx;
 $radius-l: 24rpx;
 $radius-m: 16rpx;
 $radius-s: 12rpx;
 
-// 间距
+// ==================== 间距 ====================
 $spacing-xs: 8rpx;
 $spacing-s: 16rpx;
 $spacing-m: 24rpx;
 $spacing-l: 32rpx;
 $spacing-xl: 48rpx;
 
-// uview-plus 主题变量覆盖
+// ==================== uview-plus 主题变量覆盖 ====================
 $u-primary: $glass-accent;
 $u-success: $glass-success;
 $u-warning: $glass-warning;
 $u-error: $glass-danger;
+$u-info: $glass-info;
 $u-main-color: $glass-text-main;
 $u-content-color: $glass-text-muted;
 $u-border-color: $glass-border;
-

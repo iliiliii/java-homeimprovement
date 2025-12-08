@@ -11,15 +11,17 @@ page {
   font-size: 28rpx;
   line-height: 1.5;
   min-height: 100vh;
-  // 微妙的渐变背景
+  // 微妙的渐变背景 - iPhone 17 配色
   background-image:
-    radial-gradient(at 0% 0%, rgba(45, 91, 255, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(0, 194, 178, 0.05) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(201, 176, 212, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(157, 193, 131, 0.08) 0px, transparent 50%);
   background-attachment: fixed;
 }
 
 // 盒模型
-view, text, image {
+view,
+text,
+image {
   box-sizing: border-box;
 }
 
@@ -63,19 +65,19 @@ view, text, image {
   text-align: center;
   box-shadow: $shadow-btn;
   transition: all 0.3s ease;
-  
+
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 4rpx 12rpx rgba(45, 91, 255, 0.2);
+    box-shadow: 0 4rpx 12rpx rgba(201, 176, 212, 0.25);
   }
-  
+
   &--outline {
     background: transparent;
     border: 2rpx solid $glass-accent;
     color: $glass-accent;
     box-shadow: none;
   }
-  
+
   &--secondary {
     background: $glass-surface-strong;
     color: $glass-text-main;
@@ -96,11 +98,11 @@ view, text, image {
   font-size: 28rpx;
   color: $glass-text-main;
   transition: border-color 0.3s;
-  
+
   &:focus {
     border-color: $glass-accent;
   }
-  
+
   &::placeholder {
     color: $glass-text-muted;
   }
@@ -136,10 +138,10 @@ view, text, image {
   color: $glass-text-muted;
   font-size: 20rpx;
   gap: 8rpx;
-  
+
   &.active {
     color: $glass-accent;
-    
+
     .nav-icon {
       transform: translateY(-4rpx);
     }
@@ -257,11 +259,11 @@ view, text, image {
 // ===========================================
 
 .progress-card {
-  background: linear-gradient(135deg, $glass-accent, #5E81FF);
+  background: linear-gradient(135deg, $glass-accent, #D8C0E0);
   color: white;
   border-radius: $radius-l;
   padding: $spacing-l;
-  box-shadow: 0 20rpx 60rpx rgba(45, 91, 255, 0.25);
+  box-shadow: 0 20rpx 60rpx rgba(201, 176, 212, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -271,7 +273,7 @@ view, text, image {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 8rpx;
   overflow: hidden;
-  
+
   .progress-fill {
     height: 100%;
     background: white;
@@ -320,7 +322,7 @@ view, text, image {
   box-shadow: $shadow-card;
   position: relative;
   overflow: hidden;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -330,11 +332,11 @@ view, text, image {
     width: 12rpx;
     background: #eee;
   }
-  
+
   &.done::before {
     background: $glass-success;
   }
-  
+
   &.active::before {
     background: $glass-accent;
   }
@@ -395,7 +397,7 @@ view, text, image {
   margin-bottom: 48rpx;
   overflow-x: auto;
   padding-bottom: 8rpx;
-  
+
   &::-webkit-scrollbar {
     display: none;
   }
@@ -408,7 +410,7 @@ view, text, image {
   background: white;
   color: $glass-text-muted;
   font-size: 28rpx;
-  
+
   &.active {
     background: $glass-accent;
     color: white;
@@ -448,4 +450,3 @@ view, text, image {
   justify-content: center;
   margin-right: 32rpx;
 }
-
