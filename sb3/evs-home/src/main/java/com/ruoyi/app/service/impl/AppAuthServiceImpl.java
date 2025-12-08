@@ -236,7 +236,7 @@ public class AppAuthServiceImpl implements IAppAuthService {
         
         // 验证密码（只有员工支持密码登录）
         if (userInfo.getUserType() != UserTypeEnum.STAFF) {
-            throw new ServiceException("客户请使用短信验证码登录");
+            throw new ServiceException("当前账户不支持密码登录");
         }
         
         // 验证员工密码（使用自定义Mapper绕过数据权限）

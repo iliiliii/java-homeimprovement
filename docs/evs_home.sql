@@ -11,11 +11,156 @@
  Target Server Version : 90500 (9.5.0)
  File Encoding         : 65001
 
- Date: 08/12/2025 02:18:23
+ Date: 09/12/2025 01:40:05
 */
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for app_audit_logs
+-- ----------------------------
+DROP TABLE IF EXISTS `app_audit_logs`;
+CREATE TABLE `app_audit_logs` (
+  `id` varchar(50) NOT NULL COMMENT '主键ID',
+  `user_type` varchar(20) NOT NULL COMMENT '用户类型：customer/staff',
+  `user_id` varchar(50) NOT NULL COMMENT '用户ID',
+  `project_id` varchar(50) DEFAULT NULL COMMENT '项目ID',
+  `action` varchar(100) NOT NULL COMMENT '操作类型',
+  `resource_type` varchar(50) DEFAULT NULL COMMENT '资源类型',
+  `resource_id` varchar(50) DEFAULT NULL COMMENT '资源ID',
+  `ip_address` varchar(50) DEFAULT NULL COMMENT 'IP地址',
+  `device_id` varchar(100) DEFAULT NULL COMMENT '设备ID',
+  `request_url` varchar(500) DEFAULT NULL COMMENT '请求URL',
+  `request_method` varchar(10) DEFAULT NULL COMMENT '请求方法',
+  `request_params` text COMMENT '请求参数',
+  `response_code` int DEFAULT NULL COMMENT '响应码',
+  `execute_time` int DEFAULT NULL COMMENT '执行时长（毫秒）',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user` (`user_type`,`user_id`),
+  KEY `idx_project` (`project_id`),
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_action` (`action`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审计日志表';
+
+-- ----------------------------
+-- Records of app_audit_logs
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
+-- Table structure for app_login_logs
+-- ----------------------------
+DROP TABLE IF EXISTS `app_login_logs`;
+CREATE TABLE `app_login_logs` (
+  `id` varchar(50) NOT NULL COMMENT '主键ID',
+  `user_type` varchar(20) NOT NULL COMMENT '用户类型：customer/staff',
+  `user_id` varchar(50) NOT NULL COMMENT '用户ID',
+  `login_type` varchar(20) NOT NULL COMMENT '登录类型：wechat/sms/password',
+  `login_ip` varchar(50) DEFAULT NULL COMMENT '登录IP',
+  `device_id` varchar(100) DEFAULT NULL COMMENT '设备唯一标识',
+  `device_info` text COMMENT '设备信息（JSON）',
+  `login_status` varchar(20) DEFAULT 'success' COMMENT '登录状态：success/failed',
+  `fail_reason` varchar(200) DEFAULT NULL COMMENT '失败原因',
+  `login_time` datetime NOT NULL COMMENT '登录时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user` (`user_type`,`user_id`),
+  KEY `idx_login_time` (`login_time`),
+  KEY `idx_device_id` (`device_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='小程序登录日志表';
+
+-- ----------------------------
+-- Records of app_login_logs
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
+-- Table structure for app_sms_codes
+-- ----------------------------
+DROP TABLE IF EXISTS `app_sms_codes`;
+CREATE TABLE `app_sms_codes` (
+  `id` varchar(50) NOT NULL COMMENT '主键ID',
+  `phone` varchar(20) NOT NULL COMMENT '手机号',
+  `code` varchar(10) NOT NULL COMMENT '验证码',
+  `type` varchar(20) DEFAULT 'login' COMMENT '类型：login/bind/reset',
+  `ip_address` varchar(50) DEFAULT NULL COMMENT 'IP地址',
+  `is_used` tinyint(1) DEFAULT '0' COMMENT '是否已使用',
+  `use_time` datetime DEFAULT NULL COMMENT '使用时间',
+  `expire_time` datetime NOT NULL COMMENT '过期时间',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_phone` (`phone`),
+  KEY `idx_expire_time` (`expire_time`),
+  KEY `idx_phone_code` (`phone`,`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='短信验证码表';
+
+-- ----------------------------
+-- Records of app_sms_codes
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
+-- Table structure for app_tokens
+-- ----------------------------
+DROP TABLE IF EXISTS `app_tokens`;
+CREATE TABLE `app_tokens` (
+  `id` varchar(50) NOT NULL COMMENT '主键ID',
+  `user_type` varchar(20) NOT NULL COMMENT '用户类型：customer/staff',
+  `user_id` varchar(50) NOT NULL COMMENT '用户ID',
+  `access_token` varchar(500) NOT NULL COMMENT 'Access Token',
+  `refresh_token` varchar(500) NOT NULL COMMENT 'Refresh Token',
+  `device_id` varchar(100) NOT NULL COMMENT '设备唯一标识',
+  `access_token_expire` datetime NOT NULL COMMENT 'Access Token过期时间',
+  `refresh_token_expire` datetime NOT NULL COMMENT 'Refresh Token过期时间',
+  `is_revoked` tinyint(1) DEFAULT '0' COMMENT '是否已撤销',
+  `revoke_time` datetime DEFAULT NULL COMMENT '撤销时间',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  `last_use_time` datetime DEFAULT NULL COMMENT '最后使用时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_access_token` (`access_token`(255)),
+  KEY `idx_refresh_token` (`refresh_token`(255)),
+  KEY `idx_user` (`user_type`,`user_id`),
+  KEY `idx_device_id` (`device_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Token管理表';
+
+-- ----------------------------
+-- Records of app_tokens
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
+-- Table structure for app_wechat_bindings
+-- ----------------------------
+DROP TABLE IF EXISTS `app_wechat_bindings`;
+CREATE TABLE `app_wechat_bindings` (
+  `id` varchar(50) NOT NULL COMMENT '主键ID',
+  `open_id` varchar(100) NOT NULL COMMENT '微信openId',
+  `union_id` varchar(100) DEFAULT NULL COMMENT '微信unionId',
+  `user_type` varchar(20) NOT NULL COMMENT '用户类型：customer/staff',
+  `user_id` varchar(50) NOT NULL COMMENT '用户ID',
+  `phone` varchar(20) DEFAULT NULL COMMENT '绑定手机号',
+  `nickname` varchar(100) DEFAULT NULL COMMENT '微信昵称',
+  `avatar` varchar(500) DEFAULT NULL COMMENT '微信头像',
+  `session_key` varchar(100) DEFAULT NULL COMMENT '会话密钥',
+  `bind_time` datetime NOT NULL COMMENT '绑定时间',
+  `last_login_time` datetime DEFAULT NULL COMMENT '最后登录时间',
+  `create_time` datetime NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_open_id` (`open_id`),
+  KEY `idx_user` (`user_type`,`user_id`),
+  KEY `idx_phone` (`phone`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='微信绑定表';
+
+-- ----------------------------
+-- Records of app_wechat_bindings
+-- ----------------------------
+BEGIN;
+COMMIT;
 
 -- ----------------------------
 -- Table structure for customers
@@ -262,7 +407,7 @@ CREATE TABLE `gen_table` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`table_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='代码生成业务表';
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='代码生成业务表';
 
 -- ----------------------------
 -- Records of gen_table
@@ -280,6 +425,7 @@ INSERT INTO `gen_table` (`table_id`, `table_name`, `table_comment`, `sub_table_n
 INSERT INTO `gen_table` (`table_id`, `table_name`, `table_comment`, `sub_table_name`, `sub_table_fk_name`, `class_name`, `tpl_category`, `tpl_web_type`, `package_name`, `module_name`, `business_name`, `function_name`, `function_author`, `gen_type`, `gen_path`, `options`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (10, 'project_rooms', '项目房间表', NULL, NULL, 'ProjectRooms', 'crud', 'element-plus', 'com.ruoyi.web', 'evs', 'projectRooms', '项目房间', 'evs', '0', '/', '{\"parentMenuId\":0}', 'admin', '2025-11-27 21:01:07', '', '2025-11-27 21:04:20', NULL);
 INSERT INTO `gen_table` (`table_id`, `table_name`, `table_comment`, `sub_table_name`, `sub_table_fk_name`, `class_name`, `tpl_category`, `tpl_web_type`, `package_name`, `module_name`, `business_name`, `function_name`, `function_author`, `gen_type`, `gen_path`, `options`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (11, 'quality_issues', '质量问题表', NULL, NULL, 'QualityIssues', 'crud', 'element-plus', 'com.ruoyi.web', 'evs', 'qualityIssues', '质量问题', 'evs', '0', '/', '{}', 'admin', '2025-12-02 00:12:17', '', '2025-12-02 00:54:18', NULL);
 INSERT INTO `gen_table` (`table_id`, `table_name`, `table_comment`, `sub_table_name`, `sub_table_fk_name`, `class_name`, `tpl_category`, `tpl_web_type`, `package_name`, `module_name`, `business_name`, `function_name`, `function_author`, `gen_type`, `gen_path`, `options`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (12, 'quality_fixes', '问题修复表', NULL, NULL, 'QualityFixes', 'crud', 'element-plus', 'com.ruoyi.web', 'evs', 'qualityFixes', '问题修复', 'evs', '0', '/', '{\"parentMenuId\":0}', 'admin', '2025-12-02 01:18:03', '', '2025-12-02 01:28:57', NULL);
+INSERT INTO `gen_table` (`table_id`, `table_name`, `table_comment`, `sub_table_name`, `sub_table_fk_name`, `class_name`, `tpl_category`, `tpl_web_type`, `package_name`, `module_name`, `business_name`, `function_name`, `function_author`, `gen_type`, `gen_path`, `options`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (13, 'news_consultation', '新闻咨询设置表', NULL, NULL, 'NewsConsultation', 'crud', 'element-plus', 'com.ruoyi.web', 'evs', 'newsConsultation', '新闻咨询设置', 'evs', '0', '/', '{\"parentMenuId\":2012}', 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38', NULL);
 COMMIT;
 
 -- ----------------------------
@@ -310,7 +456,7 @@ CREATE TABLE `gen_table_column` (
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`column_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=176 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='代码生成业务表字段';
+) ENGINE=InnoDB AUTO_INCREMENT=190 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='代码生成业务表字段';
 
 -- ----------------------------
 -- Records of gen_table_column
@@ -485,6 +631,52 @@ INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_
 INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (173, 12, 'updated_at', '更新时间', 'datetime', 'Date', 'updatedAt', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'datetime', '', 9, 'admin', '2025-12-02 01:18:03', '', '2025-12-02 01:28:57');
 INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (174, 12, 'created_by', '创建人', 'varchar(64)', 'String', 'createdBy', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'input', '', 10, 'admin', '2025-12-02 01:18:03', '', '2025-12-02 01:28:57');
 INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (175, 12, 'updated_by', '更新人', 'varchar(64)', 'String', 'updatedBy', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'input', '', 11, 'admin', '2025-12-02 01:18:03', '', '2025-12-02 01:28:57');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (176, 13, 'id', '咨询ID', 'varchar(32)', 'String', 'id', '1', '0', '0', '1', NULL, NULL, NULL, 'EQ', 'input', '', 1, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (177, 13, 'title', '标题', 'varchar(255)', 'String', 'title', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'input', '', 2, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (178, 13, 'subtitle', '副标题', 'varchar(255)', 'String', 'subtitle', '0', '0', '0', '1', '1', '1', '0', 'EQ', 'input', '', 3, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (179, 13, 'publish_position', '发布位置', 'varchar(50)', 'String', 'publishPosition', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'input', '', 4, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (180, 13, 'publish_time', '发布时间', 'datetime', 'Date', 'publishTime', '0', '0', '0', '1', '1', '1', '1', 'EQ', 'datetime', '', 5, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (181, 13, 'publish_status', '发布状态（DRAFT:草稿, PUBLISHED:已发布）', 'varchar(20)', 'String', 'publishStatus', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'radio', '', 6, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (182, 13, 'cover_image', '封面图片URL', 'varchar(500)', 'String', 'coverImage', '0', '0', '0', '1', '1', '1', '0', 'EQ', 'imageUpload', '', 7, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (183, 13, 'jump_url', '跳转地址', 'varchar(500)', 'String', 'jumpUrl', '0', '0', '0', '1', '1', '1', '0', 'EQ', 'textarea', '', 8, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (184, 13, 'sort_order', '排序（数值越大越靠前）', 'int', 'Long', 'sortOrder', '0', '0', '0', '1', '1', '1', '1', 'EQ', 'input', '', 9, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (185, 13, 'created_at', '创建时间', 'datetime', 'Date', 'createdAt', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'datetime', '', 10, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (186, 13, 'updated_at', '更新时间', 'datetime', 'Date', 'updatedAt', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'datetime', '', 11, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (187, 13, 'deleted_at', '删除时间', 'datetime', 'Date', 'deletedAt', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'datetime', '', 12, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (188, 13, 'created_by', '创建人', 'varchar(64)', 'String', 'createdBy', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'input', '', 13, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+INSERT INTO `gen_table_column` (`column_id`, `table_id`, `column_name`, `column_comment`, `column_type`, `java_type`, `java_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`, `query_type`, `html_type`, `dict_type`, `sort`, `create_by`, `create_time`, `update_by`, `update_time`) VALUES (189, 13, 'updated_by', '更新人', 'varchar(64)', 'String', 'updatedBy', '0', '0', '0', '0', '0', '0', '0', 'EQ', 'input', '', 14, 'admin', '2025-12-08 22:16:18', '', '2025-12-08 22:19:38');
+COMMIT;
+
+-- ----------------------------
+-- Table structure for news_consultation
+-- ----------------------------
+DROP TABLE IF EXISTS `news_consultation`;
+CREATE TABLE `news_consultation` (
+  `id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '咨询ID',
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '标题',
+  `subtitle` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '副标题',
+  `publish_position` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'HOME_PAGE' COMMENT '发布位置',
+  `publish_time` datetime DEFAULT NULL COMMENT '发布时间',
+  `publish_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DRAFT' COMMENT '发布状态（DRAFT:草稿, PUBLISHED:已发布）',
+  `cover_image` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '封面图片URL',
+  `jump_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '跳转地址',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序（数值越大越靠前）',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` datetime DEFAULT NULL COMMENT '删除时间',
+  `created_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '创建人',
+  `updated_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '更新人',
+  PRIMARY KEY (`id`),
+  KEY `idx_publish_status` (`publish_status`),
+  KEY `idx_publish_position` (`publish_position`),
+  KEY `idx_publish_time` (`publish_time`),
+  KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='新闻咨询设置表';
+
+-- ----------------------------
+-- Records of news_consultation
+-- ----------------------------
+BEGIN;
 COMMIT;
 
 -- ----------------------------
@@ -889,7 +1081,9 @@ BEGIN;
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('0ee24d5001514b9b827e18214181c56a', 'P202411240038', '2', 'DESIGNER', 1, '2025-11-26 23:49:46', '2025-11-26 23:49:45', 'admin', NULL, NULL, NULL, NULL);
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('2a77ad69dd7340e9bb6a99df058f96ee', 'P2024110100001', '103', 'WORKER', 1, '2025-11-25 00:52:15', '2025-11-25 00:52:14', 'admin', NULL, NULL, NULL, NULL);
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('3a78b5d26f0b42d49be10c28da250e90', 'P202411240036', '2', 'DESIGNER', 1, '2025-11-27 02:14:35', '2025-11-27 02:14:35', 'admin', NULL, NULL, NULL, NULL);
+INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('9a547477cb91430cbfe96220fa9fac4a', 'P202411240033', '2', 'PM', 1, '2025-12-08 02:34:29', '2025-12-08 02:34:29', 'admin', NULL, NULL, NULL, NULL);
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('b972c5710c2c4b8fb64724e7fa1f9ad8', 'P2024110100001', '102', 'WORKER', 1, '2025-11-25 00:52:15', '2025-11-25 00:52:14', 'admin', NULL, NULL, NULL, NULL);
+INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('e76d007759e04689bb17d1604d922a82', 'P202411240030', '2', 'DESIGNER', 1, '2025-12-08 02:34:57', '2025-12-08 02:34:57', 'admin', NULL, NULL, NULL, NULL);
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('M202411240011', 'P202411240013', '200', 'WORKER', 1, '2025-11-24 23:28:04', '2025-11-24 23:43:50', 'admin', 'admin', 'CONSTRUCTION', 'MID', '2025-10-28 23:43:50');
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('M202411240013', 'P202411240014', '137', 'PM', 1, '2025-11-24 23:28:04', '2025-11-24 23:43:50', 'admin', 'admin', 'ENGINEERING', 'MID', '2025-09-30 23:43:50');
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `is_active`, `created_at`, `updated_at`, `created_by`, `updated_by`, `role_category`, `skill_level`, `join_date`) VALUES ('M202411240014', 'P202411240014', '201', 'WORKER', 1, '2025-11-24 23:28:04', '2025-11-24 23:43:50', 'admin', 'admin', 'CONSTRUCTION', 'MID', '2025-11-10 23:43:50');
@@ -1892,7 +2086,7 @@ CREATE TABLE `sys_dict_data` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`dict_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=2341 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典数据表';
+) ENGINE=InnoDB AUTO_INCREMENT=2347 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典数据表';
 
 -- ----------------------------
 -- Records of sys_dict_data
@@ -2021,6 +2215,12 @@ INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value
 INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2338, 0, '西北', 'NW', 'decoration_orientation', NULL, 'default', 'N', '0', 'admin', '2025-11-29 14:39:53', '', NULL, NULL);
 INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2339, 0, '东南', 'SE', 'decoration_orientation', NULL, 'default', 'N', '0', 'admin', '2025-11-29 14:40:06', '', NULL, NULL);
 INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2340, 0, '西南', 'SW', 'decoration_orientation', NULL, 'default', 'N', '0', 'admin', '2025-11-29 14:40:15', '', NULL, NULL);
+INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2341, 0, 'Token有效期（小时）', '2', 'mini_app_config', NULL, 'default', 'N', '0', 'admin', '2025-12-08 23:19:36', '', NULL, NULL);
+INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2342, 0, 'RefreshToken有效期（天）', '7', 'mini_app_config', NULL, 'default', 'N', '0', 'admin', '2025-12-08 23:20:30', '', NULL, NULL);
+INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2343, 0, '验证码有效期（分钟）', '5', 'mini_app_config', NULL, 'default', 'N', '0', 'admin', '2025-12-08 23:20:37', '', NULL, NULL);
+INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2344, 0, '验证码长度', '6', 'mini_app_config', NULL, 'default', 'N', '0', 'admin', '2025-12-08 23:20:43', '', NULL, NULL);
+INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2345, 0, '单次上传图片数量', '9', 'mini_app_config', NULL, 'default', 'N', '0', 'admin', '2025-12-08 23:20:53', '', NULL, NULL);
+INSERT INTO `sys_dict_data` (`dict_code`, `dict_sort`, `dict_label`, `dict_value`, `dict_type`, `css_class`, `list_class`, `is_default`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2346, 0, '图片大小限制（MB）', '5', 'mini_app_config', NULL, 'default', 'N', '0', 'admin', '2025-12-08 23:21:05', '', NULL, NULL);
 COMMIT;
 
 -- ----------------------------
@@ -2039,7 +2239,7 @@ CREATE TABLE `sys_dict_type` (
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`dict_id`),
   UNIQUE KEY `dict_type` (`dict_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典类型表';
+) ENGINE=InnoDB AUTO_INCREMENT=235 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='字典类型表';
 
 -- ----------------------------
 -- Records of sys_dict_type
@@ -2066,6 +2266,7 @@ INSERT INTO `sys_dict_type` (`dict_id`, `dict_name`, `dict_type`, `status`, `cre
 INSERT INTO `sys_dict_type` (`dict_id`, `dict_name`, `dict_type`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (230, '装修公司岗位类型', 'decoration_job_roles', '0', 'admin', '2025-11-24 23:42:38', '', NULL, '装修公司完整岗位类型');
 INSERT INTO `sys_dict_type` (`dict_id`, `dict_name`, `dict_type`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (232, '岗位分类', 'decoration_role_category', '0', 'admin', '2025-11-24 23:42:38', '', NULL, '岗位分类管理');
 INSERT INTO `sys_dict_type` (`dict_id`, `dict_name`, `dict_type`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (233, '房间朝向', 'decoration_orientation', '0', 'admin', '2025-11-29 14:38:37', '', NULL, NULL);
+INSERT INTO `sys_dict_type` (`dict_id`, `dict_name`, `dict_type`, `status`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (234, '小程序配置', 'mini_app_config', '0', 'admin', '2025-12-08 23:19:13', '', NULL, NULL);
 COMMIT;
 
 -- ----------------------------
@@ -2137,7 +2338,7 @@ CREATE TABLE `sys_logininfor` (
   PRIMARY KEY (`info_id`),
   KEY `idx_sys_logininfor_s` (`status`),
   KEY `idx_sys_logininfor_lt` (`login_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=236 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统访问记录';
+) ENGINE=InnoDB AUTO_INCREMENT=253 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统访问记录';
 
 -- ----------------------------
 -- Records of sys_logininfor
@@ -2279,6 +2480,23 @@ INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`
 INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (233, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 01:47:07');
 INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (234, 'ry', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '退出成功', '2025-12-08 01:51:27');
 INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (235, 'ry', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 01:51:33');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (236, 'admin', '127.0.0.1', '内网IP', 'Safari', 'Mac OS X', '0', '登录成功', '2025-12-08 20:47:29');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (237, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 20:48:47');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (238, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '退出成功', '2025-12-08 21:06:02');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (239, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 21:06:05');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (240, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 21:54:57');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (241, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '退出成功', '2025-12-08 22:44:29');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (242, 'ry', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 22:44:35');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (243, 'ry', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '退出成功', '2025-12-08 22:51:31');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (244, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 22:51:35');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (245, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '退出成功', '2025-12-08 22:59:58');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (246, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 23:00:01');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (247, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '退出成功', '2025-12-08 23:00:17');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (248, 'ry', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 23:00:23');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (249, 'ry', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '退出成功', '2025-12-08 23:18:55');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (250, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-08 23:19:00');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (251, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-09 01:04:06');
+INSERT INTO `sys_logininfor` (`info_id`, `user_name`, `ipaddr`, `login_location`, `browser`, `os`, `status`, `msg`, `login_time`) VALUES (252, 'admin', '127.0.0.1', '内网IP', 'Chrome 14', 'Mac OS X', '0', '登录成功', '2025-12-09 01:37:48');
 COMMIT;
 
 -- ----------------------------
@@ -2307,7 +2525,7 @@ CREATE TABLE `sys_menu` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) DEFAULT '' COMMENT '备注',
   PRIMARY KEY (`menu_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2070 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单权限表';
+) ENGINE=InnoDB AUTO_INCREMENT=2077 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单权限表';
 
 -- ----------------------------
 -- Records of sys_menu
@@ -2461,6 +2679,13 @@ INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`
 INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2067, '项目房间修改', 2064, 3, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:projectRooms:edit', '#', 'admin', '2025-12-08 02:01:14', '', NULL, '');
 INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2068, '项目房间删除', 2064, 4, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:projectRooms:remove', '#', 'admin', '2025-12-08 02:01:14', '', NULL, '');
 INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2069, '项目房间导出', 2064, 5, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:projectRooms:export', '#', 'admin', '2025-12-08 02:01:14', '', NULL, '');
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2070, '新闻咨询设置', 2012, 1, 'newsConsultation', 'evs/newsConsultation/index', NULL, '', 1, 0, 'C', '0', '0', 'evs:newsConsultation:list', '#', 'admin', '2025-12-08 22:26:45', '', NULL, '新闻咨询设置菜单');
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2071, '新闻咨询设置查询', 2070, 1, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:newsConsultation:query', '#', 'admin', '2025-12-08 22:26:48', '', NULL, '');
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2072, '新闻咨询设置新增', 2070, 2, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:newsConsultation:add', '#', 'admin', '2025-12-08 22:26:48', '', NULL, '');
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2073, '新闻咨询设置修改', 2070, 3, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:newsConsultation:edit', '#', 'admin', '2025-12-08 22:26:48', '', NULL, '');
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2074, '新闻咨询设置删除', 2070, 4, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:newsConsultation:remove', '#', 'admin', '2025-12-08 22:26:48', '', NULL, '');
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2075, '新闻咨询设置导出', 2070, 5, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'evs:newsConsultation:export', '#', 'admin', '2025-12-08 22:26:48', '', NULL, '');
+INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `query`, `route_name`, `is_frame`, `is_cache`, `menu_type`, `visible`, `status`, `perms`, `icon`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2076, '新闻资讯', 0, 2, 'news', 'evs/newsConsultation/card', NULL, '', 1, 0, 'C', '0', '0', 'evs:newsConsultation:list', 'build', 'admin', '2025-12-08 22:28:39', 'admin', '2025-12-08 22:29:09', '');
 COMMIT;
 
 -- ----------------------------
@@ -2515,7 +2740,7 @@ CREATE TABLE `sys_oper_log` (
   KEY `idx_sys_oper_log_bt` (`business_type`),
   KEY `idx_sys_oper_log_s` (`status`),
   KEY `idx_sys_oper_log_ot` (`oper_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=664 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='操作日志记录';
+) ENGINE=InnoDB AUTO_INCREMENT=685 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='操作日志记录';
 
 -- ----------------------------
 -- Records of sys_oper_log
@@ -3085,6 +3310,27 @@ INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `requ
 INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (661, '角色管理', 2, 'com.ruoyi.web.controller.system.SysRoleController.edit()', 'PUT', 1, 'admin', '设计部门', '/system/role', '127.0.0.1', '内网IP', '{\"admin\":false,\"createTime\":\"2025-11-23 02:22:27\",\"dataScope\":\"1\",\"delFlag\":\"0\",\"deptCheckStrictly\":true,\"flag\":false,\"menuCheckStrictly\":true,\"menuIds\":[2056,2000,2001,2002,2003,2004,2005,2032,2033,2034,2035,2036,2037,2044,2045,2046,2047,2048,2049,2012,2063,2006,2007,2008,2009,2010,2011,2013,2014,2015,2016,2017,2018,2038,2039,2040,2041,2042,2043,2050,2051,2052,2053,2054,2055,2057,2058,2059,2060,2061,2062,2064,2065,2066,2067,2068,2069],\"params\":{},\"remark\":\"普通角色\",\"roleId\":2,\"roleKey\":\"common\",\"roleName\":\"普通角色\",\"roleSort\":2,\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 02:08:11', 29);
 INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (662, '质量检测', 1, 'com.ruoyi.web.controller.QualityInspectionsController.add()', 'POST', 1, 'ry', '市场部门', '/evs/qualityInspections', '127.0.0.1', '内网IP', '{\"createdAt\":\"2025-12-08 02:11:28.149\",\"createdBy\":\"ry\",\"description\":\"zxczxc\",\"id\":\"b78a4f563ddc472a907fb484ddf82764\",\"images\":\"[\\\"/dev-api/profile/upload/2025/12/08/pexels-cartier-1198802_20251208021126A001.jpg\\\",\\\"/dev-api/profile/upload/2025/12/08/pexels-chevanon-325044_20251208021126A002.jpg\\\",\\\"/dev-api/profile/upload/2025/12/08/pexels-eberhardgross-1064162_20251208021126A003.jpg\\\"]\",\"inspectionDate\":\"2025-12-08\",\"inspectionType\":\"水电工程\",\"params\":{},\"projectId\":\"P202411240038\",\"remarks\":\"问题上报\",\"result\":\"UNQUALIFIED\",\"title\":\"zxczxc\"}', '{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"createdAt\":\"2025-12-08 02:11:28.149\",\"createdBy\":\"ry\",\"description\":\"zxczxc\",\"id\":\"b78a4f563ddc472a907fb484ddf82764\",\"images\":\"[\\\"/dev-api/profile/upload/2025/12/08/pexels-cartier-1198802_20251208021126A001.jpg\\\",\\\"/dev-api/profile/upload/2025/12/08/pexels-chevanon-325044_20251208021126A002.jpg\\\",\\\"/dev-api/profile/upload/2025/12/08/pexels-eberhardgross-1064162_20251208021126A003.jpg\\\"]\",\"inspectionDate\":\"2025-12-08\",\"inspectionType\":\"水电工程\",\"params\":{},\"projectId\":\"P202411240038\",\"remarks\":\"问题上报\",\"result\":\"UNQUALIFIED\",\"title\":\"zxczxc\"}}', 0, NULL, '2025-12-08 02:11:28', 92);
 INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (663, '质量问题', 1, 'com.ruoyi.web.controller.QualityIssuesController.add()', 'POST', 1, 'ry', '市场部门', '/evs/qualityIssues', '127.0.0.1', '内网IP', '{\"category\":\"GENERAL\",\"createdAt\":\"2025-12-08 02:11:28.252\",\"createdBy\":\"ry\",\"description\":\"zxczxc\",\"dueDate\":\"2025-12-15\",\"id\":\"406b3ed00e8f41daaba96f0eaf79de8f\",\"images\":\"[\\\"/dev-api/profile/upload/2025/12/08/pexels-cartier-1198802_20251208021126A001.jpg\\\",\\\"/dev-api/profile/upload/2025/12/08/pexels-chevanon-325044_20251208021126A002.jpg\\\",\\\"/dev-api/profile/upload/2025/12/08/pexels-eberhardgross-1064162_20251208021126A003.jpg\\\"]\",\"location\":\"zxczxczc\",\"params\":{},\"projectId\":\"P202411240038\",\"qualityInspectionId\":\"b78a4f563ddc472a907fb484ddf82764\",\"status\":\"OPEN\",\"title\":\"zxczxc\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 02:11:28', 45);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (664, '项目成员', 1, 'com.ruoyi.web.controller.ProjectMembersController.add()', 'POST', 1, 'admin', '设计部门', '/evs/projectMembers', '127.0.0.1', '内网IP', '{\"createdAt\":\"2025-12-08 02:34:29.487\",\"createdBy\":\"admin\",\"id\":\"9a547477cb91430cbfe96220fa9fac4a\",\"params\":{},\"projectId\":\"P202411240033\",\"role\":\"PM\",\"userId\":\"2\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 02:34:29', 47);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (665, '项目成员', 1, 'com.ruoyi.web.controller.ProjectMembersController.add()', 'POST', 1, 'admin', '设计部门', '/evs/projectMembers', '127.0.0.1', '内网IP', '{\"createdAt\":\"2025-12-08 02:34:57.009\",\"createdBy\":\"admin\",\"id\":\"e76d007759e04689bb17d1604d922a82\",\"params\":{},\"projectId\":\"P202411240030\",\"role\":\"DESIGNER\",\"userId\":\"2\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 02:34:57', 35);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (666, '代码生成', 6, 'com.ruoyi.generator.controller.GenController.importTableSave()', 'POST', 1, 'admin', '设计部门', '/tool/gen/importTable', '127.0.0.1', '内网IP', '{\"tables\":\"news_consultation\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:16:18', 327);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (667, '代码生成', 2, 'com.ruoyi.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '设计部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"consultation\",\"className\":\"NewsConsultation\",\"columns\":[{\"capJavaField\":\"Id\",\"columnComment\":\"咨询ID\",\"columnId\":176,\"columnName\":\"id\",\"columnType\":\"varchar(32)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"id\",\"javaType\":\"String\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"usableColumn\":false},{\"capJavaField\":\"Title\",\"columnComment\":\"标题\",\"columnId\":177,\"columnName\":\"title\",\"columnType\":\"varchar(255)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"title\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"usableColumn\":false},{\"capJavaField\":\"Subtitle\",\"columnComment\":\"副标题\",\"columnId\":178,\"columnName\":\"subtitle\",\"columnType\":\"varchar(255)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"0\",\"isRequired\":\"0\",\"javaField\":\"subtitle\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":3,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"usableColumn\":false},{\"capJavaField\":\"PublishPosition\",\"columnComment\":\"发布位置\",\"columnId\":179,\"columnName\":\"publish_position\",\"columnType\":\"varchar(50)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:18:58', 205);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (668, '代码生成', 2, 'com.ruoyi.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '设计部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"newsConsultation\",\"className\":\"NewsConsultation\",\"columns\":[{\"capJavaField\":\"Id\",\"columnComment\":\"咨询ID\",\"columnId\":176,\"columnName\":\"id\",\"columnType\":\"varchar(32)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"id\",\"javaType\":\"String\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"updateTime\":\"2025-12-08 22:18:58\",\"usableColumn\":false},{\"capJavaField\":\"Title\",\"columnComment\":\"标题\",\"columnId\":177,\"columnName\":\"title\",\"columnType\":\"varchar(255)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"title\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"updateTime\":\"2025-12-08 22:18:58\",\"usableColumn\":false},{\"capJavaField\":\"Subtitle\",\"columnComment\":\"副标题\",\"columnId\":178,\"columnName\":\"subtitle\",\"columnType\":\"varchar(255)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"0\",\"isRequired\":\"0\",\"javaField\":\"subtitle\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":3,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"updateTime\":\"2025-12-08 22:18:58\",\"usableColumn\":false},{\"capJavaField\":\"PublishPosition\",\"columnComment\":\"发布位置\",\"columnId\":179,\"columnName\":\"publish_position\",\"columnType\":\"varchar(50)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:19:17', 196);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (669, '代码生成', 2, 'com.ruoyi.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '设计部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"newsConsultation\",\"className\":\"NewsConsultation\",\"columns\":[{\"capJavaField\":\"Id\",\"columnComment\":\"咨询ID\",\"columnId\":176,\"columnName\":\"id\",\"columnType\":\"varchar(32)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"id\",\"javaType\":\"String\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"updateTime\":\"2025-12-08 22:19:17\",\"usableColumn\":false},{\"capJavaField\":\"Title\",\"columnComment\":\"标题\",\"columnId\":177,\"columnName\":\"title\",\"columnType\":\"varchar(255)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"title\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"updateTime\":\"2025-12-08 22:19:17\",\"usableColumn\":false},{\"capJavaField\":\"Subtitle\",\"columnComment\":\"副标题\",\"columnId\":178,\"columnName\":\"subtitle\",\"columnType\":\"varchar(255)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"0\",\"isRequired\":\"0\",\"javaField\":\"subtitle\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":3,\"superColumn\":false,\"tableId\":13,\"updateBy\":\"\",\"updateTime\":\"2025-12-08 22:19:17\",\"usableColumn\":false},{\"capJavaField\":\"PublishPosition\",\"columnComment\":\"发布位置\",\"columnId\":179,\"columnName\":\"publish_position\",\"columnType\":\"varchar(50)\",\"createBy\":\"admin\",\"createTime\":\"2025-12-08 22:16:18\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:19:38', 90);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (670, '代码生成', 8, 'com.ruoyi.generator.controller.GenController.batchGenCode()', 'GET', 1, 'admin', '设计部门', '/tool/gen/batchGenCode', '127.0.0.1', '内网IP', '{\"tables\":\"news_consultation\"}', NULL, 0, NULL, '2025-12-08 22:19:48', 1154);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (671, '菜单管理', 1, 'com.ruoyi.web.controller.system.SysMenuController.add()', 'POST', 1, 'admin', '设计部门', '/system/menu', '127.0.0.1', '内网IP', '{\"children\":[],\"component\":\"evs/newsConsultation/card\",\"createBy\":\"admin\",\"icon\":\"build\",\"isCache\":\"0\",\"isFrame\":\"1\",\"menuName\":\"新闻资讯\",\"menuType\":\"C\",\"orderNum\":10,\"params\":{},\"parentId\":0,\"path\":\"news\",\"status\":\"0\",\"visible\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:28:39', 280);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (672, '菜单管理', 2, 'com.ruoyi.web.controller.system.SysMenuController.edit()', 'PUT', 1, 'admin', '设计部门', '/system/menu', '127.0.0.1', '内网IP', '{\"children\":[],\"component\":\"evs/newsConsultation/card\",\"createTime\":\"2025-12-08 22:28:39\",\"icon\":\"build\",\"isCache\":\"0\",\"isFrame\":\"1\",\"menuId\":2076,\"menuName\":\"新闻资讯\",\"menuType\":\"C\",\"orderNum\":2,\"params\":{},\"parentId\":0,\"path\":\"news\",\"perms\":\"\",\"routeName\":\"\",\"status\":\"0\",\"updateBy\":\"admin\",\"visible\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:28:51', 82);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (673, '菜单管理', 2, 'com.ruoyi.web.controller.system.SysMenuController.edit()', 'PUT', 1, 'admin', '设计部门', '/system/menu', '127.0.0.1', '内网IP', '{\"children\":[],\"component\":\"evs/newsConsultation/card\",\"createTime\":\"2025-12-08 22:28:39\",\"icon\":\"build\",\"isCache\":\"0\",\"isFrame\":\"1\",\"menuId\":2076,\"menuName\":\"新闻资讯\",\"menuType\":\"C\",\"orderNum\":2,\"params\":{},\"parentId\":0,\"path\":\"news\",\"perms\":\"evs:newsConsultation:list\",\"routeName\":\"\",\"status\":\"0\",\"updateBy\":\"admin\",\"visible\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:29:09', 70);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (674, '角色管理', 2, 'com.ruoyi.web.controller.system.SysRoleController.edit()', 'PUT', 1, 'admin', '设计部门', '/system/role', '127.0.0.1', '内网IP', '{\"admin\":false,\"createTime\":\"2025-11-23 02:22:27\",\"dataScope\":\"1\",\"delFlag\":\"0\",\"deptCheckStrictly\":true,\"flag\":false,\"menuCheckStrictly\":true,\"menuIds\":[2056,2000,2001,2002,2003,2004,2005,2032,2033,2034,2035,2036,2037,2044,2045,2046,2047,2048,2049,2076,2012,2063,2006,2007,2008,2009,2010,2011,2013,2014,2015,2016,2017,2018,2038,2039,2040,2041,2042,2043,2050,2051,2052,2053,2054,2055,2057,2058,2059,2060,2061,2062,2064,2065,2066,2067,2068,2069,2070,2071,2072,2073,2074,2075],\"params\":{},\"remark\":\"普通角色\",\"roleId\":2,\"roleKey\":\"common\",\"roleName\":\"普通角色\",\"roleSort\":2,\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 22:29:23', 260);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (675, '字典类型', 1, 'com.ruoyi.web.controller.system.SysDictTypeController.add()', 'POST', 1, 'admin', '设计部门', '/system/dict/type', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"dictName\":\"小程序配置\",\"dictType\":\"mini_app_config\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:19:13', 86);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (676, '字典数据', 1, 'com.ruoyi.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '设计部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"Token有效期（小时）\",\"dictSort\":0,\"dictType\":\"mini_app_config\",\"dictValue\":\"2\",\"listClass\":\"default\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:19:36', 52);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (677, '字典数据', 1, 'com.ruoyi.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '设计部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"RefreshToken有效期（天）\",\"dictSort\":0,\"dictType\":\"mini_app_config\",\"dictValue\":\"7\",\"listClass\":\"default\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:20:30', 46);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (678, '字典数据', 1, 'com.ruoyi.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '设计部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"验证码有效期（分钟）\",\"dictSort\":0,\"dictType\":\"mini_app_config\",\"dictValue\":\"5\",\"listClass\":\"default\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:20:37', 30);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (679, '字典数据', 1, 'com.ruoyi.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '设计部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"验证码长度\",\"dictSort\":0,\"dictType\":\"mini_app_config\",\"dictValue\":\"6\",\"listClass\":\"default\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:20:43', 35);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (680, '字典数据', 1, 'com.ruoyi.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '设计部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"单次上传图片数量\",\"dictSort\":0,\"dictType\":\"mini_app_config\",\"dictValue\":\"9\",\"listClass\":\"default\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:20:53', 40);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (681, '字典数据', 1, 'com.ruoyi.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '设计部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"图片大小限制（MB）\",\"dictSort\":0,\"dictType\":\"mini_app_config\",\"dictValue\":\"5\",\"listClass\":\"default\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:21:05', 61);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (682, '新闻咨询设置', 1, 'com.ruoyi.web.controller.NewsConsultationController.add()', 'POST', 1, 'admin', '设计部门', '/evs/newsConsultation', '127.0.0.1', '内网IP', '{\"coverImage\":\"/profile/upload/2025/12/08/pexels-chevanon-325044_20251208233313A017.jpg,/profile/upload/2025/12/08/pexels-chevanon-325044_20251208233313A017.jpg\",\"createdAt\":\"2025-12-08 23:33:37.424\",\"createdBy\":\"admin\",\"id\":\"38bd21d3c1804df0960c0847e3303d8b\",\"jumpUrl\":\"http://www.baidu.com\",\"params\":{},\"publishPosition\":\"Banner区域\",\"publishStatus\":\"DRAFT\",\"publishTime\":\"2025-12-23\",\"sortOrder\":123,\"subtitle\":\"12312312312\",\"title\":\"123123\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:33:37', 81);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (683, '新闻咨询设置', 2, 'com.ruoyi.web.controller.NewsConsultationController.edit()', 'PUT', 1, 'admin', '设计部门', '/evs/newsConsultation', '127.0.0.1', '内网IP', '{\"coverImage\":\"/profile/upload/2025/12/08/pexels-chevanon-325044_20251208233313A017.jpg,/profile/upload/2025/12/08/pexels-chevanon-325044_20251208233313A017.jpg\",\"createdAt\":\"2025-12-08 23:33:37\",\"createdBy\":\"admin\",\"id\":\"38bd21d3c1804df0960c0847e3303d8b\",\"jumpUrl\":\"http://www.baidu.com\",\"params\":{},\"publishPosition\":\"Banner区域\",\"publishStatus\":\"PUBLISHED\",\"publishTime\":\"2025-12-23\",\"sortOrder\":123,\"subtitle\":\"12312312312\",\"title\":\"123123\",\"updatedAt\":\"2025-12-08 23:33:41.161\",\"updatedBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:33:41', 9);
+INSERT INTO `sys_oper_log` (`oper_id`, `title`, `business_type`, `method`, `request_method`, `operator_type`, `oper_name`, `dept_name`, `oper_url`, `oper_ip`, `oper_location`, `oper_param`, `json_result`, `status`, `error_msg`, `oper_time`, `cost_time`) VALUES (684, '新闻咨询设置', 3, 'com.ruoyi.web.controller.NewsConsultationController.remove()', 'DELETE', 1, 'admin', '设计部门', '/evs/newsConsultation/38bd21d3c1804df0960c0847e3303d8b', '127.0.0.1', '内网IP', '[\"38bd21d3c1804df0960c0847e3303d8b\"]', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-12-08 23:33:46', 33);
 COMMIT;
 
 -- ----------------------------
@@ -3142,7 +3388,7 @@ CREATE TABLE `sys_role` (
 -- ----------------------------
 BEGIN;
 INSERT INTO `sys_role` (`role_id`, `role_name`, `role_key`, `role_sort`, `data_scope`, `menu_check_strictly`, `dept_check_strictly`, `status`, `del_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (1, '超级管理员', 'admin', 1, '1', 1, 1, '0', '0', 'admin', '2025-11-23 02:22:27', '', NULL, '超级管理员');
-INSERT INTO `sys_role` (`role_id`, `role_name`, `role_key`, `role_sort`, `data_scope`, `menu_check_strictly`, `dept_check_strictly`, `status`, `del_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2, '普通角色', 'common', 2, '1', 1, 1, '0', '0', 'admin', '2025-11-23 02:22:27', 'admin', '2025-12-08 02:08:11', '普通角色');
+INSERT INTO `sys_role` (`role_id`, `role_name`, `role_key`, `role_sort`, `data_scope`, `menu_check_strictly`, `dept_check_strictly`, `status`, `del_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2, '普通角色', 'common', 2, '1', 1, 1, '0', '0', 'admin', '2025-11-23 02:22:27', 'admin', '2025-12-08 22:29:23', '普通角色');
 INSERT INTO `sys_role` (`role_id`, `role_name`, `role_key`, `role_sort`, `data_scope`, `menu_check_strictly`, `dept_check_strictly`, `status`, `del_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (100, '设计师', 'design', 2, '1', 1, 1, '0', '2', 'admin', '2025-11-24 00:32:18', '', NULL, NULL);
 INSERT INTO `sys_role` (`role_id`, `role_name`, `role_key`, `role_sort`, `data_scope`, `menu_check_strictly`, `dept_check_strictly`, `status`, `del_flag`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (101, '项目经理', 'project', 3, '1', 1, 1, '0', '2', 'admin', '2025-11-24 00:32:38', '', NULL, NULL);
 COMMIT;
@@ -3234,6 +3480,13 @@ INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2066);
 INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2067);
 INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2068);
 INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2069);
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2070);
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2071);
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2072);
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2073);
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2074);
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2075);
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 2076);
 COMMIT;
 
 -- ----------------------------
@@ -3268,8 +3521,8 @@ CREATE TABLE `sys_user` (
 -- Records of sys_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `sys_user` (`user_id`, `dept_id`, `user_name`, `nick_name`, `user_type`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `del_flag`, `login_ip`, `login_date`, `pwd_update_date`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', '/profile/avatar/2025/11/29/2db7cef688e0464f88257a832589ca6f.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-12-08 01:47:08', '2025-11-23 02:22:27', 'admin', '2025-11-23 02:22:27', '', '2025-11-29 20:05:44', '管理员');
-INSERT INTO `sys_user` (`user_id`, `dept_id`, `user_name`, `nick_name`, `user_type`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `del_flag`, `login_ip`, `login_date`, `pwd_update_date`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2, 104, 'ry', '若依', '00', 'ry@qq.com', '15666666666', '1', '/profile/avatar/2025/11/26/d5c6aa6737b1488aae0c31aaa061247c.jpg', '$2a$10$Qv9f4SUivDzqFwr/PxXRVuOMCYljXpxQqgp7AA4sixfJ1kmyDdJIq', '0', '0', '127.0.0.1', '2025-12-08 01:51:33', '2025-11-26 23:31:32', 'admin', '2025-11-23 02:22:27', 'admin', '2025-11-26 23:31:32', '测试员');
+INSERT INTO `sys_user` (`user_id`, `dept_id`, `user_name`, `nick_name`, `user_type`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `del_flag`, `login_ip`, `login_date`, `pwd_update_date`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', '/profile/avatar/2025/11/29/2db7cef688e0464f88257a832589ca6f.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-12-09 01:37:49', '2025-11-23 02:22:27', 'admin', '2025-11-23 02:22:27', '', '2025-11-29 20:05:44', '管理员');
+INSERT INTO `sys_user` (`user_id`, `dept_id`, `user_name`, `nick_name`, `user_type`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `del_flag`, `login_ip`, `login_date`, `pwd_update_date`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (2, 104, 'ry', '若依', '00', 'ry@qq.com', '15666666666', '1', '/profile/avatar/2025/11/26/d5c6aa6737b1488aae0c31aaa061247c.jpg', '$2a$10$Qv9f4SUivDzqFwr/PxXRVuOMCYljXpxQqgp7AA4sixfJ1kmyDdJIq', '0', '0', '127.0.0.1', '2025-12-08 23:00:23', '2025-11-26 23:31:32', 'admin', '2025-11-23 02:22:27', 'admin', '2025-11-26 23:31:32', '测试员');
 INSERT INTO `sys_user` (`user_id`, `dept_id`, `user_name`, `nick_name`, `user_type`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `del_flag`, `login_ip`, `login_date`, `pwd_update_date`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (100, 103, '234', '123', '00', '', '13000000001', '0', '/profile/avatar/2025/11/26/e485360b82e2485b956ee47e9b4f09d5.jpg', '$2a$10$vKpB2PF1LX.98.iBAMebmuofveW.iw9fqTUBRnbQJ1b2u3LYmL89m', '0', '0', '', NULL, '2025-11-24 01:44:37', 'admin', '2025-11-24 00:54:29', 'admin', '2025-11-26 01:14:45', NULL);
 INSERT INTO `sys_user` (`user_id`, `dept_id`, `user_name`, `nick_name`, `user_type`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `del_flag`, `login_ip`, `login_date`, `pwd_update_date`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (101, 200, '张三', 'zhangsan', '00', '', '13000000002', '0', '/profile/avatar/2025/11/26/02a65c60b31a402086dcb812479f0268.jpg', '$2a$10$tOwjoAF.pqgteMqJKcc8AuednIPkRzVfE/m6Out9Pg8tbQ1Ni4pNK', '0', '0', '', NULL, NULL, 'admin', '2025-11-24 21:22:15', 'admin', '2025-11-26 01:15:09', NULL);
 INSERT INTO `sys_user` (`user_id`, `dept_id`, `user_name`, `nick_name`, `user_type`, `email`, `phonenumber`, `sex`, `avatar`, `password`, `status`, `del_flag`, `login_ip`, `login_date`, `pwd_update_date`, `create_by`, `create_time`, `update_by`, `update_time`, `remark`) VALUES (102, 201, '李四', 'Lisi', '00', '', '13000000004', '1', '/profile/avatar/2025/11/26/c5f15b3cf33349adbf1eda1828ca03d7.jpg', '$2a$10$13RYhKLCqK.mLBG0cr1dbOS2MXeHDqYbzXDHPV6Y7A6I02nwozRFi', '0', '0', '', NULL, NULL, 'admin', '2025-11-24 21:22:41', 'admin', '2025-11-26 00:54:37', NULL);
