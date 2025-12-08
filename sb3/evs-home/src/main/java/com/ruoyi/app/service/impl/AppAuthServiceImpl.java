@@ -4,6 +4,7 @@ import com.ruoyi.app.dto.request.*;
 import com.ruoyi.app.dto.response.*;
 import com.ruoyi.app.enums.LoginTypeEnum;
 import com.ruoyi.app.enums.UserTypeEnum;
+import com.ruoyi.app.mapper.AppProjectMapper;
 import com.ruoyi.app.mapper.AppUserMapper;
 import com.ruoyi.app.security.AppTokenManager;
 import com.ruoyi.app.service.IAppAuthService;
@@ -13,7 +14,6 @@ import com.ruoyi.common.utils.uuid.UUID;
 import com.ruoyi.web.domain.Customers;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.ICustomersService;
-import com.ruoyi.web.service.IProjectsService;
 import com.ruoyi.web.service.IProjectMembersService;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import org.slf4j.Logger;
@@ -40,13 +40,13 @@ public class AppAuthServiceImpl implements IAppAuthService {
     private ICustomersService customersService;
     
     @Autowired
-    private IProjectsService projectsService;
-    
-    @Autowired
     private IProjectMembersService projectMembersService;
     
     @Autowired
     private AppUserMapper appUserMapper;
+    
+    @Autowired
+    private AppProjectMapper appProjectMapper;
     
     // 简单的验证码存储（生产环境应使用Redis）
     private static final Map<String, SmsCodeInfo> smsCodeCache = new ConcurrentHashMap<>();
@@ -336,16 +336,14 @@ public class AppAuthServiceImpl implements IAppAuthService {
     }
     
     /**
-     * 查询用户的项目列表
+     * 查询用户的项目列表（使用自定义Mapper绕过数据权限）
      */
     private List<AppProjectInfo> findUserProjects(UserTypeEnum userType, String userId) {
         List<Projects> projects;
         
         if (userType == UserTypeEnum.CUSTOMER) {
-            // 客户：查询customer_id = userId的项目
-            Projects query = new Projects();
-            query.setCustomerId(userId);
-            projects = projectsService.selectProjectsList(query);
+            // 客户：直接查询customer_id = userId的项目
+            projects = appProjectMapper.selectProjectsByCustomerId(userId);
         } else {
             // 员工：查询project_members中user_id = userId的项目
             projects = projectMembersService.selectProjectsByUserId(Long.parseLong(userId));
