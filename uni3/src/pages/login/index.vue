@@ -218,32 +218,66 @@ const handleLogin = async () => {
   }
 }
 
-const handleWechatLogin = (e) => {
+const handleWechatLogin = async (e) => {
   if (!form.agreed) {
     uni.showToast({ title: '请阅读并同意用户协议和隐私政策', icon: 'none' })
     return
   }
 
-  if (e.detail.errMsg === 'getPhoneNumber:ok') {
-    // 获取到 code，需要传给后端换取手机号
-    const code = e.detail.code
-    console.log('WeChat Code:', code)
-    
-    uni.showLoading({ title: '登录中...' })
-    
-    // 模拟登录
-    setTimeout(() => {
-      uni.hideLoading()
-      uni.setStorageSync('userInfo', {
-        phone: '13800138000', // 模拟手机号
-        projectCode: 'P2025001' // 模拟项目编号
-      })
-      uni.switchTab({
-        url: '/pages/dashboard/index'
-      })
-    }, 1000)
-  } else {
+  if (e.detail.errMsg !== 'getPhoneNumber:ok') {
     uni.showToast({ title: '获取手机号失败', icon: 'none' })
+    return
+  }
+
+  // 获取手机号的code
+  const phoneCode = e.detail.code
+  console.log('Phone Code:', phoneCode)
+  
+  uni.showLoading({ title: '登录中...' })
+  
+  try {
+    // 1. 先获取微信登录code
+    const loginRes = await new Promise((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: resolve,
+        fail: reject
+      })
+    })
+    
+    const wxCode = loginRes.code
+    console.log('WeChat Login Code:', wxCode)
+    
+    // 2. 获取设备ID
+    const { getDeviceId } = await import('@/utils/device')
+    const deviceId = getDeviceId()
+    
+    // 3. 调用后端微信登录接口
+    const { wechatLogin } = await import('@/api/auth')
+    const result = await wechatLogin({
+      code: wxCode,
+      phoneCode: phoneCode,
+      deviceId: deviceId
+    })
+    
+    // 4. 保存登录信息
+    userStore.setLoginInfo(result)
+    
+    uni.hideLoading()
+    uni.showToast({ title: '登录成功', icon: 'success' })
+    
+    // 5. 跳转到首页
+    setTimeout(() => {
+      uni.switchTab({ url: '/pages/dashboard/index' })
+    }, 500)
+    
+  } catch (error) {
+    uni.hideLoading()
+    console.error('微信登录失败:', error)
+    uni.showToast({ 
+      title: error.message || '登录失败，请重试', 
+      icon: 'none' 
+    })
   }
 }
 

@@ -16,6 +16,7 @@ import com.ruoyi.web.domain.Customers;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.ICustomersService;
 import com.ruoyi.web.service.IProjectMembersService;
+import com.ruoyi.app.service.WechatService;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,9 @@ public class AppAuthServiceImpl implements IAppAuthService {
     @Autowired
     private RedisCache redisCache;
     
+    @Autowired
+    private WechatService wechatService;
+    
     // 验证码有效期（分钟）
     private static final int SMS_CODE_EXPIRE_MINUTES = 5;
     
@@ -74,14 +78,88 @@ public class AppAuthServiceImpl implements IAppAuthService {
     
     @Override
     public AppLoginResponse wechatLogin(WechatLoginRequest request, String ipAddress) {
-        // TODO: 实现微信登录
-        // 1. 通过code换取openId
-        // 2. 通过phoneCode获取手机号
-        // 3. 查询用户
-        // 4. 生成Token
+        String code = request.getCode();
+        String phoneCode = request.getPhoneCode();
+        String deviceId = request.getDeviceId();
         
-        // 暂时返回模拟数据，等微信配置完成后再实现
-        throw new ServiceException("微信登录功能正在开发中，请使用短信验证码登录");
+        // 1. 通过code换取openId和sessionKey
+        WechatService.WxSession wxSession = wechatService.code2Session(code);
+        String openId = wxSession.getOpenId();
+        
+        // 2. 通过phoneCode获取手机号
+        WechatService.WxPhoneInfo phoneInfo = wechatService.getPhoneNumber(phoneCode);
+        String phone = phoneInfo.getPurePhoneNumber();
+        
+        if (StringUtils.isEmpty(phone)) {
+            throw new ServiceException("获取手机号失败，请重试");
+        }
+        
+        // 3. 检查账号是否被锁定
+        if (isAccountLocked(phone)) {
+            throw new ServiceException("账号已被锁定，请" + ACCOUNT_LOCK_MINUTES + "分钟后再试");
+        }
+        
+        // 4. 查询用户
+        UserInfo userInfo = findUserByPhone(phone);
+        if (userInfo == null) {
+            throw new ServiceException("用户不存在，请联系管理员");
+        }
+        
+        // 5. 保存/更新微信绑定信息（可选，用于后续直接通过openId登录）
+        saveWechatBinding(openId, wxSession.getUnionId(), userInfo, phone);
+        
+        // 6. 查询用户的项目列表
+        List<AppProjectInfo> projects = findUserProjects(userInfo.getUserType(), userInfo.getUserId());
+        
+        // 7. 生成Token
+        List<String> projectIds = projects.stream()
+                .map(AppProjectInfo::getId)
+                .collect(Collectors.toList());
+        
+        String accessToken = tokenManager.generateAccessToken(
+                userInfo.getUserType(),
+                userInfo.getUserId(),
+                phone,
+                userInfo.getName(),
+                projectIds,
+                deviceId
+        );
+        
+        String refreshToken = tokenManager.generateRefreshToken(
+                userInfo.getUserType(),
+                userInfo.getUserId(),
+                deviceId
+        );
+        
+        // 8. 记录登录日志
+        logLogin(userInfo.getUserType(), userInfo.getUserId(), LoginTypeEnum.WECHAT, 
+                ipAddress, deviceId, true, null);
+        
+        // 9. 构建响应
+        return buildLoginResponse(accessToken, refreshToken, userInfo, projects);
+    }
+    
+    /**
+     * 保存微信绑定信息
+     */
+    private void saveWechatBinding(String openId, String unionId, UserInfo userInfo, String phone) {
+        try {
+            // 将绑定信息存储到Redis（简化实现，生产环境应存储到数据库）
+            String bindingKey = "app:wechat:binding:" + openId;
+            Map<String, String> binding = new HashMap<>();
+            binding.put("openId", openId);
+            binding.put("unionId", unionId != null ? unionId : "");
+            binding.put("userType", userInfo.getUserType().getCode());
+            binding.put("userId", userInfo.getUserId());
+            binding.put("phone", phone);
+            binding.put("bindTime", String.valueOf(System.currentTimeMillis()));
+            
+            redisCache.setCacheMap(bindingKey, binding);
+            log.info("微信绑定信息已保存: openId={}, userId={}", openId, userInfo.getUserId());
+        } catch (Exception e) {
+            log.warn("保存微信绑定信息失败: {}", e.getMessage());
+            // 不影响登录流程
+        }
     }
     
     @Override
@@ -301,7 +379,7 @@ public class AppAuthServiceImpl implements IAppAuthService {
             if (expireSeconds > 0) {
                 // 将Token加入黑名单，过期时间与Token剩余有效期一致
                 String blacklistKey = TOKEN_BLACKLIST_KEY + token;
-                redisCache.setCacheObject(blacklistKey, "revoked", expireSeconds, TimeUnit.SECONDS);
+                redisCache.setCacheObject(blacklistKey, "revoked", (int) expireSeconds, TimeUnit.SECONDS);
                 log.info("Token已加入黑名单，剩余有效期: {}秒", expireSeconds);
             }
         } catch (Exception e) {
