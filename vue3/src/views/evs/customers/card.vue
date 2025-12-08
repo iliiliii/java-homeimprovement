@@ -218,10 +218,7 @@
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="form.phone" placeholder="请输入手机号" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱" />
-        </el-form-item>
-        <el-form-item label="地址" prop="address">
+        <el-form-item label="详细地址" prop="address">
           <el-input v-model="form.address" type="textarea" placeholder="请输入内容" />
         </el-form-item>
         <el-form-item label="客户等级" prop="level">
@@ -236,42 +233,6 @@
         </el-form-item>
         <el-form-item label="备注" prop="remarks">
           <el-input v-model="form.remarks" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="头像" prop="avatar">
-          <el-input v-model="form.avatar" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="创建时间" prop="createdAt">
-          <el-date-picker clearable
-            v-model="form.createdAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择创建时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="更新时间" prop="updatedAt">
-          <el-date-picker clearable
-            v-model="form.updatedAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择更新时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="删除时间" prop="deletedAt">
-          <el-date-picker clearable
-            v-model="form.deletedAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择删除时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="创建人" prop="createdBy">
-          <el-input v-model="form.createdBy" placeholder="请输入创建人" />
-        </el-form-item>
-        <el-form-item label="更新人" prop="updatedBy">
-          <el-input v-model="form.updatedBy" placeholder="请输入更新人" />
-        </el-form-item>
-        <el-form-item label="删除人" prop="deletedBy">
-          <el-input v-model="form.deletedBy" placeholder="请输入删除人" />
         </el-form-item>
       </el-form>
       <template #footer>

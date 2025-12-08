@@ -9,6 +9,7 @@ import com.ruoyi.web.service.ICustomersService;
 import com.ruoyi.common.utils.uuid.IdUtils;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.exception.ServiceException;
 
 /**
  * 客户档案Service业务层处理
@@ -48,13 +49,20 @@ public class CustomersServiceImpl implements ICustomersService
 
     /**
      * 新增客户档案
-     * 
+     *
      * @param customers 客户档案
      * @return 结果
      */
     @Override
     public int insertCustomers(Customers customers)
     {
+        // 检查手机号是否已存在
+        if (customers.getPhone() != null && !customers.getPhone().trim().isEmpty()) {
+            if (checkPhoneExists(customers.getPhone(), null)) {
+                throw new ServiceException("当前手机号已存在");
+            }
+        }
+
         // 如果 id 为空，自动生成 UUID
         if (customers.getId() == null || customers.getId().isEmpty()) {
             customers.setId(IdUtils.fastSimpleUUID());
@@ -66,13 +74,20 @@ public class CustomersServiceImpl implements ICustomersService
 
     /**
      * 修改客户档案
-     * 
+     *
      * @param customers 客户档案
      * @return 结果
      */
     @Override
     public int updateCustomers(Customers customers)
     {
+        // 检查手机号是否已存在（排除当前客户ID）
+        if (customers.getPhone() != null && !customers.getPhone().trim().isEmpty()) {
+            if (checkPhoneExists(customers.getPhone(), customers.getId())) {
+                throw new ServiceException("当前手机号已存在");
+            }
+        }
+
         customers.setUpdatedAt(DateUtils.getNowDate());
         customers.setUpdatedBy(SecurityUtils.getUsername());
         return customersMapper.updateCustomers(customers);

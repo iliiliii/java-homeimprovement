@@ -137,39 +137,6 @@
         <el-form-item label="头像" prop="avatar">
           <el-input v-model="form.avatar" type="textarea" placeholder="请输入内容" />
         </el-form-item>
-        <el-form-item label="创建时间" prop="createdAt">
-          <el-date-picker clearable
-            v-model="form.createdAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择创建时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="更新时间" prop="updatedAt">
-          <el-date-picker clearable
-            v-model="form.updatedAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择更新时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="删除时间" prop="deletedAt">
-          <el-date-picker clearable
-            v-model="form.deletedAt"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择删除时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="创建人" prop="createdBy">
-          <el-input v-model="form.createdBy" placeholder="请输入创建人" />
-        </el-form-item>
-        <el-form-item label="更新人" prop="updatedBy">
-          <el-input v-model="form.updatedBy" placeholder="请输入更新人" />
-        </el-form-item>
-        <el-form-item label="删除人" prop="deletedBy">
-          <el-input v-model="form.deletedBy" placeholder="请输入删除人" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
