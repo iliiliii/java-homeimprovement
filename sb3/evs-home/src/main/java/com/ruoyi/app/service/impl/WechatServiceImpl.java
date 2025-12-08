@@ -1,7 +1,8 @@
-package com.ruoyi.app.service;
+package com.ruoyi.app.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.app.service.IWechatService;
 import com.ruoyi.common.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,12 +17,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * 微信小程序服务
+ * 微信小程序服务实现
  */
 @Service
-public class WechatService {
+public class WechatServiceImpl implements IWechatService {
     
-    private static final Logger log = LoggerFactory.getLogger(WechatService.class);
+    private static final Logger log = LoggerFactory.getLogger(WechatServiceImpl.class);
     
     @Value("${app.wechat.appid:}")
     private String appId;
@@ -31,41 +32,7 @@ public class WechatService {
     
     private final RestTemplate restTemplate = new RestTemplate();
     
-    /**
-     * 微信登录会话信息
-     */
-    public static class WxSession {
-        private String openId;
-        private String unionId;
-        private String sessionKey;
-        
-        public String getOpenId() { return openId; }
-        public void setOpenId(String openId) { this.openId = openId; }
-        public String getUnionId() { return unionId; }
-        public void setUnionId(String unionId) { this.unionId = unionId; }
-        public String getSessionKey() { return sessionKey; }
-        public void setSessionKey(String sessionKey) { this.sessionKey = sessionKey; }
-    }
-    
-    /**
-     * 微信手机号信息
-     */
-    public static class WxPhoneInfo {
-        private String phoneNumber;
-        private String purePhoneNumber;
-        private String countryCode;
-        
-        public String getPhoneNumber() { return phoneNumber; }
-        public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
-        public String getPurePhoneNumber() { return purePhoneNumber; }
-        public void setPurePhoneNumber(String purePhoneNumber) { this.purePhoneNumber = purePhoneNumber; }
-        public String getCountryCode() { return countryCode; }
-        public void setCountryCode(String countryCode) { this.countryCode = countryCode; }
-    }
-    
-    /**
-     * 通过code获取微信会话信息（openId, sessionKey）
-     */
+    @Override
     public WxSession code2Session(String code) {
         if (appId == null || appId.isEmpty() || appSecret == null || appSecret.isEmpty()) {
             throw new ServiceException("微信小程序配置未完成，请联系管理员");
@@ -103,9 +70,7 @@ public class WechatService {
         }
     }
     
-    /**
-     * 通过phoneCode获取手机号（新版API，推荐）
-     */
+    @Override
     public WxPhoneInfo getPhoneNumber(String phoneCode) {
         if (appId == null || appId.isEmpty() || appSecret == null || appSecret.isEmpty()) {
             throw new ServiceException("微信小程序配置未完成，请联系管理员");
@@ -179,9 +144,7 @@ public class WechatService {
         }
     }
     
-    /**
-     * 解密微信加密数据（旧版API，备用）
-     */
+    @Override
     public String decryptData(String encryptedData, String sessionKey, String iv) {
         try {
             byte[] keyBytes = Base64.getDecoder().decode(sessionKey);

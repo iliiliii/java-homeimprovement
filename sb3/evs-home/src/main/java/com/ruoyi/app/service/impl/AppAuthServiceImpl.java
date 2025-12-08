@@ -16,7 +16,7 @@ import com.ruoyi.web.domain.Customers;
 import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.ICustomersService;
 import com.ruoyi.web.service.IProjectMembersService;
-import com.ruoyi.app.service.WechatService;
+import com.ruoyi.app.service.IWechatService;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ public class AppAuthServiceImpl implements IAppAuthService {
     private RedisCache redisCache;
     
     @Autowired
-    private WechatService wechatService;
+    private IWechatService wechatService;
     
     // 验证码有效期（分钟）
     private static final int SMS_CODE_EXPIRE_MINUTES = 5;
@@ -83,11 +83,11 @@ public class AppAuthServiceImpl implements IAppAuthService {
         String deviceId = request.getDeviceId();
         
         // 1. 通过code换取openId和sessionKey
-        WechatService.WxSession wxSession = wechatService.code2Session(code);
+        IWechatService.WxSession wxSession = wechatService.code2Session(code);
         String openId = wxSession.getOpenId();
         
         // 2. 通过phoneCode获取手机号
-        WechatService.WxPhoneInfo phoneInfo = wechatService.getPhoneNumber(phoneCode);
+        IWechatService.WxPhoneInfo phoneInfo = wechatService.getPhoneNumber(phoneCode);
         String phone = phoneInfo.getPurePhoneNumber();
         
         if (StringUtils.isEmpty(phone)) {
