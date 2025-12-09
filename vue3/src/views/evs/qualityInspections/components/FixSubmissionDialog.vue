@@ -30,30 +30,21 @@
 
       <el-form-item label="修复照片" prop="images">
         <ImageUploadCard
-          ref="uploadRef"
-          v-model="fixForm.images"
-          :upload-url="uploadUrl"
-          :upload-headers="uploadHeaders"
-          :max-count="10"
-          :max-size="5"
-          tip-text="(最多10张，支持jpg、png格式，自动压缩)"
-          :compress="true"
-          :compress-quality="0.8"
-          :compress-max-size="2"
+          v-model="imagesFileList"
+          v-bind="getUploadProps()"
           @success="handleUploadSuccess"
           @error="handleUploadError"
           @upload-status-change="handleUploadStatusChange"
         />
         <!-- 上传状态提示 -->
-        <div v-if="uploadStatus.totalFiles > 0" class="upload-status-tip">
-          <el-tag
-              :type="uploadStatus.isAllUploaded ? 'success' : 'warning'"
-              size="small"
-          >
-            <el-icon><Check v-if="uploadStatus.isAllUploaded" /><Loading v-else /></el-icon>
-            {{ uploadStatus.isAllUploaded ? '图片上传完成' : `正在上传图片 (${uploadStatus.uploadedFiles}/${uploadStatus.totalFiles})` }}
+        <div v-if="getStatusTip().show" class="upload-status-tip">
+          <el-tag :type="getStatusTip().type" size="small">
+            <el-icon><Loading v-if="!uploadStatus.isAllUploaded" /><Check v-else /></el-icon>
+            {{ getStatusTip().message }}
           </el-tag>
-          <span v-if="!uploadStatus.isAllUploaded" class="upload-hint">请等待图片上传完成后再提交</span>
+          <span v-if="!uploadStatus.isAllUploaded && uploadStatus.totalFiles > 0" class="upload-hint">
+            请等待图片上传完成后再提交
+          </span>
         </div>
       </el-form-item>
 
@@ -73,9 +64,8 @@
         <el-button @click="$emit('update:visible', false)">取 消</el-button>
         <el-button
           type="primary"
-          @click="handleSubmit"
-          :loading="saving"
-          :disabled="!uploadStatus.isAllUploaded"
+          @click="handleFixSubmit"
+          v-bind="getButtonProps('提 交')"
         >提 交</el-button>
       </div>
     </template>
@@ -92,6 +82,7 @@ import { ref, watch, computed, getCurrentInstance } from 'vue'
 import { getToken } from "@/utils/auth"
 import { addQualityFixes, updateQualityFixes } from "@/api/evs/qualityFixes"
 import { updateQualityIssues } from "@/api/evs/qualityIssues"
+import { useUploadManager, uploadPresets } from '@/composables/useUploadManager'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
 import { Plus, Check, Loading } from '@element-plus/icons-vue'
 
@@ -123,12 +114,26 @@ const emit = defineEmits(['update:visible', 'success', 'error', 'refresh'])
 const { proxy } = getCurrentInstance()
 
 const saving = ref(false)
-const uploadRef = ref(null)
-const uploadStatus = ref({
-  isAllUploaded: true,
-  totalFiles: 0,
-  uploadedFiles: 0
-})
+
+// 修复照片上传状态
+const imagesFileList = ref([])
+
+// 初始化上传管理Hook - 使用整改预设配置
+const {
+  uploadStatus,
+  submitting,
+  uploadRef,
+  isSubmitDisabled,
+  handleSubmit,
+  extractImageUrls,
+  handleUploadStatusChange,
+  handleUploadSuccess,
+  handleUploadError,
+  reset,
+  getUploadProps,
+  getButtonProps,
+  getStatusTip
+} = useUploadManager(uploadPresets.fix)
 const dialogImageVisible = ref(false)
 const dialogImageUrl = ref('')
 
@@ -240,9 +245,20 @@ watch(() => props.visible, (newVal) => {
         id: props.fixData.id,
         qualityIssuesId: props.issue.id,
         fixDescription: props.fixData.fixDescription || '',
-        images: images,
+        images: parsedImages,
         status: props.fixData.status || 'IN_PROGRESS',
         fixedAt: props.fixData.fixedAt || ''
+      }
+
+      // 处理编辑模式下的图片回显
+      if (images.length > 0) {
+        imagesFileList.value = uploadRef.value?.parseFileIdsToList?.(images) ||
+          images.map((url, index) => ({
+            uid: `existing-${index}`,
+            name: `image-${index}.jpg`,
+            url: url.startsWith('http') ? url : (import.meta.env.VITE_APP_BASE_API + url),
+            status: 'success'
+          }))
       }
     } else {
       // 新建模式：初始化空表单
@@ -254,6 +270,10 @@ watch(() => props.visible, (newVal) => {
         status: 'IN_PROGRESS',
         fixedAt: props.issue.status === 'RESOLVED' ? defaultTime : ''
       }
+      // 重置图片上传状态
+      imagesFileList.value = []
+      // 重置上传管理器状态
+      reset()
     }
 
     console.log('🔍 [FORM] 表单已初始化', fixForm.value)
@@ -293,29 +313,6 @@ watch(() => fixForm.value, (newVal, oldVal) => {
   }
 }, { deep: true })
 
-/** 上传状态变化回调 */
-function handleUploadStatusChange(status) {
-  uploadStatus.value = status
-  console.log('上传状态变化:', status)
-}
-
-/** 上传成功回调 - 优化版本 */
-function handleUploadSuccess({ file, response }) {
-  try {
-    console.log('整改记录图片上传成功:', { file, response })
-  } catch (error) {
-    console.error('整改记录图片上传回调处理失败:', error)
-  }
-}
-
-/** 上传失败回调 - 优化版本 */
-function handleUploadError({ file, message }) {
-  try {
-    console.error('整改记录图片上传失败:', { file, message })
-  } catch (error) {
-    console.error('整改记录图片上传错误回调处理失败:', error)
-  }
-}
 
 /** 业务逻辑验证 */
 function validateBusinessLogic() {
@@ -350,34 +347,26 @@ function validateBusinessLogic() {
   return true
 }
 
-/** 网络和服务器状态检查 */
-function checkNetworkAndServerStatus() {
-  // 检查网络连接
-  if (!navigator.onLine) {
-    proxy.$modal.msgError('网络连接已断开，请检查网络后重试')
-    return false
-  }
 
-  // 检查用户认证状态
-  const token = getToken()
-  if (!token) {
-    proxy.$modal.msgError('用户认证已失效，请重新登录')
-    return false
-  }
 
-  return true
+/** 格式化图片数据 */
+function formatImagesData() {
+  try {
+    // 从图片上传组件提取URL数组
+    const uploadedImages = extractImageUrls(imagesFileList.value)
+
+    // 返回JSON字符串格式，保持与后端的兼容性
+    return uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : '[]'
+  } catch (error) {
+    console.error('格式化图片数据失败:', error)
+    return '[]'
+  }
 }
 
-
-/** 提交整改 */
-async function handleSubmit() {
-  try {
-    // 🔍 调试日志：输出表单当前状态
-    console.log('🔍 [DEBUG] 表单提交前的完整数据:', JSON.stringify(fixForm.value, null, 2))
-    console.log('🔍 [DEBUG] fixForm.fixDescription:', JSON.stringify(fixForm.value.fixDescription))
-    console.log('🔍 [DEBUG] fixForm.status:', JSON.stringify(fixForm.value.status))
-    console.log('🔍 [DEBUG] fixForm.images:', JSON.stringify(fixForm.value.images))
-
+/** 提交整改 - 集成Hook统一处理 */
+async function handleFixSubmit() {
+  // 使用统一的提交处理逻辑，但保留业务验证和调试日志
+  handleSubmit(async () => {
     // 表单验证
     const valid = await new Promise((resolve) => {
       proxy.$refs.fixFormRef.validate((valid, fields) => {
@@ -385,51 +374,34 @@ async function handleSubmit() {
         resolve(valid)
       })
     })
+
     if (!valid) {
-      console.log('❌ [ERROR] 表单验证失败，提交终止')
-      return
+      throw new Error('表单验证失败')
     }
 
     // 业务逻辑验证
     if (!validateBusinessLogic()) {
-      console.log('❌ [ERROR] 业务逻辑验证失败，提交终止')
-      return
+      throw new Error('业务逻辑验证失败')
     }
 
     if (!props.issue) {
-      proxy.$modal.msgError('数据错误')
-      return
+      throw new Error('数据错误')
     }
 
-    // 检查图片上传状态
-    if (!uploadStatus.value.isAllUploaded) {
-      proxy.$modal.msgWarning('请等待图片上传完成后再提交')
-      return
-    }
-
-    // 业务逻辑验证
-    if (!validateBusinessLogic()) {
-      console.log('❌ [ERROR] 业务逻辑验证失败，提交终止')
-      return
-    }
-
-    // 网络和认证状态检查
-    if (!checkNetworkAndServerStatus()) {
-      return
-    }
-
+    // 设置loading状态
     saving.value = true
 
-    // 🔧 使用 ImageUploadCard 的 extractImageUrls 方法处理图片
-    const processedImages = uploadRef.value?.extractImageUrls(fixForm.value.images) || []
-
-    console.log('🔍 [DEBUG] 处理后的图片:', processedImages)
+    // 🔍 调试日志：输出表单当前状态
+    console.log('🔍 [DEBUG] 表单提交前的完整数据:', JSON.stringify(fixForm.value, null, 2))
+    console.log('🔍 [DEBUG] fixForm.fixDescription:', JSON.stringify(fixForm.value.fixDescription))
+    console.log('🔍 [DEBUG] fixForm.status:', JSON.stringify(fixForm.value.status))
+    console.log('🔍 [DEBUG] fixForm.images:', JSON.stringify(fixForm.value.images))
 
     // 🔧 构造修复数据对象
     const fixData = {
       qualityIssuesId: props.issue.id,
       fixDescription: fixForm.value.fixDescription || '无',
-      images: processedImages.length > 0 ? JSON.stringify(processedImages) : '[]',
+      images: formatImagesData(),
       status: fixForm.value.status || 'IN_PROGRESS',
       fixedAt: fixForm.value.status === 'RESOLVED' ? fixForm.value.fixedAt : null,
       verifiedAt: null
@@ -449,41 +421,34 @@ async function handleSubmit() {
       console.log('🔍 [API RESPONSE]:', apiResponse)
     }
 
-    // 更新问题状态 - 修复：使用正确的 ref 访问方式
+    // 更新问题状态
     const issueUpdateData = {
       id: props.issue.id,
-      status: fixForm.value.status,  // 🔧 修复：正确访问 ref 的值
+      status: fixForm.value.status,
       resolvedAt: fixForm.value.status === 'RESOLVED' ? fixForm.value.fixedAt : null
     }
 
     console.log('🔍 [DEBUG] 问题更新数据:', JSON.stringify(issueUpdateData, null, 2))
-
     console.log('🔍 [API CALL] 准备调用 updateQualityIssues API')
     const updateResponse = await updateQualityIssues(issueUpdateData)
     console.log('🔍 [API RESPONSE] 问题状态更新响应:', updateResponse)
 
+    return { fixData, apiResponse, updateResponse }
+  }).then(({ fixData, apiResponse, updateResponse }) => {
+    // 成功处理
     const successMessage = props.editMode ? '整改编辑成功' : '整改提交成功'
     proxy.$modal.msgSuccess(successMessage)
     emit('success', fixData)
     emit('refresh') // 通知父组件刷新数据
     emit('update:visible', false)
-
-  } catch (error) {
+  }).catch((error) => {
+    // 统一错误处理（Hook已处理错误提示，这里只处理业务逻辑）
     console.error('提交整改失败:', error)
-
-    // 统一错误处理
-    if (error.response?.status === 401) {
-      proxy.$modal.msgError('用户认证已失效，请重新登录')
-    } else if (error.response?.status >= 500) {
-      proxy.$modal.msgError('服务器错误，请稍后重试')
-    } else {
-      proxy.$modal.msgError(error.message || error.msg || '提交失败，请重试')
-    }
-
     emit('error', error)
-  } finally {
+  }).finally(() => {
+    // 重置loading状态
     saving.value = false
-  }
+  })
 }
 
 // 暴露给父组件使用
