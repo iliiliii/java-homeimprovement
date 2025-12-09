@@ -1,30 +1,34 @@
 <template>
   <view class="dashboard-page">
-    <!-- 客户视图 -->
-    <template v-if="isCustomer">
-      <CustomerDashboard 
-        :projects="projects"
-        :current-project="currentProject"
-        :loading="loading"
-        @switch-project="handleSwitchProject"
-        @navigate="navigateTo"
-      />
-    </template>
-    
-    <!-- 员工视图 -->
-    <template v-else-if="isStaff">
-      <StaffDashboard 
-        :projects="staffProjects"
-        :todo-stats="todoStats"
-        :loading="loading"
-        @navigate="navigateTo"
-        @view-project="handleViewProject"
-      />
-    </template>
-    
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-mask">
       <view class="loading-spinner"></view>
+    </view>
+    
+    <!-- 客户视图 -->
+    <CustomerDashboard 
+      v-else-if="userType === 'customer'"
+      :projects="projects"
+      :current-project="currentProject"
+      :loading="loading"
+      @switch-project="handleSwitchProject"
+      @navigate="navigateTo"
+    />
+    
+    <!-- 员工视图 -->
+    <StaffDashboard 
+      v-else-if="userType === 'staff'"
+      :projects="staffProjects"
+      :todo-stats="todoStats"
+      :loading="loading"
+      @navigate="navigateTo"
+      @view-project="handleViewProject"
+    />
+    
+    <!-- 未登录或未知用户类型 -->
+    <view v-else class="empty-state">
+      <text class="empty-text">请先登录</text>
+      <view class="login-btn" @click="goLogin">去登录</view>
     </view>
     
     <!-- 底部占位 -->
@@ -45,20 +49,31 @@ import StaffDashboard from './components/StaffDashboard.vue'
 
 const userStore = useUserStore()
 
-const loading = ref(false)
+const loading = ref(true)
+const userType = ref('')
 const projects = ref([])
 const staffProjects = ref([])
 const todoStats = ref({ pendingInspections: 0, pendingIssues: 0, todayTasks: 0 })
 const currentProjectIndex = ref(0)
 
 // 计算属性
-const isCustomer = computed(() => userStore.isCustomer)
-const isStaff = computed(() => userStore.isStaff)
 const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
 
 // 初始化
 onMounted(async () => {
+  // 先从本地存储恢复用户状态
   userStore.initFromStorage()
+  userType.value = userStore.userType
+  
+  console.log('[Dashboard] 用户类型:', userType.value)
+  console.log('[Dashboard] Token:', userStore.token ? '存在' : '不存在')
+  
+  // 如果没有登录，跳转登录页
+  if (!userStore.token) {
+    loading.value = false
+    return
+  }
+  
   await loadDashboardData()
 })
 
@@ -66,9 +81,11 @@ onMounted(async () => {
 const loadDashboardData = async () => {
   loading.value = true
   try {
-    if (isCustomer.value) {
+    if (userType.value === 'customer') {
+      console.log('[Dashboard] 加载客户首页数据...')
       const data = await getCustomerDashboard()
-      projects.value = data.projects || []
+      console.log('[Dashboard] 客户数据:', data)
+      projects.value = data?.projects || []
       // 恢复上次选择的项目
       const savedProjectId = uni.getStorageSync('currentProjectId')
       if (savedProjectId) {
@@ -77,17 +94,26 @@ const loadDashboardData = async () => {
           currentProjectIndex.value = index
         }
       }
-    } else if (isStaff.value) {
+    } else if (userType.value === 'staff') {
+      console.log('[Dashboard] 加载员工首页数据...')
       const data = await getStaffDashboard()
-      staffProjects.value = data.projects || []
-      todoStats.value = data.todoStats || { pendingInspections: 0, pendingIssues: 0, todayTasks: 0 }
+      console.log('[Dashboard] 员工数据:', data)
+      staffProjects.value = data?.projects || []
+      todoStats.value = data?.todoStats || { pendingInspections: 0, pendingIssues: 0, todayTasks: 0 }
+    } else {
+      console.log('[Dashboard] 未知用户类型:', userType.value)
     }
   } catch (error) {
-    console.error('加载首页数据失败:', error)
-    uni.showToast({ title: '加载失败', icon: 'none' })
+    console.error('[Dashboard] 加载首页数据失败:', error)
+    uni.showToast({ title: error.message || '加载失败', icon: 'none' })
   } finally {
     loading.value = false
   }
+}
+
+// 跳转登录
+const goLogin = () => {
+  uni.reLaunch({ url: '/pages/login/index' })
 }
 
 // 切换项目
@@ -102,7 +128,7 @@ const handleSwitchProject = (index) => {
 // 页面导航
 const navigateTo = (url) => {
   // 如果是客户，需要带上当前项目ID
-  if (isCustomer.value && currentProject.value) {
+  if (userType.value === 'customer' && currentProject.value) {
     const separator = url.includes('?') ? '&' : '?'
     url = `${url}${separator}projectId=${currentProject.value.id}`
   }
@@ -149,5 +175,27 @@ const handleViewProject = (project) => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 48rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: $glass-text-muted;
+  margin-bottom: 32rpx;
+}
+
+.login-btn {
+  padding: 24rpx 64rpx;
+  background: $glass-accent;
+  color: white;
+  border-radius: 48rpx;
+  font-size: 28rpx;
 }
 </style>
