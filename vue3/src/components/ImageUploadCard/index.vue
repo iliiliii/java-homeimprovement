@@ -1,5 +1,74 @@
 <template>
   <div class="image-upload-card">
+    <!-- 总体进度条 - 使用新的条件显示逻辑 -->
+    <div v-if="showOverallProgress && shouldShowProgress" class="overall-progress-wrapper" :class="`progress-${progressDisplayState.state}`">
+      <!-- 失败状态显示 -->
+      <div v-if="progressDisplayState.state === 'failed'" class="progress-failed">
+        <div class="progress-info">
+          <div class="progress-message">
+            <el-icon class="error-icon"><CircleClose /></el-icon>
+            <span class="progress-text">{{ progressDisplayState.message }}</span>
+          </div>
+          <div class="progress-actions">
+            <el-button size="small" type="primary" @click="handleRetryAll" :loading="retrying">
+              重试
+            </el-button>
+            <el-button size="small" @click="handleHideProgress">
+              关闭
+            </el-button>
+          </div>
+        </div>
+        <el-progress
+          :percentage="progressDisplayState.progress"
+          :stroke-width="8"
+          :show-text="false"
+          class="overall-progress progress-failed-bar"
+          status="exception"
+        />
+      </div>
+
+      <!-- 上传中状态显示 -->
+      <div v-else-if="progressDisplayState.state === 'uploading'" class="progress-uploading">
+        <div class="progress-info">
+          <div class="progress-message">
+            <el-icon class="uploading-icon"><Loading /></el-icon>
+            <span class="progress-text">{{ progressDisplayState.message }}</span>
+          </div>
+          <span class="progress-percentage">{{ progressDisplayState.progress }}%</span>
+        </div>
+        <el-progress
+          :percentage="progressDisplayState.progress"
+          :stroke-width="8"
+          :show-text="false"
+          class="overall-progress progress-uploading-bar"
+        />
+        <div v-if="currentUploadingFileName" class="current-file-info">
+          <el-icon class="uploading-icon"><Loading /></el-icon>
+          <span class="current-file-name">{{ currentUploadingFileName }}</span>
+        </div>
+      </div>
+
+      <!-- 完成状态显示（短暂显示后自动隐藏） -->
+      <div v-else-if="progressDisplayState.state === 'completed'" class="progress-completed">
+        <div class="progress-info">
+          <div class="progress-message">
+            <el-icon class="success-icon"><CircleCheck /></el-icon>
+            <span class="progress-text">{{ progressDisplayState.message }}</span>
+          </div>
+          <el-button size="small" @click="handleHideProgress" text>
+            关闭
+          </el-button>
+        </div>
+        <el-progress
+          :percentage="100"
+          :stroke-width="8"
+          :show-text="false"
+          class="overall-progress progress-completed-bar"
+          status="success"
+        />
+      </div>
+    </div>
+
     <!-- 图片卡片式上传 -->
     <el-upload
       v-model:file-list="fileList"
@@ -32,6 +101,34 @@
       </template>
     </el-upload>
 
+    <!-- 当前上传进度信息面板 -->
+    <div v-if="uploadingFiles.length > 0" class="current-upload-panel">
+      <div class="panel-header">
+        <el-icon class="uploading-icon"><Loading /></el-icon>
+        <span class="panel-title">正在上传 ({{ uploadingFiles.length }})</span>
+      </div>
+      <div class="upload-items">
+        <div
+          v-for="file in uploadingFiles"
+          :key="file.uid"
+          class="upload-item"
+        >
+          <div class="item-info">
+            <div class="file-name">{{ file.name }}</div>
+            <div class="file-progress">{{ file.progress }}%</div>
+          </div>
+          <div class="progress-bar">
+            <el-progress
+              :percentage="file.progress"
+              :stroke-width="4"
+              :show-text="false"
+              :duration="0.3"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 图片预览组件 - 直接使用 v-viewer 全屏预览 -->
     <div
       v-if="showPreview"
@@ -50,8 +147,9 @@
 </template>
 
 <script setup>
-import { Plus, Picture } from '@element-plus/icons-vue'
-import { onMounted, onUnmounted } from 'vue'
+import { Plus, Picture, Loading, CircleClose, CircleCheck } from '@element-plus/icons-vue'
+import { onMounted, onUnmounted, computed, nextTick, ref } from 'vue'
+import { getCurrentInstance } from 'vue'
 import useUserStore from '@/store/modules/user'
 import { useImageCompress } from '@/composables/useImageCompress'
 
@@ -130,6 +228,41 @@ const props = defineProps({
   compressMaxWidthOrHeight: {
     type: Number,
     default: 1920
+  },
+  // 是否显示总体进度条
+  showOverallProgress: {
+    type: Boolean,
+    default: true
+  },
+  // 总体进度 (0-100)
+  overallProgress: {
+    type: Number,
+    default: 0
+  },
+  // 正在上传的文件数量
+  uploadingCount: {
+    type: Number,
+    default: 0
+  },
+  // 当前正在上传的文件名
+  currentUploadingFileName: {
+    type: String,
+    default: ''
+  },
+  // 新增：是否应该显示进度条
+  shouldShowProgress: {
+    type: Boolean,
+    default: false
+  },
+  // 新增：进度显示状态对象
+  progressDisplayState: {
+    type: Object,
+    default: () => ({
+      state: 'hidden',
+      message: '',
+      showRetry: false,
+      progress: 0
+    })
   }
 })
 
@@ -142,7 +275,11 @@ const emit = defineEmits([
   'change',
   'exceed',
   'preview',
-  'upload-status-change'
+  'upload-status-change',
+  'upload-start',     // 开始上传
+  'upload-progress',  // 上传进度更新
+  'retry-all',        // 重试所有失败文件
+  'hide-progress'     // 隐藏进度条
 ])
 
 // 响应式数据
@@ -230,6 +367,12 @@ const deletingFiles = ref(new Set()) // 正在删除的文件UID集合
 // 保存压缩后的文件缓存
 const compressedFiles = ref(new Map()) // 压缩后的文件缓存 (fileUid -> File)
 
+// 上传中的文件列表（包含进度信息）
+const uploadingFiles = ref([]) // 正在上传的文件列表
+
+// 组件内部状态
+const retrying = ref(false) // 重试状态
+
 // 计算所有图片是否都已上传完成
 const isAllUploaded = computed(() => {
   if (!fileList.value || fileList.value.length === 0) return true
@@ -268,6 +411,22 @@ watch(isAllUploaded, (newVal, oldVal) => {
 const computedTipText = computed(() => {
   if (props.tipText) return props.tipText
   return `支持拖拽上传，最多${props.maxCount}张图片，单张不超过${props.maxSize}MB`
+})
+
+// 进度文字显示
+const progressText = computed(() => {
+  const total = fileList.value.length
+  const uploaded = fileList.value.filter(file =>
+    file.status === 'success' || file.response?.code === 200
+  ).length
+
+  if (props.uploadingCount > 0) {
+    return `正在上传图片 (${uploaded}/${total})`
+  } else if (uploaded === total && total > 0) {
+    return `图片上传完成 (${uploaded}/${total})`
+  } else {
+    return `准备上传 (0/${total})`
+  }
 })
 
 // 处理图片超出限制
@@ -451,9 +610,50 @@ function handleUploadError(error, file) {
   emit('change', { fileList: fileList.value, file, type: 'error' })
 }
 
-// 自定义上传函数 - 支持压缩文件上传
+// 处理上传开始
+function handleUploadStart({ file }) {
+  // 添加到上传列表
+  const uploadFile = {
+    uid: file.uid,
+    name: file.name,
+    progress: 0
+  }
+
+  // 检查是否已存在
+  const existingIndex = uploadingFiles.value.findIndex(f => f.uid === file.uid)
+  if (existingIndex > -1) {
+    uploadingFiles.value[existingIndex] = uploadFile
+  } else {
+    uploadingFiles.value.push(uploadFile)
+  }
+
+  emit('upload-start', { file })
+}
+
+// 处理上传进度
+function handleUploadProgress({ file, progress }) {
+  const uploadFile = uploadingFiles.value.find(f => f.uid === file.uid)
+  if (uploadFile) {
+    uploadFile.progress = progress
+  }
+
+  emit('upload-progress', { file, progress })
+}
+
+// 移除上传完成的文件
+function removeUploadFile(fileUid) {
+  const index = uploadingFiles.value.findIndex(f => f.uid === fileUid)
+  if (index > -1) {
+    uploadingFiles.value.splice(index, 1)
+  }
+}
+
+// 自定义上传函数 - 支持压缩文件上传和进度跟踪
 async function handleHttpRequest(options) {
   try {
+    // 通知外部组件开始上传
+    handleUploadStart({ file: options.file })
+
     // 创建FormData
     const formData = new FormData()
 
@@ -461,28 +661,73 @@ async function handleHttpRequest(options) {
     const fileToUpload = compressedFiles.value.get(options.file.uid) || options.file
     formData.append('file', fileToUpload)
 
-    // 发起请求
-    const response = await fetch(options.action, {
-      method: 'POST',
-      headers: options.headers || props.uploadHeaders,
-      body: formData
+    // 创建 XMLHttpRequest 以支持进度跟踪
+    const xhr = new XMLHttpRequest()
+
+    // 设置上传进度监听
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100)
+        // 通知外部组件进度更新
+        handleUploadProgress({
+          file: options.file,
+          progress
+        })
+      }
     })
 
-    const data = await response.json()
+    // 设置响应处理
+    return new Promise((resolve, reject) => {
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText)
 
-    if (data.code === 200) {
-      // 清空该文件的压缩缓存
-      compressedFiles.value.delete(options.file.uid)
+          if (data.code === 200) {
+            // 清空该文件的压缩缓存
+            compressedFiles.value.delete(options.file.uid)
+            // 移除上传列表中的文件
+            removeUploadFile(options.file.uid)
 
-      // 调用el-upload的成功回调
-      options.onSuccess(data, options.file)
-    } else {
-      throw new Error(data.msg || '上传失败')
-    }
+            // 调用el-upload的成功回调
+            options.onSuccess(data, options.file)
+            resolve(data)
+          } else {
+            throw new Error(data.msg || '上传失败')
+          }
+        } catch (error) {
+          console.error('解析响应失败:', error)
+          reject(error)
+        }
+      }
+
+      xhr.onerror = () => {
+        const error = new Error('网络请求失败')
+        console.error('自定义上传失败:', error)
+        // 清理压缩缓存
+        compressedFiles.value.delete(options.file.uid)
+        // 移除上传列表中的文件
+        removeUploadFile(options.file.uid)
+        options.onError(error)
+        reject(error)
+      }
+
+      xhr.open('POST', options.action)
+
+      // 设置请求头
+      const headers = options.headers || props.uploadHeaders
+      Object.keys(headers).forEach(key => {
+        xhr.setRequestHeader(key, headers[key])
+      })
+
+      xhr.send(formData)
+    })
+
   } catch (error) {
     console.error('自定义上传失败:', error)
     // 清理压缩缓存
     compressedFiles.value.delete(options.file.uid)
+    // 移除上传列表中的文件
+    removeUploadFile(options.file.uid)
     options.onError(error)
   }
 }
@@ -692,6 +937,25 @@ onUnmounted(() => {
   compressedFiles.value.clear()
 })
 
+// 处理重试所有失败文件
+async function handleRetryAll() {
+  retrying.value = true
+  try {
+    // 触发重试事件，由父组件处理具体逻辑
+    emit('retry-all')
+  } catch (error) {
+    console.error('重试失败:', error)
+    proxy.$modal.msgError('重试失败，请稍后再试')
+  } finally {
+    retrying.value = false
+  }
+}
+
+// 处理隐藏进度条
+function handleHideProgress() {
+  emit('hide-progress')
+}
+
 // 暴露给父组件的工具函数
 defineExpose({
   parseFileIdsToList,
@@ -703,6 +967,158 @@ defineExpose({
 
 <style scoped lang="scss">
 .image-upload-card {
+  // 总体进度条样式
+  .overall-progress-wrapper {
+    margin-bottom: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+
+    // 失败状态样式
+    &.progress-failed {
+      background: #fff2f0;
+      border-color: #ffccc7;
+
+      .progress-failed {
+        .progress-info {
+          .progress-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ff4d4f;
+
+            .error-icon {
+              color: #ff4d4f;
+              font-size: 16px;
+            }
+
+            .progress-text {
+              font-weight: 500;
+            }
+          }
+
+          .progress-actions {
+            display: flex;
+            gap: 8px;
+          }
+        }
+      }
+
+      .progress-failed-bar {
+        :deep(.el-progress-bar__inner) {
+          background: #ff4d4f;
+        }
+      }
+    }
+
+    // 上传中状态样式
+    &.progress-uploading {
+      background: #f0f8ff;
+      border-color: #d1e7ff;
+
+      .progress-uploading {
+        .progress-info {
+          .progress-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #1890ff;
+
+            .uploading-icon {
+              color: #1890ff;
+              animation: spin 1s linear infinite;
+            }
+          }
+        }
+      }
+
+      .progress-uploading-bar {
+        :deep(.el-progress-bar__inner) {
+          background: linear-gradient(90deg, #1890ff 0%, #40a9ff 100%);
+        }
+      }
+    }
+
+    // 完成状态样式
+    &.progress-completed {
+      background: #f6ffed;
+      border-color: #b7eb8f;
+
+      .progress-completed {
+        .progress-info {
+          .progress-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #52c41a;
+
+            .success-icon {
+              color: #52c41a;
+              font-size: 16px;
+            }
+          }
+
+          .progress-actions {
+            margin-left: auto;
+          }
+        }
+      }
+
+      .progress-completed-bar {
+        :deep(.el-progress-bar__inner) {
+          background: #52c41a;
+        }
+      }
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+
+      .progress-text {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .progress-percentage {
+        font-size: 16px;
+        color: #1890ff;
+        font-weight: 600;
+      }
+    }
+
+    .overall-progress {
+      margin-bottom: 8px;
+
+      :deep(.el-progress-bar__inner) {
+        background: linear-gradient(90deg, #1890ff 0%, #40a9ff 100%);
+      }
+    }
+
+    .current-file-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #666;
+
+      .uploading-icon {
+        color: #1890ff;
+        animation: spin 1s linear infinite;
+      }
+
+      .current-file-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
   .upload-component {
     // 上传按钮尺寸
     :deep(.el-upload--picture-card) {
@@ -751,6 +1167,66 @@ defineExpose({
 
           &:hover::before {
             background: rgba(0, 0, 0, 0.3);
+          }
+        }
+
+        // 上传中的状态 - 进度覆盖层
+        &.uploading {
+          .el-upload-list__item-thumbnail {
+            position: relative;
+            overflow: hidden;
+
+            // 进度条覆盖层
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0, 0, 0, 0.6);
+              z-index: 1;
+            }
+
+            // 圆形进度指示器
+            &::after {
+              content: '';
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 60px;
+              height: 60px;
+              border: 3px solid rgba(255, 255, 255, 0.3);
+              border-top: 3px solid #1890ff;
+              border-radius: 50%;
+              z-index: 2;
+              animation: spin 1s linear infinite;
+            }
+          }
+
+          // 进度百分比文字
+          .upload-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 3;
+            background: rgba(24, 144, 255, 0.8);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          // 隐藏默认的操作按钮
+          .el-upload-list__item-actions {
+            display: none;
           }
         }
 
@@ -811,5 +1287,86 @@ defineExpose({
   justify-content: center;
   align-items: center;
   cursor: pointer;
+}
+
+// 旋转动画
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 当前上传进度面板样式
+.current-upload-panel {
+  margin: 16px 0;
+  padding: 16px;
+  background: #f0f8ff;
+  border: 1px solid #d1e7ff;
+  border-radius: 8px;
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #1890ff;
+
+    .uploading-icon {
+      animation: spin 1s linear infinite;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+  }
+
+  .upload-items {
+    .upload-item {
+      margin-bottom: 12px;
+      padding: 8px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e6f4ff;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .item-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+
+        .file-name {
+          font-size: 13px;
+          color: #333;
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          margin-right: 8px;
+        }
+
+        .file-progress {
+          font-size: 13px;
+          color: #1890ff;
+          font-weight: 600;
+          min-width: 40px;
+          text-align: right;
+        }
+      }
+
+      .progress-bar {
+        :deep(.el-progress-bar__inner) {
+          background: linear-gradient(90deg, #1890ff 0%, #40a9ff 100%);
+        }
+      }
+    }
+  }
 }
 </style>
