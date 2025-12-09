@@ -154,7 +154,23 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="封面图片" prop="coverImage">
-          <image-upload v-model="form.coverImage"/>
+          <ImageUploadCard
+            v-model="coverImageFileList"
+            v-bind="getUploadProps()"
+            @success="handleUploadSuccess"
+            @error="handleUploadError"
+            @upload-status-change="handleUploadStatusChange"
+          />
+          <!-- 上传状态提示 -->
+          <div v-if="getStatusTip().show" class="upload-status-tip">
+            <el-tag :type="getStatusTip().type" size="small">
+              <el-icon><Loading v-if="!uploadStatus.isAllUploaded" /><Check v-else /></el-icon>
+              {{ getStatusTip().message }}
+            </el-tag>
+            <span v-if="!uploadStatus.isAllUploaded && uploadStatus.totalFiles > 0" class="upload-hint">
+              请等待图片上传完成后再提交表单
+            </span>
+          </div>
         </el-form-item>
         <el-form-item label="跳转地址" prop="jumpUrl">
           <el-input 
@@ -171,7 +187,14 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
+          <el-button
+            type="primary"
+            @click="submitForm"
+            :loading="submitting"
+            :disabled="isSubmitDisabled"
+          >
+            确定
+          </el-button>
           <el-button @click="cancel">取 消</el-button>
         </div>
       </template>
@@ -181,8 +204,9 @@
 
 <script setup name="NewsConsultationCard">
 import { listNewsConsultation, getNewsConsultation, delNewsConsultation, addNewsConsultation, updateNewsConsultation } from "@/api/evs/newsConsultation"
-import { Document, Calendar, VideoPlay, View } from '@element-plus/icons-vue'
-import ImageUpload from '@/components/ImageUpload/index.vue'
+import { Document, Calendar, VideoPlay, View, Loading, Check } from '@element-plus/icons-vue'
+import { useUploadManager, uploadPresets } from '@/composables/useUploadManager'
+import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
 
 const { proxy } = getCurrentInstance()
 
@@ -191,6 +215,25 @@ const open = ref(false)
 const loading = ref(true)
 const total = ref(0)
 const title = ref("")
+
+// 封面图片上传状态
+const coverImageFileList = ref([])
+
+// 初始化上传管理Hook - 使用资讯预设配置
+const {
+  uploadStatus,
+  submitting,
+  uploadRef,
+  isSubmitDisabled,
+  handleSubmit,
+  extractImageUrls,
+  handleUploadStatusChange,
+  handleUploadSuccess,
+  handleUploadError,
+  reset,
+  getUploadProps,
+  getStatusTip
+} = useUploadManager(uploadPresets.news)
 
 const data = reactive({
   form: {},
@@ -208,7 +251,7 @@ const data = reactive({
       { required: true, message: "标题不能为空", trigger: "blur" },
       { min: 1, max: 100, message: "标题长度在1到100个字符之间", trigger: "blur" },
       { 
-        validator: (rule, value, callback) => {
+        validator: (_rule, value, callback) => {
           if (value && /[<>\"'&]/.test(value)) {
             callback(new Error("标题不能包含特殊字符：< > \" ' &"))
           } else {
@@ -221,7 +264,7 @@ const data = reactive({
     subtitle: [
       { max: 500, message: "副标题长度不能超过500个字符", trigger: "blur" },
       { 
-        validator: (rule, value, callback) => {
+        validator: (_rule, value, callback) => {
           if (value && /[<>\"'&]/.test(value)) {
             callback(new Error("副标题不能包含特殊字符：< > \" ' &"))
           } else {
@@ -240,7 +283,7 @@ const data = reactive({
     jumpUrl: [
       { max: 500, message: "跳转地址长度不能超过500个字符", trigger: "blur" },
       {
-        validator: (rule, value, callback) => {
+        validator: (_rule, value, callback) => {
           if (!value || value.trim() === '') {
             callback()
           } else {
@@ -277,11 +320,11 @@ function getList() {
 // 取消按钮
 function cancel() {
   open.value = false
-  reset()
+  resetForm()
 }
 
 // 表单重置
-function reset() {
+function resetForm() {
   form.value = {
     id: null,
     title: null,
@@ -298,45 +341,97 @@ function reset() {
     createdBy: null,
     updatedBy: null
   }
+  // 重置图片上传状态
+  coverImageFileList.value = []
+  // 重置上传管理器状态
+  reset()
   proxy.resetForm("newsConsultationRef")
 }
 
 /** 新增按钮操作 */
 function handleAdd() {
-  reset()
+  resetForm()
   open.value = true
   title.value = "新建资讯"
 }
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-  reset()
+  resetForm()
   const _id = row.id
   getNewsConsultation(_id).then(response => {
     form.value = response.data
+
+    // 处理现有封面图片数据
+    if (form.value.coverImage) {
+      try {
+        // 将封面图片转换为ImageUploadCard可识别的格式
+        const coverImageUrl = form.value.coverImage
+        if (coverImageUrl) {
+          coverImageFileList.value = uploadRef.value?.parseFileIdsToList?.([coverImageUrl]) || [{
+            uid: 'existing-cover',
+            name: 'cover-image.jpg',
+            url: coverImageUrl.startsWith('http') ? coverImageUrl : (import.meta.env.VITE_APP_BASE_API + coverImageUrl),
+            status: 'success'
+          }]
+        }
+      } catch (error) {
+        console.warn('解析现有封面图片失败:', error)
+        coverImageFileList.value = []
+      }
+    }
+
     open.value = true
     title.value = "编辑资讯"
   })
 }
 
+/** 格式化封面图片数据 */
+function formatCoverImageData() {
+  try {
+    // 从图片上传组件提取URL数组
+    const uploadedImages = extractImageUrls(coverImageFileList.value)
+
+    // 资讯封面只取第一张图片
+    return uploadedImages.length > 0 ? uploadedImages[0] : null
+  } catch (error) {
+    console.error('格式化封面图片数据失败:', error)
+    return null
+  }
+}
+
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["newsConsultationRef"].validate(valid => {
-    if (valid) {
-      if (form.value.id != null) {
-        updateNewsConsultation(form.value).then(response => {
-          proxy.$modal.msgSuccess("修改成功")
-          open.value = false
-          getList()
-        })
-      } else {
-        addNewsConsultation(form.value).then(response => {
-          proxy.$modal.msgSuccess("新增成功")
-          open.value = false
-          getList()
-        })
-      }
+  // 使用统一的提交处理逻辑
+  handleSubmit(async () => {
+    // 表单验证
+    const valid = await new Promise((resolve) => {
+      proxy.$refs["newsConsultationRef"].validate((valid) => {
+        resolve(valid)
+      })
+    })
+
+    if (!valid) {
+      throw new Error('表单验证失败')
     }
+
+    // 准备提交数据
+    const submitData = { ...form.value }
+
+    // 格式化封面图片数据
+    submitData.coverImage = formatCoverImageData()
+
+    if (submitData.id != null) {
+      return updateNewsConsultation(submitData)
+    } else {
+      return addNewsConsultation(submitData)
+    }
+  }).then(() => {
+    // 提交成功处理
+    open.value = false
+    getList()
+  }).catch(() => {
+    // 错误已经在handleSubmit中统一处理，这里不需要额外处理
   })
 }
 
@@ -400,5 +495,24 @@ getList()
 
 :deep(.el-card__body) {
   padding: 20px;
+}
+
+.upload-status-tip {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+
+  .el-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .upload-hint {
+    color: #e6a23c;
+    font-size: 12px;
+  }
 }
 </style>

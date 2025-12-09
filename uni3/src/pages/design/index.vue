@@ -5,55 +5,70 @@
       <!-- 标题 -->
       <view class="header-title">
         <text class="page-title">设计方案</text>
-      </view>
-      
-      <!-- 空间分类 -->
-      <view class="space-tabs">
-        <scroll-view scroll-x class="tabs-scroll">
-          <view class="tabs-container">
-            <view 
-              class="tab-item"
-              :class="{ active: currentSpace === space.key }"
-              v-for="space in spaces"
-              :key="space.key"
-              @click="switchSpace(space.key)"
-            >
-              {{ space.name }}
-            </view>
-          </view>
-        </scroll-view>
+        <text v-if="currentProject" class="project-name">{{ currentProject.name }}</text>
       </view>
     </view>
     
     <!-- 头部占位 -->
     <view :style="{ height: headerHeight + 'px' }"></view>
     
-    <!-- 设计图展示 -->
-    <view class="design-gallery">
-      <view 
-        class="design-card"
-        v-for="(item, index) in currentDesigns"
-        :key="index"
-        @click="openViewer(index)"
-      >
-        <image class="design-image" :src="item.image" mode="aspectFill" />
-        <view class="design-info">
-          <text class="design-name">{{ item.name }}</text>
-          <text class="design-version">{{ item.version }}</text>
-        </view>
-        <view class="design-meta flex-between">
-          <text class="design-date">{{ item.updateTime }}</text>
-          <view class="design-status" :class="item.status">
-            {{ getStatusText(item.status) }}
-          </view>
-        </view>
-      </view>
+    <!-- 加载状态 -->
+    <view v-if="loading" class="loading-state">
+      <u-loading-icon size="48" color="#C9B0D4" />
+      <text class="loading-text">加载中...</text>
     </view>
     
     <!-- 空状态 -->
-    <view v-if="currentDesigns.length === 0" class="empty-state">
-      <SvgIcon name="photo" size="100rpx" color="#ccc" />
+    <view v-else-if="rooms.length === 0" class="empty-state">
+      <SvgIcon name="photo" size="120rpx" color="#ccc" />
       <text class="empty-text">暂无设计图</text>
+      <text class="empty-tip">设计师正在努力设计中...</text>
+    </view>
+    
+    <!-- 房间列表 -->
+    <view v-else class="room-list">
+      <view 
+        class="room-card"
+        v-for="room in rooms"
+        :key="room.id"
+        @click="openRoom(room)"
+      >
+        <!-- 房间封面 -->
+        <view class="room-cover">
+          <image 
+            v-if="room.images && room.images.length > 0"
+            class="cover-image"
+            :src="getFullUrl(room.images[0])"
+            mode="aspectFill"
+          />
+          <view v-else class="cover-placeholder">
+            <SvgIcon name="photo" size="64rpx" color="#ccc" />
+          </view>
+          <!-- 图片数量角标 -->
+          <view v-if="room.imageCount > 0" class="image-count">
+            <SvgIcon name="photo" size="24rpx" color="#fff" />
+            <text>{{ room.imageCount }}</text>
+          </view>
+        </view>
+        
+        <!-- 房间信息 -->
+        <view class="room-info">
+          <view class="room-header">
+            <text class="room-name">{{ room.roomName }}</text>
+            <view class="room-type-tag">{{ room.roomTypeText }}</view>
+          </view>
+          <view class="room-meta">
+            <text v-if="room.area" class="meta-item">{{ room.area }}㎡</text>
+            <text v-if="room.floor" class="meta-item">{{ room.floor }}楼</text>
+          </view>
+          <text v-if="room.description" class="room-desc">{{ room.description }}</text>
+        </view>
+        
+        <!-- 箭头 -->
+        <view class="room-arrow">
+          <SvgIcon name="chevron-right" size="32rpx" color="#ccc" />
+        </view>
+      </view>
     </view>
     
     <!-- 底部占位 -->
@@ -67,85 +82,94 @@
       v-model:visible="viewerVisible"
       :images="viewerImages"
       :start-index="viewerIndex"
-      url-key="image"
+      url-key="url"
       name-key="name"
-      desc-key="updateTime"
       :show-thumbnail="true"
     />
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { onBackPress } from '@dcloudio/uni-app'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { onShow, onBackPress } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
+import { useUserStore } from '@/store/user'
+import { getProjectRooms } from '@/api/dashboard'
+import { BASE_URL } from '@/utils/request'
+
+const userStore = useUserStore()
 
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
-const currentSpace = ref('all')
+const loading = ref(false)
+const rooms = ref([])
+
+// 图片查看器状态
 const viewerVisible = ref(false)
 const viewerIndex = ref(0)
+const viewerImages = ref([])
+const currentViewRoom = ref(null)
 
-const spaces = ref([
-  { key: 'all', name: '全部' },
-  { key: 'living', name: '客厅' },
-  { key: 'bedroom', name: '卧室' },
-  { key: 'kitchen', name: '厨房' },
-  { key: 'bathroom', name: '卫生间' },
-  { key: 'balcony', name: '阳台' }
-])
+// 当前项目
+const currentProject = computed(() => userStore.currentProject)
+const currentProjectId = computed(() => userStore.currentProjectId)
 
-const designs = ref([
-  {
-    id: 1,
-    name: '客厅效果图',
-    space: 'living',
-    version: 'v2.0',
-    updateTime: '今天 09:30',
-    status: 'confirmed',
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 2,
-    name: '主卧效果图',
-    space: 'bedroom',
-    version: 'v1.5',
-    updateTime: '昨天 14:20',
-    status: 'reviewing',
-    image: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 3,
-    name: '厨房效果图',
-    space: 'kitchen',
-    version: 'v2.1',
-    updateTime: '12.01',
-    status: 'confirmed',
-    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 4,
-    name: '卫生间效果图',
-    space: 'bathroom',
-    version: 'v1.0',
-    updateTime: '11.28',
-    status: 'draft',
-    image: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+// 获取完整URL
+const getFullUrl = (path) => {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
   }
-])
-
-const currentDesigns = computed(() => {
-  if (currentSpace.value === 'all') {
-    return designs.value
+  // 拼接基础URL（使用request.js中的BASE_URL）
+  if (path.startsWith('/')) {
+    return BASE_URL + path
   }
-  return designs.value.filter(d => d.space === currentSpace.value)
-})
+  return BASE_URL + '/' + path
+}
 
-// 用于查看器的图片列表
-const viewerImages = computed(() => currentDesigns.value)
+// 加载房间列表
+const loadRooms = async () => {
+  if (!currentProjectId.value) {
+    rooms.value = []
+    return
+  }
+  
+  loading.value = true
+  try {
+    // request.js 的响应拦截器会返回 data.data，所以这里直接是数组
+    const data = await getProjectRooms(currentProjectId.value)
+    rooms.value = data || []
+  } catch (error) {
+    console.error('加载房间列表失败:', error)
+    rooms.value = []
+    // 错误提示已在request.js中处理
+  } finally {
+    loading.value = false
+  }
+}
+
+// 打开房间查看设计图
+const openRoom = (room) => {
+  if (!room.images || room.images.length === 0) {
+    uni.showToast({
+      title: '该房间暂无设计图',
+      icon: 'none'
+    })
+    return
+  }
+  
+  currentViewRoom.value = room
+  // 转换为查看器需要的格式
+  viewerImages.value = room.images.map((url, index) => ({
+    url: getFullUrl(url),
+    name: `${room.roomName} - 设计图${index + 1}`
+  }))
+  viewerIndex.value = 0
+  viewerVisible.value = true
+}
 
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
@@ -159,30 +183,23 @@ onMounted(() => {
   })
 })
 
-const switchSpace = (key) => {
-  currentSpace.value = key
-}
+// 页面显示时加载数据
+onShow(() => {
+  loadRooms()
+})
 
-const getStatusText = (status) => {
-  const map = {
-    confirmed: '已确认',
-    reviewing: '待确认',
-    draft: '草稿'
+// 监听项目切换
+watch(currentProjectId, (newId, oldId) => {
+  if (newId !== oldId) {
+    loadRooms()
   }
-  return map[status] || ''
-}
-
-const openViewer = (index) => {
-  viewerIndex.value = index
-  viewerVisible.value = true
-}
-
+})
 
 // 监听返回键
 onBackPress((e) => {
   if (viewerVisible.value) {
     viewerVisible.value = false
-    return true // 阻止默认返回
+    return true
   }
 })
 </script>
@@ -190,6 +207,7 @@ onBackPress((e) => {
 <style lang="scss" scoped>
 .design-page {
   min-height: 100vh;
+  background: $glass-bg;
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -210,106 +228,32 @@ onBackPress((e) => {
 }
 
 .page-title {
+  display: block;
   font-size: 36rpx;
   font-weight: 600;
   color: $glass-text-main;
 }
 
-// 空间分类
-.space-tabs {
-  padding: 0 48rpx 24rpx;
-}
-
-.tabs-scroll {
-  white-space: nowrap;
-}
-
-.tabs-container {
-  display: inline-flex;
-  gap: 24rpx;
-}
-
-.tab-item {
-  padding: 16rpx 32rpx;
-  border-radius: 100rpx;
-  background: white;
+.project-name {
+  display: block;
+  font-size: 24rpx;
   color: $glass-text-muted;
-  font-size: 28rpx;
-  flex-shrink: 0;
-  
-  &.active {
-    background: $glass-accent;
-    color: white;
-  }
+  margin-top: 8rpx;
 }
 
-// 设计图展示
-.design-gallery {
-  padding: 0 48rpx;
-}
-
-.design-card {
-  background: white;
-  border-radius: 32rpx;
-  overflow: hidden;
-  margin-bottom: 32rpx;
-  box-shadow: $shadow-card;
-}
-
-.design-image {
-  width: 100%;
-  height: 400rpx;
-}
-
-.design-info {
-  padding: 24rpx 24rpx 0;
+// 加载状态
+.loading-state {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
 }
 
-.design-name {
-  font-weight: 600;
-  font-size: 32rpx;
-  color: $glass-text-main;
-}
-
-.design-version {
-  font-size: 24rpx;
+.loading-text {
+  margin-top: 24rpx;
+  font-size: 28rpx;
   color: $glass-text-muted;
-  background: $glass-bg;
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-}
-
-.design-meta {
-  padding: 16rpx 24rpx 24rpx;
-}
-
-.design-date {
-  font-size: 24rpx;
-  color: $glass-text-muted;
-}
-
-.design-status {
-  font-size: 24rpx;
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-  
-  &.confirmed {
-    background: rgba(0, 194, 178, 0.1);
-    color: $glass-success;
-  }
-  
-  &.reviewing {
-    background: rgba(255, 176, 32, 0.1);
-    color: $glass-warning;
-  }
-  
-  &.draft {
-    background: $glass-bg;
-    color: $glass-text-muted;
-  }
 }
 
 // 空状态
@@ -318,12 +262,138 @@ onBackPress((e) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 100rpx;
+  padding: 200rpx 48rpx;
 }
 
 .empty-text {
-  margin-top: 24rpx;
-  font-size: 28rpx;
+  margin-top: 32rpx;
+  font-size: 32rpx;
+  color: $glass-text-main;
+}
+
+.empty-tip {
+  margin-top: 16rpx;
+  font-size: 26rpx;
   color: $glass-text-muted;
+}
+
+// 房间列表
+.room-list {
+  padding: 24rpx 32rpx;
+}
+
+.room-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: $shadow-card;
+  
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+}
+
+// 房间封面
+.room-cover {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cover-image {
+  width: 100%;
+  height: 100%;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.image-count {
+  position: absolute;
+  bottom: 8rpx;
+  right: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  
+  text {
+    font-size: 22rpx;
+    color: #fff;
+  }
+}
+
+// 房间信息
+.room-info {
+  flex: 1;
+  margin-left: 24rpx;
+  overflow: hidden;
+}
+
+.room-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.room-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $glass-text-main;
+}
+
+.room-type-tag {
+  font-size: 22rpx;
+  color: $glass-accent;
+  background: rgba(201, 176, 212, 0.15);
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+.room-meta {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.meta-item {
+  font-size: 24rpx;
+  color: $glass-text-muted;
+}
+
+.room-desc {
+  display: block;
+  font-size: 24rpx;
+  color: $glass-text-muted;
+  margin-top: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 箭头
+.room-arrow {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+// TabBar占位
+.tab-bar-placeholder {
+  height: 120rpx;
 }
 </style>

@@ -251,4 +251,7 @@ export const del = (url, data, options = {}) => {
   return request({ url, method: 'DELETE', data, ...options })
 }
 
+// 导出BASE_URL供其他模块使用
+export { BASE_URL }
+
 export default request

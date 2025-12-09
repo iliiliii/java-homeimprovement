@@ -194,9 +194,10 @@ export const useUserStore = defineStore('user', () => {
   }
   
   /**
-   * 登出
+   * 登出 - 清空所有缓存
    */
   const logout = () => {
+    // 重置所有状态
     token.value = ''
     refreshToken.value = ''
     userType.value = ''
@@ -210,17 +211,22 @@ export const useUserStore = defineStore('user', () => {
     projects.value = []
     currentProjectId.value = ''
     
-    // 清除本地存储
-    uni.removeStorageSync('token')
-    uni.removeStorageSync('refreshToken')
-    uni.removeStorageSync('userType')
-    uni.removeStorageSync('userId')
-    uni.removeStorageSync('userInfo')
-    uni.removeStorageSync('projects')
-    uni.removeStorageSync('currentProjectId')
+    // 清除所有本地存储（包括可能遗漏的缓存）
+    try {
+      uni.clearStorageSync()
+    } catch (e) {
+      // 如果clearStorageSync失败，逐个清除
+      uni.removeStorageSync('token')
+      uni.removeStorageSync('refreshToken')
+      uni.removeStorageSync('userType')
+      uni.removeStorageSync('userId')
+      uni.removeStorageSync('userInfo')
+      uni.removeStorageSync('projects')
+      uni.removeStorageSync('currentProjectId')
+    }
     
-    // 跳转登录页
-    uni.reLaunch({ url: '/pages/login/index' })
+    // 跳转登录页（注意：登录页是index-new）
+    uni.reLaunch({ url: '/pages/login/index-new' })
   }
   
   return {

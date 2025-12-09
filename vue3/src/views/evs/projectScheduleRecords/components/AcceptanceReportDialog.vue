@@ -30,27 +30,21 @@
       </el-form-item>
       <el-form-item label="现场照片" prop="images">
         <ImageUploadCard
-          ref="uploadRef"
-          v-model="acceptanceForm.images"
-          :upload-url="props.uploadUrl"
-          :upload-headers="{
-            Authorization: 'Bearer ' + userStore.token
-          }"
-          tip-text="(最多20张，支持多选)"
+          v-model="imagesFileList"
+          v-bind="getUploadProps()"
           @success="handleUploadSuccess"
           @error="handleUploadError"
           @upload-status-change="handleUploadStatusChange"
         />
         <!-- 上传状态提示 -->
-        <div v-if="uploadStatus.totalFiles > 0" class="upload-status-tip">
-          <el-tag
-              :type="uploadStatus.isAllUploaded ? 'success' : 'warning'"
-              size="small"
-          >
-            <el-icon><Check v-if="uploadStatus.isAllUploaded" /><Loading v-else /></el-icon>
-            {{ uploadStatus.isAllUploaded ? '图片上传完成' : `正在上传图片 (${uploadStatus.uploadedFiles}/${uploadStatus.totalFiles})` }}
+        <div v-if="getStatusTip().show" class="upload-status-tip">
+          <el-tag :type="getStatusTip().type" size="small">
+            <el-icon><Loading v-if="!uploadStatus.isAllUploaded" /><Check v-else /></el-icon>
+            {{ getStatusTip().message }}
           </el-tag>
-          <span v-if="!uploadStatus.isAllUploaded" class="upload-hint">请等待图片上传完成后再提交</span>
+          <span v-if="!uploadStatus.isAllUploaded && uploadStatus.totalFiles > 0" class="upload-hint">
+            请等待图片上传完成后再提交
+          </span>
         </div>
       </el-form-item>
       <el-form-item label="验收结果" prop="result" required>
@@ -81,9 +75,8 @@
         <el-button @click="$emit('update:visible', false)">取 消</el-button>
         <el-button
           type="primary"
-          @click="handleSubmit"
-          :loading="saving"
-          :disabled="!uploadStatus.isAllUploaded"
+          @click="handleAcceptanceSubmit"
+          v-bind="getButtonProps(isEdit ? '更新验收' : '提交验收')"
         >
           {{ isEdit ? '更新验收' : '提交验收' }}
         </el-button>
@@ -96,6 +89,7 @@
 import { onMounted, watch } from 'vue'
 import useUserStore from '@/store/modules/user'
 import { listProjectScheduleRecords } from "@/api/evs/projectScheduleRecords"
+import { useUploadManager, uploadPresets } from '@/composables/useUploadManager'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
 import { Check, Loading } from '@element-plus/icons-vue'
 
@@ -134,12 +128,26 @@ const userStore = useUserStore()
 const { decoration_construction_stage } = proxy.useDict('decoration_construction_stage')
 
 const saving = ref(false)
-const uploadRef = ref(null)
-const uploadStatus = ref({
-  isAllUploaded: true,
-  totalFiles: 0,
-  uploadedFiles: 0
-})
+
+// 现场照片上传状态
+const imagesFileList = ref([])
+
+// 初始化上传管理Hook - 使用验收预设配置
+const {
+  uploadStatus,
+  submitting,
+  uploadRef,
+  isSubmitDisabled,
+  handleSubmit,
+  extractImageUrls,
+  handleUploadStatusChange,
+  handleUploadSuccess,
+  handleUploadError,
+  reset,
+  getUploadProps,
+  getButtonProps,
+  getStatusTip
+} = useUploadManager(uploadPresets.acceptance)
 const acceptanceForm = ref({
   title: '',
   content: '',
@@ -284,6 +292,10 @@ watch(() => props.visible, async (newVal) => {
         acceptanceTime: defaultTime,              // 验收时间
         acceptor: userStore.nickName || userStore.name || ''  // 默认验收人为当前登录用户昵称
       }
+      // 重置图片上传状态
+      imagesFileList.value = []
+      // 重置上传管理器状态
+      reset()
     } catch (error) {
       console.error('初始化验收表单失败:', error)
       proxy.$modal.msgError('初始化表单失败，请重试')
@@ -322,35 +334,21 @@ watch(() => [props.visible, props.isEdit, props.editRecord], async ([visible, is
       acceptanceForm.value = {
         title: editRecord.acceptanceTitle || '',
         content: editRecord.acceptanceContent || '',
-        images: images.map((img, index) => {
-          // 确保图片URL格式正确
-          let imageUrl = ''
-          const baseUrl = import.meta.env.VITE_APP_BASE_API
-
-          if (img.startsWith('http')) {
-            // 完整URL直接使用
-            imageUrl = img
-          } else if (img.startsWith(baseUrl)) {
-            // 已包含baseUrl的路径直接使用
-            imageUrl = img
-          } else {
-            // 纯粹的相对路径需要拼接baseUrl
-            let path = img
-            if (!path.startsWith('/')) {
-              path = '/' + path
-            }
-            const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
-            imageUrl = cleanBaseUrl + path
-          }
-          return {
-            uid: `edit-${index}`,
-            name: `image-${index}.jpg`,
-            url: imageUrl
-          }
-        }),
+        images: images,
         result: editRecord.acceptanceResult || 'QUALIFIED',
         acceptanceTime: editRecord.acceptanceTime || '',
         acceptor: editRecord.acceptor || ''
+      }
+
+      // 处理编辑模式下的图片回显
+      if (images.length > 0) {
+        imagesFileList.value = uploadRef.value?.parseFileIdsToList?.(images) ||
+          images.map((url, index) => ({
+            uid: `existing-${index}`,
+            name: `image-${index}.jpg`,
+            url: url.startsWith('http') ? url : (import.meta.env.VITE_APP_BASE_API + url),
+            status: 'success'
+          }))
       }
       console.log('表单数据已预填充', acceptanceForm.value)
     } catch (error) {
@@ -360,39 +358,18 @@ watch(() => [props.visible, props.isEdit, props.editRecord], async ([visible, is
   }
 }, { immediate: true })
 
-/** 上传成功回调 - 优化版本 */
-function handleUploadSuccess({ file, response }) {
+/** 格式化图片数据 */
+function formatImagesData() {
   try {
-    // 新组件已经处理了URL设置和成功提示
-    console.log('验收记录图片上传成功:', { file, response })
+    // 从图片上传组件提取URL数组
+    const uploadedImages = extractImageUrls(imagesFileList.value)
 
-    // 可以在这里添加特殊的业务逻辑，如记录日志等
-    // 例如：统计上传成功的图片数量、验证图片格式等
-
+    // 返回JSON字符串格式，保持与后端的兼容性
+    return uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : '[]'
   } catch (error) {
-    console.error('验收记录图片上传回调处理失败:', error)
-    // 不需要显示错误提示，因为组件已经处理了
+    console.error('格式化图片数据失败:', error)
+    return '[]'
   }
-}
-
-/** 上传失败回调 - 优化版本 */
-function handleUploadError({ file, message }) {
-  try {
-    // 新组件已经处理了错误提示和文件移除
-    console.error('验收记录图片上传失败:', { file, message })
-
-    // 可以在这里添加特殊的业务逻辑，如记录错误日志等
-    // 例如：统计失败次数、分析失败原因等
-
-  } catch (error) {
-    console.error('验收记录图片上传错误回调处理失败:', error)
-  }
-}
-
-/** 上传状态变化回调 */
-function handleUploadStatusChange(status) {
-  uploadStatus.value = status
-  console.log('上传状态变化:', status)
 }
 
 /** 业务逻辑验证 */
@@ -434,52 +411,29 @@ function validateBusinessLogic() {
   return true
 }
 
-/** 网络和服务器状态检查 */
-function checkNetworkAndServerStatus() {
-  // 检查网络连接
-  if (!navigator.onLine) {
-    proxy.$modal.msgError('网络连接已断开，请检查网络后重试')
-    return false
-  }
 
-  // 检查用户认证状态
-  const token = localStorage.getItem('token') || userStore.token
-  if (!token) {
-    proxy.$modal.msgError('用户认证已失效，请重新登录')
-    return false
-  }
-
-  return true
-}
-
-/** 提交验收 - 重构为自管理API调用 */
-async function handleSubmit() {
-  // 表单验证
-  try {
+/** 提交验收 - 集成Hook统一处理 */
+async function handleAcceptanceSubmit() {
+  // 使用统一的提交处理逻辑，但保留业务验证
+  handleSubmit(async () => {
+    // 表单验证
     const valid = await new Promise((resolve) => {
-      proxy.$refs.acceptanceFormRef.validate(resolve)
+      proxy.$refs.acceptanceFormRef.validate((valid) => {
+        resolve(valid)
+      })
     })
-    if (!valid) return
+
+    if (!valid) {
+      throw new Error('表单验证失败')
+    }
 
     // 业务逻辑验证
     if (!validateBusinessLogic()) {
-      return
+      throw new Error('业务逻辑验证失败')
     }
 
     if (!props.project || !props.scheduleItem) {
-      proxy.$modal.msgError('数据错误')
-      return
-    }
-
-    // 检查图片上传状态
-    if (!uploadStatus.value.isAllUploaded) {
-      proxy.$modal.msgWarning('请等待图片上传完成后再提交')
-      return
-    }
-
-    // 网络和认证状态检查
-    if (!checkNetworkAndServerStatus()) {
-      return
+      throw new Error('数据错误')
     }
 
     // 设置loading状态
@@ -495,7 +449,7 @@ async function handleSubmit() {
       projectId: props.project.id,
       scheduleId: props.scheduleItem.id,
       recordType: 'ACCEPTANCE',
-      images: JSON.stringify(uploadRef.value?.extractImageUrls(acceptanceForm.value.images) || []),
+      images: formatImagesData(),
       acceptanceTitle: acceptanceForm.value.title,
       acceptanceContent: acceptanceForm.value.content,
       acceptanceResult: acceptanceForm.value.result,
@@ -513,13 +467,14 @@ async function handleSubmit() {
     // 根据编辑模式调用不同的API
     const { addProjectScheduleRecords, updateProjectScheduleRecords } = await import('@/api/evs/projectScheduleRecords')
 
+    let result
     if (props.isEdit) {
       // 编辑模式：调用更新API
-      await updateProjectScheduleRecords(recordData)
+      result = await updateProjectScheduleRecords(recordData)
       console.log('编辑模式：调用更新API')
     } else {
       // 新增模式：调用新增API
-      await addProjectScheduleRecords(recordData)
+      result = await addProjectScheduleRecords(recordData)
       console.log('新增模式：调用新增API')
     }
 
@@ -528,13 +483,16 @@ async function handleSubmit() {
     const apiDuration = apiEndTime - apiStartTime
     console.log(`API调用成功，耗时: ${apiDuration}ms`)
 
+    return result
+  }).then((result) => {
     // 成功处理
     if (props.isEdit) {
       proxy.$modal.msgSuccess('验收记录更新成功')
     } else {
       proxy.$modal.msgSuccess('验收上报成功')
     }
-    emit('success', recordData)
+
+    emit('success', result)
 
     // 重置loading状态
     saving.value = false
@@ -544,25 +502,15 @@ async function handleSubmit() {
     emit('update:visible', false)
 
     console.log('验收提交成功，loading状态已重置，对话框已关闭')
-
-  } catch (error) {
-    // 统一错误处理
+  }).catch((error) => {
+    // 统一错误处理（Hook已处理错误提示，这里只处理业务逻辑）
     console.error('提交验收数据时出错:', error)
 
     // 重置loading状态
     saving.value = false
     emit('loading-change', false)
     emit('error', error)
-
-    // 显示错误信息
-    if (error.response?.status === 401) {
-      proxy.$modal.msgError('用户认证已失效，请重新登录')
-    } else if (error.response?.status >= 500) {
-      proxy.$modal.msgError('服务器错误，请稍后重试')
-    } else {
-      proxy.$modal.msgError(error.message || error.msg || '提交失败，请重试')
-    }
-  }
+  })
 }
 
 // 组件初始化
