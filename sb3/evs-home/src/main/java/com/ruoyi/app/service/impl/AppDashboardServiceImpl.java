@@ -10,6 +10,7 @@ import com.ruoyi.web.domain.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,6 +25,9 @@ import java.util.stream.Collectors;
 public class AppDashboardServiceImpl implements IAppDashboardService {
 
     private static final Logger log = LoggerFactory.getLogger(AppDashboardServiceImpl.class);
+
+    @Value("${ruoyi.profile:}")
+    private String uploadPath;
 
     @Autowired
     private AppTokenManager tokenManager;
@@ -48,14 +52,15 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         STAGE_TEXT_MAP.put("ACCEPTANCE", "验收阶段");
     }
 
-    // 状态名称映射
-    private static final Map<String, String> STATUS_TEXT_MAP = new HashMap<>();
+    // 项目状态字典类型
+    private static final String DICT_TYPE_PROJECT_STATUS = "decoration_project_status";
+    
+    // 进度状态映射（通用状态，不需要从字典表查询）
+    private static final Map<String, String> SCHEDULE_STATUS_MAP = new HashMap<>();
     static {
-        STATUS_TEXT_MAP.put("PENDING", "待开始");
-        STATUS_TEXT_MAP.put("IN_PROGRESS", "进行中");
-        STATUS_TEXT_MAP.put("COMPLETED", "已完成");
-        STATUS_TEXT_MAP.put("DESIGN", "设计中");
-        STATUS_TEXT_MAP.put("CONSTRUCTION", "施工中");
+        SCHEDULE_STATUS_MAP.put("PENDING", "待开始");
+        SCHEDULE_STATUS_MAP.put("IN_PROGRESS", "进行中");
+        SCHEDULE_STATUS_MAP.put("COMPLETED", "已完成");
     }
 
     // 角色名称映射
@@ -65,6 +70,23 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         ROLE_TEXT_MAP.put("PM", "项目经理");
         ROLE_TEXT_MAP.put("WORKER", "工长");
         ROLE_TEXT_MAP.put("SUPERVISOR", "监理");
+    }
+
+    // 房间类型映射
+    private static final Map<String, String> ROOM_TYPE_MAP = new HashMap<>();
+    static {
+        ROOM_TYPE_MAP.put("LIVING_ROOM", "客厅");
+        ROOM_TYPE_MAP.put("BEDROOM", "卧室");
+        ROOM_TYPE_MAP.put("KITCHEN", "厨房");
+        ROOM_TYPE_MAP.put("BATHROOM", "卫生间");
+        ROOM_TYPE_MAP.put("STUDY", "书房");
+        ROOM_TYPE_MAP.put("DINING_ROOM", "餐厅");
+        ROOM_TYPE_MAP.put("BALCONY", "阳台");
+        ROOM_TYPE_MAP.put("CHILDREN_ROOM", "儿童房");
+        ROOM_TYPE_MAP.put("ELDER_ROOM", "老人房");
+        ROOM_TYPE_MAP.put("CLOAKROOM", "衣帽间");
+        ROOM_TYPE_MAP.put("STORAGE", "储物间");
+        ROOM_TYPE_MAP.put("OTHER", "其他");
     }
 
     @Override
@@ -81,11 +103,14 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         CustomerDashboardVO result = new CustomerDashboardVO();
         // 不再返回用户信息，前端使用登录时缓存的数据
 
-        // 获取客户关联的项目列表（使用带字典的查询）
+        // 获取客户关联的项目列表
         List<CustomerProjectVO> projectVOs = dashboardMapper.selectCustomerProjects(userId);
         
         // 补充项目详细信息
         for (CustomerProjectVO vo : projectVOs) {
+            // 从字典表获取状态文本
+            vo.setStatusText(getProjectStatusText(vo.getStatus()));
+            
             // 获取当前阶段
             ProjectSchedules currentSchedule = dashboardMapper.selectCurrentSchedule(vo.getId());
             if (currentSchedule != null) {
@@ -132,8 +157,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         // 验证Token并获取用户信息
         Map<String, Object> claims = tokenManager.validateToken(extractToken(token));
         String userType = (String) claims.get("userType");
-        String odUserId = claims.get("userId").toString();
-        Long userId = Long.parseLong(odUserId);
+        String userId = claims.get("userId").toString();
 
         if (!"staff".equals(userType)) {
             throw new ServiceException("非员工用户无法访问此接口");
@@ -142,11 +166,14 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         StaffDashboardVO result = new StaffDashboardVO();
         // 不再返回用户信息，前端使用登录时缓存的数据
 
-        // 获取员工关联的项目列表（使用带字典的查询）
+        // 获取员工关联的项目列表
         List<StaffProjectVO> projectVOs = dashboardMapper.selectStaffProjectsWithDict(userId);
         
         // 补充项目详细信息
         for (StaffProjectVO vo : projectVOs) {
+            // 从字典表获取状态文本
+            vo.setStatusText(getProjectStatusText(vo.getStatus()));
+            
             // 获取当前阶段
             ProjectSchedules currentSchedule = dashboardMapper.selectCurrentSchedule(vo.getId());
             if (currentSchedule != null) {
@@ -158,8 +185,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             int issueCount = dashboardMapper.countPendingIssues(vo.getId());
             vo.setPendingIssueCount(issueCount);
             
-            // 设置状态文本
-            vo.setStatusText(STATUS_TEXT_MAP.getOrDefault(vo.getStatus(), vo.getStatus()));
+            // 设置角色文本
             vo.setMyRoleText(ROLE_TEXT_MAP.getOrDefault(vo.getMyRole(), vo.getMyRole()));
         }
         result.setProjects(projectVOs);
@@ -190,7 +216,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         result.setAddress(project.getAddress());
         result.setArea(project.getArea());
         result.setStatus(project.getStatus());
-        result.setStatusText(STATUS_TEXT_MAP.getOrDefault(project.getStatus(), project.getStatus()));
+        result.setStatusText(getProjectStatusText(project.getStatus()));
         result.setStartDate(project.getStartDate());
         result.setEndDate(project.getEndDate());
         result.setBudget(project.getBudget());
@@ -235,7 +261,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             vo.setActualStartDate(s.getActualStartDate());
             vo.setActualEndDate(s.getActualEndDate());
             vo.setStatus(s.getStatus());
-            vo.setStatusText(STATUS_TEXT_MAP.getOrDefault(s.getStatus(), s.getStatus()));
+            vo.setStatusText(SCHEDULE_STATUS_MAP.getOrDefault(s.getStatus(), s.getStatus()));
             vo.setCompletionRate(s.getCompletionRate());
             vo.setDescription(s.getDescription());
             return vo;
@@ -260,6 +286,17 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
 
     // ==================== 私有方法 ====================
 
+    /**
+     * 从字典表获取项目状态文本
+     */
+    private String getProjectStatusText(String status) {
+        if (status == null || status.isEmpty()) {
+            return status;
+        }
+        String label = dashboardMapper.selectDictLabel(DICT_TYPE_PROJECT_STATUS, status);
+        return label != null ? label : status;
+    }
+
     private String extractToken(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
@@ -279,7 +316,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
                 throw new ServiceException("无权访问该项目");
             }
         } else if ("staff".equals(userType)) {
-            boolean hasAccess = dashboardMapper.checkStaffProjectAccess(Long.parseLong(userId), projectId);
+            boolean hasAccess = dashboardMapper.checkStaffProjectAccess(userId, projectId);
             if (!hasAccess) {
                 throw new ServiceException("无权访问该项目");
             }
@@ -299,19 +336,19 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         vo.setName(project.getName());
         vo.setAddress(project.getAddress());
         vo.setArea(project.getArea());
-        vo.setStatus(project.getStatus());
+        String status = project.getStatus();
+        vo.setStatus(status);
         vo.setEndDate(project.getEndDate());
 
-        // 设置状态文本和卡片类型
-        String status = project.getStatus();
+        // 从字典表获取状态文本
+        vo.setStatusText(getProjectStatusText(status));
+        
+        // 设置卡片类型
         if ("DESIGN".equals(status)) {
-            vo.setStatusText("设计中");
             vo.setCardType("design");
         } else if ("COMPLETED".equals(status)) {
-            vo.setStatusText("已完工");
             vo.setCardType("completed");
         } else {
-            vo.setStatusText("施工中");
             vo.setCardType("construction");
         }
 
@@ -488,5 +525,72 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             log.warn("解析JSON数组失败: {}", json);
         }
         return new ArrayList<>();
+    }
+
+    @Override
+    public List<RoomVO> getProjectRooms(String token, String projectId) {
+        validateTokenAndAccess(token, projectId);
+
+        List<Map<String, Object>> rooms = dashboardMapper.selectProjectRooms(projectId);
+        List<RoomVO> result = new ArrayList<>();
+
+        for (Map<String, Object> room : rooms) {
+            RoomVO vo = new RoomVO();
+            vo.setId((String) room.get("id"));
+            vo.setRoomName((String) room.get("roomName"));
+            
+            String roomType = (String) room.get("roomType");
+            vo.setRoomType(roomType);
+            vo.setRoomTypeText(ROOM_TYPE_MAP.getOrDefault(roomType, roomType));
+            
+            Object areaObj = room.get("area");
+            if (areaObj != null) {
+                vo.setArea(new BigDecimal(areaObj.toString()));
+            }
+            
+            vo.setDescription((String) room.get("description"));
+            vo.setFloor((String) room.get("floor"));
+
+            // 解析fileIds获取图片列表
+            String fileIds = (String) room.get("fileIds");
+            List<String> images = parseFileIdsToUrls(fileIds);
+            vo.setImages(images);
+            vo.setImageCount(images.size());
+
+            result.add(vo);
+        }
+
+        return result;
+    }
+
+    /**
+     * 解析fileIds JSON字符串为完整URL列表
+     */
+    private List<String> parseFileIdsToUrls(String fileIds) {
+        if (fileIds == null || fileIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> paths = parseJsonArray(fileIds);
+        List<String> urls = new ArrayList<>();
+
+        for (String path : paths) {
+            if (path == null || path.isEmpty()) {
+                continue;
+            }
+            // 如果已经是完整URL，直接使用
+            if (path.startsWith("http://") || path.startsWith("https://")) {
+                urls.add(path);
+            } else {
+                // 相对路径，需要拼接前缀
+                // 路径格式通常是 profile/upload/xxx.jpg
+                if (!path.startsWith("/")) {
+                    path = "/" + path;
+                }
+                urls.add(path);
+            }
+        }
+
+        return urls;
     }
 }

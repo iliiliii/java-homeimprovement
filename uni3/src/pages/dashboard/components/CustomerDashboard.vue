@@ -8,54 +8,56 @@
           <text class="project-name" v-if="currentProject">
             {{ currentProject.name }} · {{ currentProject.area }}㎡
           </text>
-          <text class="project-status">{{ currentProject?.statusText || '暂无项目' }}</text>
+          <text class="project-status" :class="getCardTypeClass(currentProject)">
+            {{ currentProject?.statusText || '暂无项目' }}
+          </text>
         </view>
       </view>
       
       <!-- 项目卡片滑动区域 -->
       <view class="project-cards-section" v-if="projects.length > 0">
-        <view class="swipe-hint" v-if="projects.length > 1">
-          <text>← 左右滑动切换项目 →</text>
-        </view>
-        <scroll-view 
-          scroll-x 
-          class="project-cards-scroll"
-          :scroll-left="scrollLeft"
-          @scroll="onScroll"
-          @scrollend="onScrollEnd"
-          scroll-with-animation
-          :enhanced="true"
-          :show-scrollbar="false"
+        <!-- 使用touch事件实现带回弹的滑动 -->
+        <view 
+          class="project-cards-wrapper"
+          @touchstart="onTouchStart"
+          @touchmove="onTouchMove"
+          @touchend="onTouchEnd"
         >
-          <view class="project-cards-container">
+          <view 
+            class="project-cards-container"
+            :style="{ 
+              transform: `translateX(${translateX}px)`,
+              transition: isAnimating ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none'
+            }"
+          >
             <view 
               class="project-card"
-              :class="[project.cardType, { active: index === currentIndex }]"
+              :class="[getCardTypeClass(project), { active: index === currentIndex }]"
               v-for="(project, index) in projects"
               :key="project.id"
-              @click="$emit('switch-project', index)"
+              @click="handleCardClick(index)"
             >
               <view class="card-header">
                 <text class="card-name">{{ project.name }}</text>
-                <view class="card-status" :class="project.cardType">
+                <view class="card-status" :class="getCardTypeClass(project)">
                   {{ project.statusText }}
                 </view>
               </view>
               <view class="card-stage">
-                <text>当前阶段: {{ project.currentStageText }}</text>
+                <text>当前阶段: {{ project.currentStageText || '设计阶段' }}</text>
               </view>
               <view class="card-progress">
                 <view class="progress-bar">
-                  <view class="progress-fill" :style="{ width: project.progressPercent + '%' }"></view>
+                  <view class="progress-fill" :style="{ width: (project.progressPercent || 0) + '%' }"></view>
                 </view>
                 <view class="progress-info">
-                  <text>进度 {{ project.progressPercent }}%</text>
+                  <text>进度 {{ project.progressPercent || 0 }}%</text>
                   <text v-if="project.nextMilestone">预计 {{ project.nextMilestone }} 完工</text>
                 </view>
               </view>
             </view>
           </view>
-        </scroll-view>
+        </view>
         
         <!-- 指示器 -->
         <view class="card-indicators" v-if="projects.length > 1">
@@ -64,6 +66,7 @@
             :class="{ active: index === currentIndex }"
             v-for="(_, index) in projects"
             :key="index"
+            @click="scrollToCard(index)"
           ></view>
         </view>
       </view>
@@ -74,11 +77,11 @@
       </view>
     </view>
     
-    <!-- 头部占位 -->
-    <view :style="{ height: headerHeight + 'px' }"></view>
+    <!-- 头部占位 - 确保内容不被固定头部覆盖 -->
+    <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
     
     <!-- 可滚动内容区域 -->
-    <view class="scroll-content">
+    <view class="scroll-content" v-if="projects.length > 0">
       <!-- 功能菜单 -->
       <view class="menu-section">
         <view class="menu-grid">
@@ -121,7 +124,7 @@
           </view>
         </view>
       </view>
-      
+
       <!-- 设计方案展示（设计阶段） -->
       <view v-if="isDesignPhase" class="content-section">
         <text class="section-title">设计方案</text>
@@ -167,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, nextTick, watch, getCurrentInstance } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
 
@@ -190,8 +193,13 @@ const emit = defineEmits(['switch-project', 'navigate'])
 
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
-const scrollLeft = ref(0)
 const currentIndex = ref(0)
+
+// 滑动相关状态
+const translateX = ref(0)
+const isAnimating = ref(false)
+const touchStartX = ref(0)
+const touchStartTranslateX = ref(0)
 
 // 计算当前是否设计阶段
 const isDesignPhase = computed(() => {
@@ -199,57 +207,130 @@ const isDesignPhase = computed(() => {
          props.currentProject?.currentStage === 'DESIGN'
 })
 
+// 根据状态获取卡片类型样式
+const getCardTypeClass = (project) => {
+  const status = project?.status?.toUpperCase()
+  if (status === 'DESIGN') return 'design'
+  if (status === 'COMPLETED') return 'completed'
+  if (status === 'PENDING') return 'pending'
+  return 'construction'
+}
+
 // 监听currentProject变化，更新currentIndex
 watch(() => props.currentProject, (newVal) => {
   if (newVal && props.projects.length > 0) {
     const index = props.projects.findIndex(p => p.id === newVal.id)
-    if (index >= 0) {
+    if (index >= 0 && index !== currentIndex.value) {
       currentIndex.value = index
+      scrollToCard(index)
     }
   }
 }, { immediate: true })
 
+// 监听projects变化，重新计算位置和高度
+watch(() => props.projects, () => {
+  nextTick(() => {
+    scrollToCard(currentIndex.value)
+    updateHeaderHeight()
+  })
+}, { deep: true })
+
+// 更新header高度
+const updateHeaderHeight = () => {
+  const query = uni.createSelectorQuery().in(getCurrentInstance())
+  query.select('.fixed-header').boundingClientRect(rect => {
+    if (rect && rect.height > 0) {
+      // 增加额外间距确保内容不被遮挡
+      headerHeight.value = rect.height + 32
+      console.log('[CustomerDashboard] headerHeight:', headerHeight.value, 'rect.height:', rect.height)
+    }
+  }).exec()
+}
+
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
-  nextTick(() => {
-    const query = uni.createSelectorQuery()
-    query.select('.fixed-header').boundingClientRect(rect => {
-      if (rect) {
-        headerHeight.value = rect.height
-      }
-    }).exec()
-  })
+  
+  // 根据状态栏高度预估一个初始值，避免闪烁
+  // 头部内容约 120rpx + 卡片区域约 320rpx + padding约 60rpx = 500rpx ≈ 250px + 状态栏
+  const screenWidth = uni.getSystemInfoSync().windowWidth
+  const estimatedHeight = (500 / 750) * screenWidth + statusBarHeight.value + 32
+  headerHeight.value = estimatedHeight
+  
+  // 多次尝试获取精确高度
+  setTimeout(updateHeaderHeight, 150)
+  setTimeout(updateHeaderHeight, 400)
+  setTimeout(updateHeaderHeight, 800)
 })
 
-// 滚动事件处理
-const onScroll = (e) => {
-  const scrollX = e.detail.scrollLeft
-  const cardWidth = 620 // 卡片宽度600 + 间距20
-  const newIndex = Math.round(scrollX / cardWidth)
-  if (newIndex !== currentIndex.value && newIndex >= 0 && newIndex < props.projects.length) {
-    currentIndex.value = newIndex
-    emit('switch-project', newIndex)
+// 获取实际卡片宽度（rpx转px）
+const getCardWidthPx = () => {
+  const screenWidth = uni.getSystemInfoSync().windowWidth
+  return (620 / 750) * screenWidth
+}
+
+// Touch事件处理 - 带回弹效果
+const onTouchStart = (e) => {
+  isAnimating.value = false
+  touchStartX.value = e.touches[0].clientX
+  touchStartTranslateX.value = translateX.value
+}
+
+const onTouchMove = (e) => {
+  const deltaX = e.touches[0].clientX - touchStartX.value
+  let newTranslateX = touchStartTranslateX.value + deltaX
+  
+  const cardWidthPx = getCardWidthPx()
+  const maxTranslate = 0
+  const minTranslate = -cardWidthPx * (props.projects.length - 1)
+  
+  // 添加阻尼效果
+  if (newTranslateX > maxTranslate) {
+    newTranslateX = maxTranslate + (newTranslateX - maxTranslate) * 0.3
+  } else if (newTranslateX < minTranslate) {
+    newTranslateX = minTranslate + (newTranslateX - minTranslate) * 0.3
+  }
+  
+  translateX.value = newTranslateX
+}
+
+const onTouchEnd = () => {
+  const cardWidthPx = getCardWidthPx()
+  const deltaX = translateX.value - touchStartTranslateX.value
+  
+  let targetIndex = currentIndex.value
+  if (Math.abs(deltaX) > cardWidthPx * 0.2) {
+    if (deltaX > 0 && currentIndex.value > 0) {
+      targetIndex = currentIndex.value - 1
+    } else if (deltaX < 0 && currentIndex.value < props.projects.length - 1) {
+      targetIndex = currentIndex.value + 1
+    }
+  }
+  
+  scrollToCard(targetIndex)
+  
+  if (targetIndex !== currentIndex.value) {
+    currentIndex.value = targetIndex
+    emit('switch-project', targetIndex)
   }
 }
 
 // 滚动到指定卡片
 const scrollToCard = (index) => {
-  const cardWidth = 620
-  scrollLeft.value = index * cardWidth
+  isAnimating.value = true
+  const cardWidthPx = getCardWidthPx()
+  translateX.value = -index * cardWidthPx
+  
+  setTimeout(() => {
+    isAnimating.value = false
+  }, 300)
 }
 
-// 滚动结束时自动对齐到最近的卡片
-const onScrollEnd = (e) => {
-  const scrollX = e.detail.scrollLeft
-  const cardWidth = 620
-  const targetIndex = Math.round(scrollX / cardWidth)
-  if (targetIndex >= 0 && targetIndex < props.projects.length) {
-    // 自动对齐
-    scrollLeft.value = targetIndex * cardWidth
-    if (targetIndex !== currentIndex.value) {
-      currentIndex.value = targetIndex
-      emit('switch-project', targetIndex)
-    }
+// 点击卡片
+const handleCardClick = (index) => {
+  if (index !== currentIndex.value) {
+    scrollToCard(index)
+    currentIndex.value = index
+    emit('switch-project', index)
   }
 }
 
@@ -272,6 +353,8 @@ const openDocLink = () => {
 <style lang="scss" scoped>
 .customer-dashboard {
   min-height: 100vh;
+  background: $glass-bg;
+  padding-bottom: 140rpx; // 为底部TabBar留出空间
 }
 
 // 固定头部
@@ -282,7 +365,7 @@ const openDocLink = () => {
   right: 0;
   z-index: 100;
   background: $glass-bg;
-  padding-bottom: 24rpx;
+  padding-bottom: 16rpx;
 }
 
 .header-content {
@@ -305,85 +388,64 @@ const openDocLink = () => {
     font-size: 40rpx;
     font-weight: 700;
     color: $glass-text-main;
+    
+    &.design { color: #7C3AED; }
+    &.construction { color: #2563EB; }
+    &.completed { color: #059669; }
+    &.pending { color: #6B7280; }
   }
 }
 
-// 滑动提示
-.swipe-hint {
-  text-align: center;
-  padding: 8rpx 0;
-  
-  text {
-    font-size: 22rpx;
-    color: $glass-text-muted;
-  }
+// 头部占位
+.header-placeholder {
+  width: 100%;
+  flex-shrink: 0;
 }
 
 // 项目卡片滑动区域
-.project-cards-scroll {
-  white-space: nowrap;
+.project-cards-wrapper {
+  overflow: hidden;
+  padding: 20rpx 0;
 }
 
 .project-cards-container {
-  display: inline-flex;
+  display: flex;
   gap: 20rpx;
-  padding: 16rpx 48rpx;
-  // 让第一个和最后一个卡片可以居中
-  &::before, &::after {
-    content: '';
-    flex-shrink: 0;
-    width: 28rpx;
-  }
+  padding: 0 calc((100vw - 600rpx) / 2);
+  will-change: transform;
 }
 
 .project-card {
   width: 600rpx;
+  min-width: 600rpx;
   padding: 32rpx;
   border-radius: 32rpx;
   flex-shrink: 0;
-  transition: all 0.3s ease;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
   
-  // 设计阶段 - 紫色
   &.design {
     background: linear-gradient(145deg, #F3E8FF 0%, #E9D5FF 100%);
-    
-    .progress-fill {
-      background: linear-gradient(90deg, #A855F7 0%, #7C3AED 100%);
-    }
-    
-    .card-status {
-      background: rgba(168, 85, 247, 0.15);
-      color: #7C3AED;
-    }
+    .progress-fill { background: linear-gradient(90deg, #A855F7 0%, #7C3AED 100%); }
+    .card-status { background: rgba(168, 85, 247, 0.15); color: #7C3AED; }
   }
   
-  // 施工阶段 - 蓝色
   &.construction {
     background: linear-gradient(145deg, #DBEAFE 0%, #BFDBFE 100%);
-    
-    .progress-fill {
-      background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%);
-    }
-    
-    .card-status {
-      background: rgba(59, 130, 246, 0.15);
-      color: #2563EB;
-    }
+    .progress-fill { background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%); }
+    .card-status { background: rgba(59, 130, 246, 0.15); color: #2563EB; }
   }
   
-  // 已完工 - 绿色
   &.completed {
     background: linear-gradient(145deg, #D1FAE5 0%, #A7F3D0 100%);
-    
-    .progress-fill {
-      background: linear-gradient(90deg, #10B981 0%, #059669 100%);
-    }
-    
-    .card-status {
-      background: rgba(16, 185, 129, 0.15);
-      color: #059669;
-    }
+    .progress-fill { background: linear-gradient(90deg, #10B981 0%, #059669 100%); }
+    .card-status { background: rgba(16, 185, 129, 0.15); color: #059669; }
+  }
+  
+  &.pending {
+    background: linear-gradient(145deg, #F3F4F6 0%, #E5E7EB 100%);
+    .progress-fill { background: linear-gradient(90deg, #9CA3AF 0%, #6B7280 100%); }
+    .card-status { background: rgba(107, 114, 128, 0.15); color: #6B7280; }
   }
   
   &.active {
@@ -421,10 +483,7 @@ const openDocLink = () => {
   font-size: 28rpx;
   color: #4B5563;
   margin-bottom: 24rpx;
-  
-  text {
-    opacity: 0.9;
-  }
+  text { opacity: 0.9; }
 }
 
 .card-progress {
@@ -455,7 +514,7 @@ const openDocLink = () => {
   display: flex;
   justify-content: center;
   gap: 12rpx;
-  margin-top: 16rpx;
+  margin-top: 6rpx;
 }
 
 .indicator {
@@ -476,22 +535,19 @@ const openDocLink = () => {
 .no-project {
   padding: 48rpx;
   text-align: center;
-  
-  text {
-    font-size: 28rpx;
-    color: $glass-text-muted;
-  }
+  text { font-size: 28rpx; color: $glass-text-muted; }
 }
 
 // 可滚动内容
 .scroll-content {
-  padding-top: 32rpx;
+  padding-top: 24rpx;
+  padding-bottom: 40rpx; // 减少这里的padding，因为父容器已经有padding-bottom
 }
 
 // 功能菜单
 .menu-section {
   padding: 0 48rpx;
-  margin-bottom: 48rpx;
+  margin-bottom: 32rpx;
 }
 
 .menu-grid {
@@ -530,12 +586,17 @@ const openDocLink = () => {
   margin-bottom: 48rpx;
 }
 
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $glass-text-main;
+  margin-bottom: 24rpx;
+}
+
 .section-header {
-  margin-bottom: 32rpx;
-  
-  .section-title {
-    margin-bottom: 0;
-  }
+  margin-bottom: 24rpx;
+  .section-title { margin-bottom: 0; }
 }
 
 .view-all {

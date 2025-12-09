@@ -198,4 +198,11 @@ const handleViewProject = (project) => {
   border-radius: 48rpx;
   font-size: 28rpx;
 }
+
+// 底部TabBar占位
+.tab-bar-placeholder {
+  height: 100rpx;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
 </style>

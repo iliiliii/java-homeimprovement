@@ -109,9 +109,7 @@
         SELECT id, original_name as originalName, path, url, 
                size, type, category, created_at as createdAt
         FROM file_uploads
-        WHERE category = #{projectId} 
-          AND type = 'DESIGN'
-          AND deleted_at IS NULL
+        WHERE category = #{projectId} AND type = 'DESIGN' AND deleted_at IS NULL
         ORDER BY created_at DESC
     </select>
 
@@ -127,7 +125,7 @@
         SELECT COUNT(DISTINCT pm.project_id)
         FROM project_members pm
         INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
-        WHERE pm.user_id = #{userId} 
+        WHERE pm.user_id = #{userId}
           AND pm.is_active = 1
           AND p.status IN ('DESIGN', 'IN_PROGRESS', 'CONSTRUCTION')
     </select>
@@ -137,7 +135,7 @@
         SELECT COUNT(*)
         FROM quality_issues qi
         INNER JOIN project_members pm ON qi.project_id = pm.project_id
-        WHERE pm.user_id = #{userId} 
+        WHERE pm.user_id = #{userId}
           AND pm.is_active = 1
           AND qi.status IN ('OPEN', 'IN_PROGRESS')
     </select>
@@ -168,7 +166,7 @@
         LIMIT 1
     </select>
 
-    <!-- 查询客户项目列表（带字典状态，使用COLLATE解决字符集冲突） -->
+    <!-- 查询客户项目列表（不联表查字典，在Java代码中处理状态文本） -->
     <select id="selectCustomerProjects" resultType="com.ruoyi.app.dto.response.CustomerProjectVO">
         SELECT 
             p.id,
@@ -176,17 +174,15 @@
             p.address,
             p.area,
             p.status,
-            COALESCE(d.dict_label, p.status) as statusText,
+            p.status as statusText,
             p.end_date as endDate,
             p.progress as progressPercent
         FROM projects p
-        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' 
-            AND d.dict_value COLLATE utf8mb4_unicode_ci = p.status COLLATE utf8mb4_unicode_ci
         WHERE p.customer_id = #{customerId} AND p.deleted_at IS NULL
         ORDER BY p.created_at DESC
     </select>
 
-    <!-- 查询员工项目列表（带字典状态，使用COLLATE解决字符集冲突） -->
+    <!-- 查询员工项目列表（不联表查字典，在Java代码中处理状态文本） -->
     <select id="selectStaffProjectsWithDict" resultType="com.ruoyi.app.dto.response.StaffProjectVO">
         SELECT 
             p.id,
@@ -195,17 +191,31 @@
             p.address,
             p.area,
             p.status,
-            COALESCE(d.dict_label, p.status) as statusText,
+            p.status as statusText,
             p.progress as progressPercent,
             pm.role as myRole,
             p.updated_at as lastUpdateTime
         FROM project_members pm
         INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
         LEFT JOIN customers c ON p.customer_id = c.id
-        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' 
-            AND d.dict_value COLLATE utf8mb4_unicode_ci = p.status COLLATE utf8mb4_unicode_ci
         WHERE pm.user_id = #{userId} AND pm.is_active = 1
         ORDER BY p.updated_at DESC
+    </select>
+
+    <!-- 查询项目的房间列表 -->
+    <select id="selectProjectRooms" resultType="java.util.Map">
+        SELECT 
+            id,
+            room_name as roomName,
+            room_type as roomType,
+            area,
+            description,
+            floor,
+            file_ids as fileIds,
+            sort_order as sortOrder
+        FROM project_rooms
+        WHERE project_id = #{projectId} AND deleted_at IS NULL
+        ORDER BY sort_order ASC, created_at ASC
     </select>
 
 </mapper>

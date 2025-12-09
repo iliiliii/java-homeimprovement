@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 小程序首页数据Mapper
@@ -23,12 +24,12 @@ public interface AppDashboardMapper {
     /**
      * 根据ID查询员工信息
      */
-    AppUserInfo selectStaffById(@Param("userId") Long userId);
+    AppUserInfo selectStaffById(@Param("userId") String userId);
 
     /**
      * 查询员工关联的项目列表
      */
-    List<StaffProjectVO> selectStaffProjects(@Param("userId") Long userId);
+    List<StaffProjectVO> selectStaffProjects(@Param("userId") String userId);
 
     /**
      * 查询项目当前进行中的阶段
@@ -58,22 +59,22 @@ public interface AppDashboardMapper {
     /**
      * 统计员工待巡检数量
      */
-    int countPendingInspections(@Param("userId") Long userId);
+    int countPendingInspections(@Param("userId") String userId);
 
     /**
      * 统计员工待处理问题数
      */
-    int countStaffPendingIssues(@Param("userId") Long userId);
+    int countStaffPendingIssues(@Param("userId") String userId);
 
     /**
      * 统计员工今日待办数
      */
-    int countTodayTasks(@Param("userId") Long userId);
+    int countTodayTasks(@Param("userId") String userId);
 
     /**
      * 检查员工是否有权限访问项目
      */
-    boolean checkStaffProjectAccess(@Param("userId") Long userId, @Param("projectId") String projectId);
+    boolean checkStaffProjectAccess(@Param("userId") String userId, @Param("projectId") String projectId);
 
     /**
      * 查询字典标签
@@ -88,5 +89,10 @@ public interface AppDashboardMapper {
     /**
      * 查询员工项目列表（带字典状态）
      */
-    List<StaffProjectVO> selectStaffProjectsWithDict(@Param("userId") Long userId);
+    List<StaffProjectVO> selectStaffProjectsWithDict(@Param("userId") String userId);
+
+    /**
+     * 查询项目的房间列表
+     */
+    List<Map<String, Object>> selectProjectRooms(@Param("projectId") String projectId);
 }

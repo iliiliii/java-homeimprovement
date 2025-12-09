@@ -38,4 +38,9 @@ public interface IAppDashboardService {
      * 获取项目设计图列表
      */
     List<DesignVO> getProjectDesigns(String token, String projectId);
+
+    /**
+     * 获取项目房间列表（设计稿）
+     */
+    List<RoomVO> getProjectRooms(String token, String projectId);
 }

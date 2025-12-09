@@ -29,8 +29,8 @@
       </view>
     </view>
     
-    <!-- 头部占位 -->
-    <view :style="{ height: headerHeight + 'px' }"></view>
+    <!-- 头部占位 - 确保内容不被固定头部覆盖 -->
+    <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
     
     <!-- 快捷操作 -->
     <view class="quick-actions">
@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, getCurrentInstance } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
 
@@ -133,20 +133,36 @@ const emit = defineEmits(['navigate', 'view-project'])
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
 
+// 更新header高度
+const updateHeaderHeight = () => {
+  const query = uni.createSelectorQuery().in(getCurrentInstance())
+  query.select('.fixed-header').boundingClientRect(rect => {
+    if (rect && rect.height > 0) {
+      // 增加额外间距确保内容不被遮挡
+      headerHeight.value = rect.height + 32
+      console.log('[StaffDashboard] headerHeight:', headerHeight.value, 'rect.height:', rect.height)
+    }
+  }).exec()
+}
+
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
-  nextTick(() => {
-    const query = uni.createSelectorQuery()
-    query.select('.fixed-header').boundingClientRect(rect => {
-      if (rect) {
-        headerHeight.value = rect.height
-      }
-    }).exec()
-  })
+  
+  // 根据状态栏高度预估一个初始值，避免闪烁
+  // 头部内容约 180rpx + 待办统计约 120rpx + padding约 80rpx = 380rpx ≈ 190px + 状态栏
+  const screenWidth = uni.getSystemInfoSync().windowWidth
+  const estimatedHeight = (380 / 750) * screenWidth + statusBarHeight.value + 32
+  headerHeight.value = estimatedHeight
+  
+  // 多次尝试获取精确高度
+  setTimeout(updateHeaderHeight, 150)
+  setTimeout(updateHeaderHeight, 400)
+  setTimeout(updateHeaderHeight, 800)
 })
 
 // 获取状态样式类
 const getStatusClass = (status) => {
+  const upperStatus = status?.toUpperCase()
   const map = {
     'DESIGN': 'design',
     'IN_PROGRESS': 'progress',
@@ -154,14 +170,22 @@ const getStatusClass = (status) => {
     'COMPLETED': 'completed',
     'PENDING': 'pending'
   }
-  return map[status] || 'default'
+  return map[upperStatus] || 'default'
 }
+
 </script>
 
 <style lang="scss" scoped>
 .staff-dashboard {
   min-height: 100vh;
   background: $glass-bg;
+  padding-bottom: 140rpx; // 为底部TabBar留出空间
+}
+
+// 头部占位
+.header-placeholder {
+  width: 100%;
+  flex-shrink: 0;
 }
 
 // 固定头部

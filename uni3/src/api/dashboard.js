@@ -48,3 +48,11 @@ export const getProjectInspections = (projectId) => {
 export const getProjectDesigns = (projectId) => {
   return get(`/app/dashboard/project/${projectId}/designs`)
 }
+
+/**
+ * 获取项目房间列表（设计稿）
+ * @param {String} projectId - 项目ID
+ */
+export const getProjectRooms = (projectId) => {
+  return get(`/app/dashboard/project/${projectId}/rooms`)
+}
