@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.app.mapper.AppDashboardMapper">
+
+    <!-- 查询客户信息 -->
+    <select id="selectCustomerById" resultType="com.ruoyi.web.domain.Customers">
+        SELECT id, name, phone, email, avatar, address
+        FROM customers
+        WHERE id = #{id} AND deleted_at IS NULL
+    </select>
+
+    <!-- 查询员工信息 -->
+    <select id="selectStaffById" resultType="com.ruoyi.app.dto.response.AppUserInfo">
+        SELECT 
+            CAST(user_id AS CHAR) as id,
+            nick_name as name,
+            phonenumber as phone,
+            avatar
+        FROM sys_user
+        WHERE user_id = #{userId} AND del_flag = '0' AND status = '0'
+    </select>
+
+    <!-- 查询员工关联的项目列表 -->
+    <select id="selectStaffProjects" resultType="com.ruoyi.app.dto.response.StaffProjectVO">
+        SELECT 
+            p.id,
+            p.name,
+            c.name as customerName,
+            p.address,
+            p.area,
+            p.status,
+            p.progress as progressPercent,
+            pm.role as myRole,
+            p.updated_at as lastUpdateTime
+        FROM project_members pm
+        INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
+        LEFT JOIN customers c ON p.customer_id = c.id
+        WHERE pm.user_id = #{userId} AND pm.is_active = 1
+        ORDER BY p.updated_at DESC
+    </select>
+
+    <!-- 查询项目当前进行中的阶段 -->
+    <select id="selectCurrentSchedule" resultType="com.ruoyi.web.domain.ProjectSchedules">
+        SELECT id, project_id as projectId, stage, stage_order as stageOrder, 
+               plan_start_date as planStartDate, plan_end_date as planEndDate,
+               actual_start_date as actualStartDate, actual_end_date as actualEndDate,
+               status, completion_rate as completionRate, description
+        FROM project_schedules
+        WHERE project_id = #{projectId} AND status = 'IN_PROGRESS'
+        ORDER BY stage_order ASC
+        LIMIT 1
+    </select>
+
+    <!-- 查询项目的所有进度 -->
+    <select id="selectSchedulesByProjectId" resultType="com.ruoyi.web.domain.ProjectSchedules">
+        SELECT id, project_id as projectId, stage, stage_order as stageOrder,
+               plan_start_date as planStartDate, plan_end_date as planEndDate,
+               actual_start_date as actualStartDate, actual_end_date as actualEndDate,
+               status, completion_rate as completionRate, description
+        FROM project_schedules
+        WHERE project_id = #{projectId}
+        ORDER BY stage_order ASC
+    </select>
+
+    <!-- 质检记录结果映射 -->
+    <resultMap id="InspectionWithIssuesMap" type="com.ruoyi.web.domain.QualityInspections">
+        <id property="id" column="id"/>
+        <result property="projectId" column="project_id"/>
+        <result property="scheduleId" column="schedule_id"/>
+        <result property="inspectionType" column="inspection_type"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="result" column="result"/>
+        <result property="inspectionDate" column="inspection_date"/>
+        <result property="images" column="images"/>
+        <result property="remarks" column="remarks"/>
+        <result property="createdAt" column="created_at"/>
+        <collection property="issues" ofType="com.ruoyi.web.domain.QualityIssues">
+            <id property="id" column="issue_id"/>
+            <result property="title" column="issue_title"/>
+            <result property="description" column="issue_description"/>
+            <result property="category" column="issue_category"/>
+            <result property="location" column="issue_location"/>
+            <result property="images" column="issue_images"/>
+            <result property="status" column="issue_status"/>
+            <result property="dueDate" column="issue_due_date"/>
+            <result property="resolvedAt" column="issue_resolved_at"/>
+            <result property="createdAt" column="issue_created_at"/>
+        </collection>
+    </resultMap>
+
+    <!-- 查询项目的质检记录（包含问题） -->
+    <select id="selectInspectionsByProjectId" resultMap="InspectionWithIssuesMap">
+        SELECT 
+            qi.id, qi.project_id, qi.schedule_id, qi.inspection_type, qi.title,
+            qi.description, qi.result, qi.inspection_date, qi.images, qi.remarks, qi.created_at,
+            qis.id as issue_id, qis.title as issue_title, qis.description as issue_description,
+            qis.category as issue_category, qis.location as issue_location, qis.images as issue_images,
+            qis.status as issue_status, qis.due_date as issue_due_date, 
+            qis.resolved_at as issue_resolved_at, qis.created_at as issue_created_at
+        FROM quality_inspections qi
+        LEFT JOIN quality_issues qis ON qi.id = qis.quality_inspection_id
+        WHERE qi.project_id = #{projectId}
+        ORDER BY qi.inspection_date DESC, qi.created_at DESC
+    </select>
+
+    <!-- 查询项目的设计文件 -->
+    <select id="selectDesignFilesByProjectId" resultType="com.ruoyi.web.domain.FileUploads">
+        SELECT id, original_name as originalName, path, url, 
+               size, type, category, created_at as createdAt
+        FROM file_uploads
+        WHERE category = #{projectId} 
+          AND type = 'DESIGN'
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 统计项目待处理问题数 -->
+    <select id="countPendingIssues" resultType="int">
+        SELECT COUNT(*)
+        FROM quality_issues
+        WHERE project_id = #{projectId} AND status IN ('OPEN', 'IN_PROGRESS')
+    </select>
+
+    <!-- 统计员工待巡检数量（今日需要巡检的项目数） -->
+    <select id="countPendingInspections" resultType="int">
+        SELECT COUNT(DISTINCT pm.project_id)
+        FROM project_members pm
+        INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
+        WHERE pm.user_id = #{userId} 
+          AND pm.is_active = 1
+          AND p.status IN ('DESIGN', 'IN_PROGRESS', 'CONSTRUCTION')
+    </select>
+
+    <!-- 统计员工待处理问题数 -->
+    <select id="countStaffPendingIssues" resultType="int">
+        SELECT COUNT(*)
+        FROM quality_issues qi
+        INNER JOIN project_members pm ON qi.project_id = pm.project_id
+        WHERE pm.user_id = #{userId} 
+          AND pm.is_active = 1
+          AND qi.status IN ('OPEN', 'IN_PROGRESS')
+    </select>
+
+    <!-- 统计员工今日待办数 -->
+    <select id="countTodayTasks" resultType="int">
+        SELECT COUNT(*)
+        FROM project_schedules ps
+        INNER JOIN project_members pm ON ps.project_id = pm.project_id
+        WHERE pm.user_id = #{userId}
+          AND pm.is_active = 1
+          AND ps.status = 'IN_PROGRESS'
+          AND DATE(ps.plan_end_date) = CURDATE()
+    </select>
+
+    <!-- 检查员工是否有权限访问项目 -->
+    <select id="checkStaffProjectAccess" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM project_members
+        WHERE user_id = #{userId} AND project_id = #{projectId} AND is_active = 1
+    </select>
+
+</mapper>
