@@ -168,7 +168,7 @@
         LIMIT 1
     </select>
 
-    <!-- 查询客户项目列表（带字典状态） -->
+    <!-- 查询客户项目列表（带字典状态，使用COLLATE解决字符集冲突） -->
     <select id="selectCustomerProjects" resultType="com.ruoyi.app.dto.response.CustomerProjectVO">
         SELECT 
             p.id,
@@ -180,12 +180,13 @@
             p.end_date as endDate,
             p.progress as progressPercent
         FROM projects p
-        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' AND d.dict_value = p.status
+        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' 
+            AND d.dict_value COLLATE utf8mb4_unicode_ci = p.status COLLATE utf8mb4_unicode_ci
         WHERE p.customer_id = #{customerId} AND p.deleted_at IS NULL
         ORDER BY p.created_at DESC
     </select>
 
-    <!-- 查询员工项目列表（带字典状态） -->
+    <!-- 查询员工项目列表（带字典状态，使用COLLATE解决字符集冲突） -->
     <select id="selectStaffProjectsWithDict" resultType="com.ruoyi.app.dto.response.StaffProjectVO">
         SELECT 
             p.id,
@@ -201,7 +202,8 @@
         FROM project_members pm
         INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
         LEFT JOIN customers c ON p.customer_id = c.id
-        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' AND d.dict_value = p.status
+        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' 
+            AND d.dict_value COLLATE utf8mb4_unicode_ci = p.status COLLATE utf8mb4_unicode_ci
         WHERE pm.user_id = #{userId} AND pm.is_active = 1
         ORDER BY p.updated_at DESC
     </select>
