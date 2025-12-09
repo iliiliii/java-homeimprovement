@@ -4,25 +4,15 @@ import java.util.List;
 
 /**
  * 员工首页数据VO
+ * 注：用户信息在登录时已返回并缓存，此处不再重复返回
  */
 public class StaffDashboardVO {
-
-    /** 用户信息 */
-    private AppUserInfo userInfo;
 
     /** 负责的项目列表 */
     private List<StaffProjectVO> projects;
 
     /** 待办事项统计 */
     private TodoStats todoStats;
-
-    public AppUserInfo getUserInfo() {
-        return userInfo;
-    }
-
-    public void setUserInfo(AppUserInfo userInfo) {
-        this.userInfo = userInfo;
-    }
 
     public List<StaffProjectVO> getProjects() {
         return projects;

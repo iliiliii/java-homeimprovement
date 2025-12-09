@@ -22,7 +22,10 @@
           class="project-cards-scroll"
           :scroll-left="scrollLeft"
           @scroll="onScroll"
+          @scrollend="onScrollEnd"
           scroll-with-animation
+          :enhanced="true"
+          :show-scrollbar="false"
         >
           <view class="project-cards-container">
             <view 
@@ -221,11 +224,32 @@ onMounted(() => {
 // 滚动事件处理
 const onScroll = (e) => {
   const scrollX = e.detail.scrollLeft
-  const cardWidth = 560 // 卡片宽度 + 间距
+  const cardWidth = 620 // 卡片宽度600 + 间距20
   const newIndex = Math.round(scrollX / cardWidth)
   if (newIndex !== currentIndex.value && newIndex >= 0 && newIndex < props.projects.length) {
     currentIndex.value = newIndex
     emit('switch-project', newIndex)
+  }
+}
+
+// 滚动到指定卡片
+const scrollToCard = (index) => {
+  const cardWidth = 620
+  scrollLeft.value = index * cardWidth
+}
+
+// 滚动结束时自动对齐到最近的卡片
+const onScrollEnd = (e) => {
+  const scrollX = e.detail.scrollLeft
+  const cardWidth = 620
+  const targetIndex = Math.round(scrollX / cardWidth)
+  if (targetIndex >= 0 && targetIndex < props.projects.length) {
+    // 自动对齐
+    scrollLeft.value = targetIndex * cardWidth
+    if (targetIndex !== currentIndex.value) {
+      currentIndex.value = targetIndex
+      emit('switch-project', targetIndex)
+    }
   }
 }
 
@@ -298,107 +322,131 @@ const openDocLink = () => {
 // 项目卡片滑动区域
 .project-cards-scroll {
   white-space: nowrap;
-  padding: 0 48rpx;
 }
 
 .project-cards-container {
   display: inline-flex;
-  gap: 24rpx;
-  padding: 8rpx 0;
+  gap: 20rpx;
+  padding: 16rpx 48rpx;
+  // 让第一个和最后一个卡片可以居中
+  &::before, &::after {
+    content: '';
+    flex-shrink: 0;
+    width: 28rpx;
+  }
 }
 
 .project-card {
-  width: 540rpx;
-  padding: 28rpx;
-  border-radius: 24rpx;
+  width: 600rpx;
+  padding: 32rpx;
+  border-radius: 32rpx;
   flex-shrink: 0;
   transition: all 0.3s ease;
-  border: 3rpx solid transparent;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
   
   // 设计阶段 - 紫色
   &.design {
-    background: linear-gradient(135deg, #E8DEF8 0%, #D0BCFF 100%);
+    background: linear-gradient(145deg, #F3E8FF 0%, #E9D5FF 100%);
     
     .progress-fill {
-      background: #7C4DFF;
+      background: linear-gradient(90deg, #A855F7 0%, #7C3AED 100%);
+    }
+    
+    .card-status {
+      background: rgba(168, 85, 247, 0.15);
+      color: #7C3AED;
     }
   }
   
   // 施工阶段 - 蓝色
   &.construction {
-    background: linear-gradient(135deg, #D3E4FD 0%, #A7C7E7 100%);
+    background: linear-gradient(145deg, #DBEAFE 0%, #BFDBFE 100%);
     
     .progress-fill {
-      background: #2D5BFF;
+      background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%);
+    }
+    
+    .card-status {
+      background: rgba(59, 130, 246, 0.15);
+      color: #2563EB;
     }
   }
   
   // 已完工 - 绿色
   &.completed {
-    background: linear-gradient(135deg, #D4EDDA 0%, #A8D5BA 100%);
+    background: linear-gradient(145deg, #D1FAE5 0%, #A7F3D0 100%);
     
     .progress-fill {
-      background: #00C2B2;
+      background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+    }
+    
+    .card-status {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
     }
   }
   
   &.active {
-    border-color: rgba(0, 0, 0, 0.2);
     transform: scale(1.02);
-    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
   }
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16rpx;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
 }
 
 .card-name {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 600;
-  color: #333;
+  color: #1F2937;
+  flex: 1;
+  white-space: normal;
+  word-break: break-all;
 }
 
 .card-status {
-  font-size: 22rpx;
-  padding: 6rpx 16rpx;
+  font-size: 24rpx;
+  padding: 8rpx 20rpx;
   border-radius: 100rpx;
-  background: rgba(255, 255, 255, 0.5);
-  
-  &.design { color: #7C4DFF; }
-  &.construction { color: #2D5BFF; }
-  &.completed { color: #00C2B2; }
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-left: 16rpx;
 }
 
 .card-stage {
-  font-size: 26rpx;
-  color: #555;
-  margin-bottom: 20rpx;
+  font-size: 28rpx;
+  color: #4B5563;
+  margin-bottom: 24rpx;
+  
+  text {
+    opacity: 0.9;
+  }
 }
 
 .card-progress {
   .progress-bar {
-    height: 12rpx;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 6rpx;
+    height: 16rpx;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 8rpx;
     overflow: hidden;
-    margin-bottom: 12rpx;
+    margin-bottom: 16rpx;
   }
   
   .progress-fill {
     height: 100%;
-    border-radius: 6rpx;
+    border-radius: 8rpx;
     transition: width 0.3s ease;
   }
   
   .progress-info {
     display: flex;
     justify-content: space-between;
-    font-size: 22rpx;
-    color: #666;
+    font-size: 24rpx;
+    color: #6B7280;
   }
 }
 

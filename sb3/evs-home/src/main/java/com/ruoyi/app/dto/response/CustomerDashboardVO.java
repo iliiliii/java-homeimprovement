@@ -4,25 +4,15 @@ import java.util.List;
 
 /**
  * 客户首页数据VO
+ * 注：用户信息在登录时已返回并缓存，此处不再重复返回
  */
 public class CustomerDashboardVO {
-
-    /** 用户信息 */
-    private AppUserInfo userInfo;
 
     /** 项目列表 */
     private List<CustomerProjectVO> projects;
 
     /** 当前选中的项目ID */
     private String currentProjectId;
-
-    public AppUserInfo getUserInfo() {
-        return userInfo;
-    }
-
-    public void setUserInfo(AppUserInfo userInfo) {
-        this.userInfo = userInfo;
-    }
 
     public List<CustomerProjectVO> getProjects() {
         return projects;

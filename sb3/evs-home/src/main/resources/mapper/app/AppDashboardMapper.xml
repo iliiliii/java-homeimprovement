@@ -160,4 +160,50 @@
         WHERE user_id = #{userId} AND project_id = #{projectId} AND is_active = 1
     </select>
 
+    <!-- 查询字典标签 -->
+    <select id="selectDictLabel" resultType="String">
+        SELECT dict_label 
+        FROM sys_dict_data
+        WHERE dict_type = #{dictType} AND dict_value = #{dictValue}
+        LIMIT 1
+    </select>
+
+    <!-- 查询客户项目列表（带字典状态） -->
+    <select id="selectCustomerProjects" resultType="com.ruoyi.app.dto.response.CustomerProjectVO">
+        SELECT 
+            p.id,
+            p.name,
+            p.address,
+            p.area,
+            p.status,
+            COALESCE(d.dict_label, p.status) as statusText,
+            p.end_date as endDate,
+            p.progress as progressPercent
+        FROM projects p
+        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' AND d.dict_value = p.status
+        WHERE p.customer_id = #{customerId} AND p.deleted_at IS NULL
+        ORDER BY p.created_at DESC
+    </select>
+
+    <!-- 查询员工项目列表（带字典状态） -->
+    <select id="selectStaffProjectsWithDict" resultType="com.ruoyi.app.dto.response.StaffProjectVO">
+        SELECT 
+            p.id,
+            p.name,
+            c.name as customerName,
+            p.address,
+            p.area,
+            p.status,
+            COALESCE(d.dict_label, p.status) as statusText,
+            p.progress as progressPercent,
+            pm.role as myRole,
+            p.updated_at as lastUpdateTime
+        FROM project_members pm
+        INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
+        LEFT JOIN customers c ON p.customer_id = c.id
+        LEFT JOIN sys_dict_data d ON d.dict_type = 'decoration_project_status' AND d.dict_value = p.status
+        WHERE pm.user_id = #{userId} AND pm.is_active = 1
+        ORDER BY p.updated_at DESC
+    </select>
+
 </mapper>

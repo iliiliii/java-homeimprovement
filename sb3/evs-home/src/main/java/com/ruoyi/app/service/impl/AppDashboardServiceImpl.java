@@ -79,23 +79,44 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         }
 
         CustomerDashboardVO result = new CustomerDashboardVO();
+        // 不再返回用户信息，前端使用登录时缓存的数据
 
-        // 获取用户信息
-        AppUserInfo userInfo = new AppUserInfo();
-        Customers customer = dashboardMapper.selectCustomerById(userId);
-        if (customer != null) {
-            userInfo.setId(customer.getId());
-            userInfo.setName(customer.getName());
-            userInfo.setPhone(maskPhone(customer.getPhone()));
-            userInfo.setAvatar(customer.getAvatar());
+        // 获取客户关联的项目列表（使用带字典的查询）
+        List<CustomerProjectVO> projectVOs = dashboardMapper.selectCustomerProjects(userId);
+        
+        // 补充项目详细信息
+        for (CustomerProjectVO vo : projectVOs) {
+            // 获取当前阶段
+            ProjectSchedules currentSchedule = dashboardMapper.selectCurrentSchedule(vo.getId());
+            if (currentSchedule != null) {
+                vo.setCurrentStage(currentSchedule.getStage());
+                vo.setCurrentStageText(STAGE_TEXT_MAP.getOrDefault(currentSchedule.getStage(), currentSchedule.getStage()));
+            } else {
+                vo.setCurrentStage("DESIGN");
+                vo.setCurrentStageText("设计阶段");
+            }
+            
+            // 计算进度（如果数据库没有）
+            if (vo.getProgressPercent() == null || vo.getProgressPercent() == 0) {
+                vo.setProgressPercent(calculateProgress(vo.getId()));
+            }
+            
+            // 设置卡片类型
+            String status = vo.getStatus();
+            if ("DESIGN".equals(status) || "design".equals(status)) {
+                vo.setCardType("design");
+            } else if ("COMPLETED".equals(status) || "completed".equals(status)) {
+                vo.setCardType("completed");
+            } else {
+                vo.setCardType("construction");
+            }
+            
+            // 设置下一个里程碑
+            if (vo.getEndDate() != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("MM.dd");
+                vo.setNextMilestone(sdf.format(vo.getEndDate()));
+            }
         }
-        result.setUserInfo(userInfo);
-
-        // 获取客户关联的项目列表
-        List<Projects> projects = projectMapper.selectProjectsByCustomerId(userId);
-        List<CustomerProjectVO> projectVOs = projects.stream()
-                .map(this::convertToCustomerProjectVO)
-                .collect(Collectors.toList());
         result.setProjects(projectVOs);
 
         // 设置默认选中的项目
@@ -119,13 +140,10 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         }
 
         StaffDashboardVO result = new StaffDashboardVO();
+        // 不再返回用户信息，前端使用登录时缓存的数据
 
-        // 获取用户信息
-        AppUserInfo userInfo = dashboardMapper.selectStaffById(userId);
-        result.setUserInfo(userInfo);
-
-        // 获取员工关联的项目列表
-        List<StaffProjectVO> projectVOs = dashboardMapper.selectStaffProjects(userId);
+        // 获取员工关联的项目列表（使用带字典的查询）
+        List<StaffProjectVO> projectVOs = dashboardMapper.selectStaffProjectsWithDict(userId);
         
         // 补充项目详细信息
         for (StaffProjectVO vo : projectVOs) {

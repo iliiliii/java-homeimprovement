@@ -1,6 +1,7 @@
 package com.ruoyi.app.mapper;
 
 import com.ruoyi.app.dto.response.AppUserInfo;
+import com.ruoyi.app.dto.response.CustomerProjectVO;
 import com.ruoyi.app.dto.response.StaffProjectVO;
 import com.ruoyi.web.domain.*;
 import org.apache.ibatis.annotations.Mapper;
@@ -73,4 +74,19 @@ public interface AppDashboardMapper {
      * 检查员工是否有权限访问项目
      */
     boolean checkStaffProjectAccess(@Param("userId") Long userId, @Param("projectId") String projectId);
+
+    /**
+     * 查询字典标签
+     */
+    String selectDictLabel(@Param("dictType") String dictType, @Param("dictValue") String dictValue);
+
+    /**
+     * 查询客户项目列表（带字典状态）
+     */
+    List<CustomerProjectVO> selectCustomerProjects(@Param("customerId") String customerId);
+
+    /**
+     * 查询员工项目列表（带字典状态）
+     */
+    List<StaffProjectVO> selectStaffProjectsWithDict(@Param("userId") Long userId);
 }
