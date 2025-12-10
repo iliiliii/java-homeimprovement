@@ -11,6 +11,7 @@ import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.service.IProjectsService;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.uuid.IdUtils;
 import com.ruoyi.common.exception.ServiceException;
 
 /**
@@ -99,6 +100,11 @@ public class ProjectsServiceImpl implements IProjectsService
     @Override
     public int insertProjects(Projects projects)
     {
+        if (projects.getId() == null || projects.getId().isEmpty()) {
+            projects.setId(IdUtils.fastSimpleUUID());
+        }
+        projects.setCreatedAt(DateUtils.getNowDate());
+        projects.setCreatedBy(SecurityUtils.getUsername());
         return projectsMapper.insertProjects(projects);
     }
 
