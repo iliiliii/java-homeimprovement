@@ -102,6 +102,12 @@ public class Projects extends BaseEntity
     /** 是否为管理员（true=查看所有，false=仅查看成员项目） */
     private Boolean isAdmin;
 
+    /** 客户姓名（用于搜索筛选） */
+    private String customerName;
+
+    /** 客户电话（用于搜索筛选） */
+    private String customerPhone;
+
     /** 关联的客户信息 */
     private Customers customer;
 
@@ -434,6 +440,26 @@ public class Projects extends BaseEntity
     public Boolean getIsAdmin()
     {
         return isAdmin;
+    }
+
+    public void setCustomerName(String customerName)
+    {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerName()
+    {
+        return customerName;
+    }
+
+    public void setCustomerPhone(String customerPhone)
+    {
+        this.customerPhone = customerPhone;
+    }
+
+    public String getCustomerPhone()
+    {
+        return customerPhone;
     }
 
     public void setIds(String[] ids)

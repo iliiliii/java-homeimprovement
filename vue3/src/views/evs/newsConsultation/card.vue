@@ -14,7 +14,7 @@
     <!-- 资讯列表表格 -->
     <el-card shadow="never" style="margin-top: 20px;">
       <el-table v-loading="loading" :data="newsConsultationList" style="width: 100%">
-        <el-table-column label="标题" min-width="200">
+        <el-table-column label="标题" min-width="100">
           <template #default="scope">
             <div style="display: flex; align-items: center;">
               <el-icon style="margin-right: 8px; color: #409EFF;"><Document /></el-icon>
@@ -23,7 +23,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="内容" min-width="300" show-overflow-tooltip>
+        <el-table-column label="内容" min-width="100" show-overflow-tooltip>
           <template #default="scope">
             <span>{{ scope.row.subtitle || '暂无内容' }}</span>
           </template>
@@ -62,7 +62,7 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="300" align="center" fixed="right">
           <template #default="scope">
             <el-button 
               link 

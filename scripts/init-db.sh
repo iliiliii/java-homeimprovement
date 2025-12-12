@@ -122,15 +122,15 @@ execute_sql_file() {
     fi
 }
 
-# 初始化若依基础表
+# 初始化逅时代基础表
 init_ruoyi_tables() {
-    log_info "初始化若依基础表..."
+    log_info "初始化逅时代基础表..."
 
     local ruoyi_sql="$SCRIPT_DIR/../sb3/sql/ry_20250522.sql"
     if [ -f "$ruoyi_sql" ]; then
-        execute_sql_file "$ruoyi_sql" "若依基础表初始化"
+        execute_sql_file "$ruoyi_sql" "逅时代基础表初始化"
     else
-        log_warning "若依基础表SQL文件未找到，跳过基础表初始化"
+        log_warning "逅时代基础表SQL文件未找到，跳过基础表初始化"
     fi
 }
 
@@ -238,7 +238,7 @@ show_db_info() {
     echo ""
 
     log_info "重要表列表："
-    echo "若依基础表："
+    echo "逅时代基础表："
     echo "  - sys_user (用户表)"
     echo "  - sys_role (角色表)"
     echo "  - sys_menu (菜单表)"
@@ -291,8 +291,8 @@ main() {
     echo "开始初始化数据表..."
     echo ""
 
-    # 初始化若依基础表
-    read -p "是否初始化若依基础表? (y/N): " -n 1 -r
+    # 初始化逅时代基础表
+    read -p "是否初始化逅时代基础表? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         init_ruoyi_tables

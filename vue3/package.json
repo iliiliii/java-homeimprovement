@@ -1,8 +1,8 @@
 {
-  "name": "ruoyi",
+  "name": "evs-home",
   "version": "3.9.0",
-  "description": "若依管理系统",
-  "author": "若依",
+  "description": "逅时代装修管理系统",
+  "author": "逅时代",
   "license": "MIT",
   "type": "module",
   "scripts": {

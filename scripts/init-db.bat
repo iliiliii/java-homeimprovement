@@ -142,12 +142,12 @@ if errorlevel 1 (
 )
 exit /b 0
 
-:: 初始化若依基础表
+:: 初始化逅时代基础表
 echo.
-set /p init_ruoyi="是否初始化若依基础表? (y/N): "
+set /p init_ruoyi="是否初始化逅时代基础表? (y/N): "
 if /i "%init_ruoyi%"=="y" (
     set "RUOYI_SQL=%~dp0..\sb3\sql\ry_20250522.sql"
-    call :execute_sql_file "%RUOYI_SQL%" "若依基础表初始化"
+    call :execute_sql_file "%RUOYI_SQL%" "逅时代基础表初始化"
 )
 
 :: 初始化装修业务表

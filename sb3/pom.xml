@@ -5,12 +5,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	
     <groupId>com.ruoyi</groupId>
-    <artifactId>ruoyi</artifactId>
+    <artifactId>evs-home</artifactId>
     <version>3.9.0</version>
 
-    <name>ruoyi</name>
+    <name>evs-home</name>
     <url>http://www.ruoyi.vip</url>
-    <description>若依管理系统</description>
+    <description>逅时代装修管理系统</description>
     
     <properties>
         <ruoyi.version>3.9.0</ruoyi.version>

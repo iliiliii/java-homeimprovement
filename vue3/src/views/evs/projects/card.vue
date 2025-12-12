@@ -31,19 +31,19 @@
           />
         </el-select>
       </el-form-item>
-      <!-- 管理员特有筛选条件 -->
-      <el-form-item v-if="isAdmin" label="关联客户" prop="customerId">
+      <!-- 客户信息筛选条件 -->
+      <el-form-item label="客户姓名" prop="customerName">
         <el-input
-          v-model="queryParams.customerId"
-          placeholder="请输入客户ID"
+          v-model="queryParams.customerName"
+          placeholder="请输入客户姓名"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item v-if="isAdmin" label="关联团队" prop="memberUserId">
+      <el-form-item label="客户电话" prop="customerPhone">
         <el-input
-          v-model="queryParams.memberUserId"
-          placeholder="请输入团队成员用户ID"
+          v-model="queryParams.customerPhone"
+          placeholder="请输入客户电话"
           clearable
           @keyup.enter="handleQuery"
         />
@@ -246,7 +246,8 @@
 <script setup name="Projects">
 import { listProjects, updateProjects, delProjects, listProjectsWithCustomer, listProjectsWithMembers, getProjectWithCustomer } from "@/api/evs/projects"
 import { useRouter, useRoute } from 'vue-router'
-import userStore from '@/store/modules/user'
+import useUserStore from '@/store/modules/user'
+const userStore = useUserStore()
 import ProjectProgress from './components/ProjectProgress.vue'
 import ProjectBudget from './components/ProjectBudget.vue'
 import ProjectDetail from './components/ProjectDetail.vue'
@@ -260,6 +261,7 @@ const { decoration_project_status } = proxy.useDict('decoration_project_status')
 
 // 判断是否为管理员
 const isAdmin = computed(() => {
+  console.log('当前用户角色:', userStore.roles)
   return userStore.roles && userStore.roles.includes('admin')
 })
 
@@ -299,9 +301,9 @@ const data = reactive({
     name: null,
     address: null,
     status: null,
-    // 管理员特有筛选条件
-    customerId: null,      // 关联客户ID
-    memberUserId: null,    // 关联团队成员用户ID
+    // 客户信息筛选条件
+    customerName: null,    // 客户姓名
+    customerPhone: null,   // 客户电话
   }
 })
 

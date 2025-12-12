@@ -289,6 +289,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="status != null and status != ''"> AND p.status = #{status}</if>
             <if test="priority != null and priority != ''"> AND p.priority = #{priority}</if>
             <if test="customerId != null and customerId != ''"> AND p.customer_id = #{customerId}</if>
+            <if test="customerName != null and customerName != ''"> AND c.name like concat('%', #{customerName}, '%')</if>
+            <if test="customerPhone != null and customerPhone != ''"> AND c.phone like concat('%', #{customerPhone}, '%')</if>
         </where>
         ORDER BY p.created_at DESC
     </select>
@@ -367,6 +369,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projects.status != null and projects.status != ''"> AND p.status = #{projects.status}</if>
             <if test="projects.priority != null and projects.priority != ''"> AND p.priority = #{projects.priority}</if>
             <if test="projects.customerId != null and projects.customerId != ''"> AND p.customer_id = #{projects.customerId}</if>
+            <if test="projects.customerName != null and projects.customerName != ''"> AND c.name like concat('%', #{projects.customerName}, '%')</if>
+            <if test="projects.customerPhone != null and projects.customerPhone != ''"> AND c.phone like concat('%', #{projects.customerPhone}, '%')</if>
         </where>
         ORDER BY p.created_at DESC
     </select>

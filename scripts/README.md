@@ -205,7 +205,7 @@ sudo ./scripts/prod-deploy.sh
 **默认配置：**
 - 主机：localhost
 - 端口：3306
-- 数据库：ruoyi_vue
+- 数据库：evs-home
 - 用户：root
 - 密码：（空）
 
