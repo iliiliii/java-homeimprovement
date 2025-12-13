@@ -85,11 +85,11 @@ const headerHeight = ref(0)
 const logs = ref([
   {
     id: 1,
-    title: '水电验收',
+    title: '拆除工程',
     description: '今日进行水电节点验收，强弱电间距符合标准，水管打压测试8kg保压30分钟无掉压。',
     time: '今天 10:30',
     type: 'inspection',
-    phase: '水电阶段',
+    phase: '拆除工程',
     images: [
       'https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
       'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
@@ -97,31 +97,31 @@ const logs = ref([
   },
   {
     id: 2,
-    title: '电线布管完成',
-    description: '全屋电线布管完成，共计布线312米，线管采用PVC阻燃管，走向清晰规范。',
+    title: '水电改造',
+    description: '水电验收合格，无问题。',
     time: '昨天 16:20',
     type: 'progress',
-    phase: '水电阶段',
+    phase: '水电改造',
     images: [
       'https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
     ]
   },
   {
     id: 3,
-    title: '材料进场',
-    description: '今日进场材料：伟星PPR水管 50米、德力西电线 8卷、PVC线管 100米。材料均验收合格。',
+    title: '泥瓦工程',
+    description: '泥瓦工程完成，无问题。',
     time: '11.25 09:00',
     type: 'material',
-    phase: '水电阶段',
+    phase: '泥瓦工程',
     images: []
   },
   {
     id: 4,
-    title: '拆除阶段验收',
-    description: '拆除工作全部完成，墙体拆除8平方米，地面找平完成，现场清理完毕。',
+    title: '木工工程',
+    description: '木工工程完成，无问题。',
     time: '11.10 14:30',
     type: 'inspection',
-    phase: '拆除阶段',
+    phase: '木工工程',
     images: [
       'https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
       'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',

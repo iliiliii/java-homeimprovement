@@ -19,7 +19,7 @@
       </view>
       
       <!-- 项目切换卡片 -->
-      <view class="project-switcher">
+      <!-- <view class="project-switcher">
         <scroll-view scroll-x class="projects-scroll" :scroll-left="scrollLeft">
           <view class="projects-container">
             <view 
@@ -40,7 +40,6 @@
           </view>
         </scroll-view>
         
-        <!-- 项目指示器 -->
         <view v-if="projects.length > 1" class="project-indicator">
           <view 
             class="indicator-dot"
@@ -49,7 +48,7 @@
             :key="index"
           ></view>
         </view>
-      </view>
+      </view> -->
     </view>
     
     <!-- 头部占位 -->
@@ -59,29 +58,29 @@
     <view class="scroll-content">
       <!-- 功能菜单 -->
       <view class="menu-list">
-        <view class="menu-item" @click="handleMenu('contract')">
+        <!-- <view class="menu-item" @click="handleMenu('contract')">
           <view class="menu-icon" style="background: rgba(201, 176, 212, 0.15);">
             <SvgIcon name="file-text" size="40rpx" color="#C9B0D4" />
           </view>
           <text class="menu-text">合同文件</text>
           <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
-        </view>
+        </view> -->
         
-        <view class="menu-item" @click="handleMenu('payment')">
+        <!-- <view class="menu-item" @click="handleMenu('payment')">
           <view class="menu-icon" style="background: rgba(232, 180, 76, 0.15);">
             <SvgIcon name="rmb-circle" size="40rpx" color="#E8B44C" />
           </view>
           <text class="menu-text">付款记录</text>
           <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
-        </view>
+        </view> -->
         
-        <view class="menu-item" @click="handleMenu('feedback')">
+        <!-- <view class="menu-item" @click="handleMenu('feedback')">
           <view class="menu-icon" style="background: rgba(157, 193, 131, 0.15);">
             <SvgIcon name="chat" size="40rpx" color="#9DC183" />
           </view>
           <text class="menu-text">意见反馈</text>
           <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
-        </view>
+        </view> -->
         
         <view class="menu-item" @click="handleMenu('service')">
           <view class="menu-icon" style="background: rgba(167, 185, 211, 0.15);">

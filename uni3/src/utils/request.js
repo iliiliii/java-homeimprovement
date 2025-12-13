@@ -21,7 +21,7 @@ const getBaseUrl = () => {
   }
   
   // 生产环境使用正式域名
-  return 'https://api.yourdomain.com'
+  return 'http://123.207.3.93:3000/dev-api'
 }
 
 const BASE_URL = getBaseUrl()

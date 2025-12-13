@@ -50,10 +50,10 @@
                 <view class="progress-bar">
                   <view class="progress-fill" :style="{ width: (project.progressPercent || 0) + '%' }"></view>
                 </view>
-                <view class="progress-info">
+                <!-- <view class="progress-info">
                   <text>进度 {{ project.progressPercent || 0 }}%</text>
                   <text v-if="project.nextMilestone">预计 {{ project.nextMilestone }} 完工</text>
-                </view>
+                </view> -->
               </view>
             </view>
           </view>
@@ -86,27 +86,27 @@
       <view class="menu-section">
         <view class="menu-grid">
           <!-- 设计阶段专属 -->
-          <view v-if="isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/design/index')">
+          <!-- <view v-if="isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/design/index')">
             <view class="menu-icon-box" style="background: rgba(201, 176, 212, 0.15);">
               <SvgIcon name="photo" size="48rpx" color="#C9B0D4" />
             </view>
             <text class="menu-text">设计图</text>
-          </view>
+          </view> -->
           
           <!-- 施工阶段专属 -->
-          <view v-if="!isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/schedule/index')">
+          <!-- <view v-if="!isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/schedule/index')">
             <view class="menu-icon-box" style="background: rgba(167, 185, 211, 0.15);">
               <SvgIcon name="calendar" size="48rpx" color="#A7B9D3" />
             </view>
             <text class="menu-text">排期</text>
-          </view>
-          
+          </view> -->
+<!--           
           <view v-if="!isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/log/index')">
             <view class="menu-icon-box" style="background: rgba(126, 150, 184, 0.15);">
               <SvgIcon name="file-text" size="48rpx" color="#7E96B8" />
             </view>
             <text class="menu-text">日志</text>
-          </view>
+          </view> -->
           
           <!-- 文档链接 -->
           <view class="menu-item" @click="openDocLink">
@@ -126,8 +126,8 @@
       </view>
 
       <!-- 设计方案展示（设计阶段） -->
-      <view v-if="isDesignPhase" class="content-section">
-        <text class="section-title">设计方案</text>
+      <view  class="content-section">
+        <text class="section-title">公司资讯</text>
         <view class="glass-card design-preview" @click="$emit('navigate', '/pages/design/index')">
           <image 
             class="design-image" 
@@ -136,16 +136,13 @@
           />
           <view class="design-info flex-between">
             <view>
-              <text class="design-title">全屋效果图</text>
-              <text class="design-update">点击查看详情</text>
+              <text class="design-title">最新资讯</text>
             </view>
-            <text class="view-link">查看 ></text>
           </view>
         </view>
       </view>
       
-      <!-- 最新日志（施工阶段） -->
-      <view v-if="!isDesignPhase" class="content-section">
+      <!-- <view v-if="!isDesignPhase" class="content-section">
         <view class="flex-between section-header">
           <text class="section-title">最新日志</text>
           <text class="view-all" @click="$emit('navigate', '/pages/log/index')">查看全部</text>
@@ -164,7 +161,7 @@
             <text class="log-desc">点击查看项目施工日志和进度更新</text>
           </view>
         </view>
-      </view>
+      </view> -->
     </view>
   </view>
 </template>
@@ -253,7 +250,7 @@ onMounted(() => {
   // 根据状态栏高度预估一个初始值，避免闪烁
   // 头部内容约 120rpx + 卡片区域约 320rpx + padding约 60rpx = 500rpx ≈ 250px + 状态栏
   const screenWidth = uni.getSystemInfoSync().windowWidth
-  const estimatedHeight = (500 / 750) * screenWidth + statusBarHeight.value + 32
+  const estimatedHeight = (500 / 750) * screenWidth + statusBarHeight.value 
   headerHeight.value = estimatedHeight
   
   // 多次尝试获取精确高度
@@ -336,7 +333,7 @@ const handleCardClick = (index) => {
 
 // 打开外部文档链接
 const openDocLink = () => {
-  const docUrl = 'https://www.kdocs.cn/l/cgkCcqM3rO5j?from=docs'
+  const docUrl = 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2'
   
   // #ifdef MP-WEIXIN
   uni.navigateTo({

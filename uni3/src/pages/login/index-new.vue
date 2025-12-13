@@ -183,7 +183,7 @@ const loading = ref(false)
 const agreed = ref(false)
 
 // 开发者模式
-const showDevMode = ref(true)  // 开发时设为true，生产时设为false
+const showDevMode = ref(false)  // 开发时设为true，生产时设为false
 const devPanelOpen = ref(false)
 
 // 短信登录表单
