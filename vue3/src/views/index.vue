@@ -151,7 +151,7 @@
         </el-col>
 
         <!-- 待办事项 -->
-        <el-col :xs="24" :lg="10">
+        <!-- <el-col :xs="24" :lg="10">
           <el-card class="section-card todo-card" shadow="never">
             <template #header>
               <div class="section-header">
@@ -199,7 +199,7 @@
               />
             </div>
           </el-card>
-        </el-col>
+        </el-col> -->
       </el-row>
     </template>
 
