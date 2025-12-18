@@ -117,26 +117,26 @@
           <!-- 预算信息 -->
           <div style="margin-bottom: 12px;">
             <template v-if="project.budget && project.budget > 0">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <!-- <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 14px; font-weight: 600; color: #303133;">总预算</span>
                 <span style="font-size: 18px; font-weight: 600; color: #1677ff;">¥{{ formatBudget(project.budget) }}万</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: #909399;">
+              </div> -->
+              <!-- <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: #909399;">
                 <span>已支出</span>
                 <span>¥{{ formatBudget(project.actualCost || 0) }}万</span>
-              </div>
-              <el-progress
+              </div> -->
+              <!-- <el-progress
                 :percentage="calculateProgress(project.actualCost || 0, project.budget)"
                 :stroke-width="6"
                 :show-text="false"
-              />
+              /> -->
             </template>
-            <div v-else style="padding: 12px; background: #fff7e6; border: 1px dashed #ffd591; border-radius: 4px; text-align: center;">
+            <!-- <div v-else style="padding: 12px; background: #fff7e6; border: 1px dashed #ffd591; border-radius: 4px; text-align: center;">
               <span style="font-size: 12px; color: #909399;">
                 <el-icon style="vertical-align: middle; margin-right: 4px;"><Wallet /></el-icon>
                 尚未设置预算
               </span>
-            </div>
+            </div> -->
           </div>
 
           <!-- 卡片底部操作按钮 -->

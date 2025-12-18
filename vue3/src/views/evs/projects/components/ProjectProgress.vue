@@ -322,11 +322,16 @@ function convertFromBackendData(backendItems) {
 
 // 数据转换：将组件数据转换为后端所需格式
 function convertToBackendData(componentItem) {
+  // 从字典数据中获取排序
+  const stageDict = decoration_construction_stage.value.find(
+    dict => dict.value === componentItem.title
+  )
+
   return {
     id: componentItem.id,
     projectId: props.project.id,
     stage: componentItem.title,
-    stageOrder: getStageOrder(componentItem.title),
+    stageOrder: stageDict?.dictSort || 999,
     planStartDate: componentItem.date,
     actualStartDate: componentItem.status === 'inProgress' ? componentItem.date : null,
     actualEndDate: componentItem.status === 'completed' ? componentItem.date : null,
@@ -354,21 +359,6 @@ function mapStatusFromBackend(backendStatus) {
     'COMPLETED': 'completed'
   }
   return statusMap[backendStatus] || 'pending'
-}
-
-// 获取施工阶段顺序
-function getStageOrder(stage) {
-  const stageOrders = {
-    'DISMANTLING': 1,
-    'WATER_ELECTRIC': 2,
-    'TILES': 3,
-    'WOODWORK': 4,
-    'PAINTING': 5,
-    'INSTALLATION': 6,
-    'SOFT_FURNISHING': 7,
-    'ACCEPTANCE': 8
-  }
-  return stageOrders[stage] || 999
 }
 
 // 加载项目进度数据

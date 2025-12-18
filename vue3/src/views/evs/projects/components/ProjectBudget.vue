@@ -99,15 +99,18 @@
                     size="large"
                     style="width: 100%"
                   >
-                    <el-option value="拆除工程" label="拆除工程" />
-                    <el-option value="水电安装" label="水电安装" />
-                    <el-option value="泥瓦工程" label="泥瓦工程" />
-                    <el-option value="木工工程" label="木工工程" />
-                    <el-option value="油漆工程" label="油漆工程" />
-                    <el-option value="材料费" label="材料费" />
-                    <el-option value="人工费" label="人工费" />
-                    <el-option value="管理费" label="管理费" />
-                    <el-option value="其他" label="其他" />
+                    <el-option
+                      v-for="dict in decoration_project_budget"
+                      :key="dict.value"
+                      :label="dict.label"
+                      :value="dict.value"
+                    />
+                    <el-option
+                      v-if="decoration_project_budget.length === 0"
+                      disabled
+                      value=""
+                      label="暂无可用预算类别"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -166,9 +169,11 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useDict } from '@/utils/dict'
 import { listProjectBudgets, addProjectBudgets, updateProjectBudgets, delProjectBudgets } from '@/api/evs/projectBudgets'
 
 const { proxy } = getCurrentInstance()
+const { decoration_project_budget } = useDict('decoration_project_budget')
 
 // Props
 const props = defineProps({
