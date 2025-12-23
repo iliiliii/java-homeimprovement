@@ -4,6 +4,14 @@
     <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
       <!-- 头部信息 -->
       <view class="header-content">
+        <!-- 左侧头像 -->
+        <UserAvatar 
+          :avatar="userInfo.avatar" 
+          :name="userInfo.name" 
+          size="80rpx"
+        />
+        
+        <!-- 项目信息 -->
         <view class="header-info">
           <text class="project-name" v-if="currentProject">
             {{ currentProject.name }} · {{ currentProject.area }}㎡
@@ -13,10 +21,21 @@
           </text>
         </view>
       </view>
+    </view>
+    
+    <!-- 头部占位 -->
+    <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
+    
+    <!-- 可滚动内容区域 -->
+    <view class="scroll-content" v-if="projects.length > 0">
+      <!-- Banner 轮播 -->
+      <BannerSwiper 
+        :banners="bannerList" 
+        @click="handleBannerClick"
+      />
       
       <!-- 项目卡片滑动区域 -->
-      <view class="project-cards-section" v-if="projects.length > 0">
-        <!-- 使用touch事件实现带回弹的滑动 -->
+      <view class="project-cards-section">
         <view 
           class="project-cards-wrapper"
           @touchstart="onTouchStart"
@@ -30,32 +49,13 @@
               transition: isAnimating ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none'
             }"
           >
-            <view 
-              class="project-card"
-              :class="[getCardTypeClass(project), { active: index === currentIndex }]"
+            <ProjectCard
               v-for="(project, index) in projects"
               :key="project.id"
+              :project="project"
+              :active="index === currentIndex"
               @click="handleCardClick(index)"
-            >
-              <view class="card-header">
-                <text class="card-name">{{ project.name }}</text>
-                <view class="card-status" :class="getCardTypeClass(project)">
-                  {{ project.statusText }}
-                </view>
-              </view>
-              <view class="card-stage">
-                <text>当前阶段: {{ project.currentStageText || '设计阶段' }}</text>
-              </view>
-              <view class="card-progress">
-                <view class="progress-bar">
-                  <view class="progress-fill" :style="{ width: (project.progressPercent || 0) + '%' }"></view>
-                </view>
-                <!-- <view class="progress-info">
-                  <text>进度 {{ project.progressPercent || 0 }}%</text>
-                  <text v-if="project.nextMilestone">预计 {{ project.nextMilestone }} 完工</text>
-                </view> -->
-              </view>
-            </view>
+            />
           </view>
         </view>
         
@@ -71,105 +71,53 @@
         </view>
       </view>
       
-      <!-- 无项目提示 -->
-      <view class="no-project" v-else>
-        <text>暂无关联项目</text>
+      <!-- 资讯 Tab -->
+      <view class="news-section">
+        <NewsTab :current="currentTab" @change="handleTabChange">
+          <!-- 资讯列表 -->
+          <view class="news-list">
+            <NewsItem 
+              v-for="item in newsList" 
+              :key="item.id" 
+              :item="item" 
+              @click="handleNewsClick"
+            />
+            
+            <!-- 加载更多 -->
+            <view v-if="newsLoading" class="loading-more">
+              <text>加载中...</text>
+            </view>
+            <view v-else-if="hasMoreNews" class="load-more" @click="loadMoreNews">
+              <text>加载更多</text>
+            </view>
+            <view v-else-if="newsList.length > 0" class="no-more">
+              <text>没有更多了</text>
+            </view>
+            <view v-else class="empty-news">
+              <text>暂无资讯</text>
+            </view>
+          </view>
+        </NewsTab>
       </view>
     </view>
     
-    <!-- 头部占位 - 确保内容不被固定头部覆盖 -->
-    <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
-    
-    <!-- 可滚动内容区域 -->
-    <view class="scroll-content" v-if="projects.length > 0">
-      <!-- 功能菜单 -->
-      <view class="menu-section">
-        <view class="menu-grid">
-          <!-- 设计阶段专属 -->
-          <!-- <view v-if="isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/design/index')">
-            <view class="menu-icon-box" style="background: rgba(201, 176, 212, 0.15);">
-              <SvgIcon name="photo" size="48rpx" color="#C9B0D4" />
-            </view>
-            <text class="menu-text">设计图</text>
-          </view> -->
-          
-          <!-- 施工阶段专属 -->
-          <!-- <view v-if="!isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/schedule/index')">
-            <view class="menu-icon-box" style="background: rgba(167, 185, 211, 0.15);">
-              <SvgIcon name="calendar" size="48rpx" color="#A7B9D3" />
-            </view>
-            <text class="menu-text">排期</text>
-          </view> -->
-<!--           
-          <view v-if="!isDesignPhase" class="menu-item" @click="$emit('navigate', '/pages/log/index')">
-            <view class="menu-icon-box" style="background: rgba(126, 150, 184, 0.15);">
-              <SvgIcon name="file-text" size="48rpx" color="#7E96B8" />
-            </view>
-            <text class="menu-text">日志</text>
-          </view> -->
-          
-          <!-- 文档链接 -->
-          <view class="menu-item" @click="openDocLink">
-            <view class="menu-icon-box" style="background: rgba(157, 193, 131, 0.15);">
-              <SvgIcon name="file-text" size="48rpx" color="#9DC183" />
-            </view>
-            <text class="menu-text">文档</text>
-          </view>
-          
-          <view class="menu-item" @click="$emit('navigate', '/pages/budget/index')">
-            <view class="menu-icon-box" style="background: rgba(232, 180, 76, 0.15);">
-              <SvgIcon name="rmb-circle" size="48rpx" color="#E8B44C" />
-            </view>
-            <text class="menu-text">预算</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 设计方案展示（设计阶段） -->
-      <view  class="content-section">
-        <text class="section-title">公司资讯</text>
-        <view class="glass-card design-preview" @click="$emit('navigate', '/pages/design/index')">
-          <image 
-            class="design-image" 
-            src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-            mode="aspectFill"
-          />
-          <view class="design-info flex-between">
-            <view>
-              <text class="design-title">最新资讯</text>
-            </view>
-          </view>
-        </view>
-      </view>
-      
-      <!-- <view v-if="!isDesignPhase" class="content-section">
-        <view class="flex-between section-header">
-          <text class="section-title">最新日志</text>
-          <text class="view-all" @click="$emit('navigate', '/pages/log/index')">查看全部</text>
-        </view>
-        <view class="log-preview glass-card" @click="$emit('navigate', '/pages/log/index')">
-          <image 
-            class="log-image" 
-            src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
-            mode="aspectFill"
-          />
-          <view class="log-content">
-            <view class="flex-between log-header">
-              <text class="log-title">施工进度</text>
-              <text class="log-time">查看详情</text>
-            </view>
-            <text class="log-desc">点击查看项目施工日志和进度更新</text>
-          </view>
-        </view>
-      </view> -->
+    <!-- 无项目提示 -->
+    <view class="no-project" v-else>
+      <text>暂无关联项目</text>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch, getCurrentInstance } from 'vue'
-import SvgIcon from '@/components/SvgIcon.vue'
+import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
+import { useUserStore } from '@/store/user.js'
+import { getBannerNews, getNewsList } from '@/api/news.js'
 import { getStatusBarHeight } from '@/utils/system.js'
+import UserAvatar from '@/components/UserAvatar.vue'
+import BannerSwiper from '@/components/BannerSwiper.vue'
+import ProjectCard from '@/components/ProjectCard.vue'
+import NewsTab from '@/components/NewsTab.vue'
+import NewsItem from '@/components/NewsItem.vue'
 
 const props = defineProps({
   projects: {
@@ -188,6 +136,9 @@ const props = defineProps({
 
 const emit = defineEmits(['switch-project', 'navigate'])
 
+const userStore = useUserStore()
+
+// 状态
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
 const currentIndex = ref(0)
@@ -198,11 +149,19 @@ const isAnimating = ref(false)
 const touchStartX = ref(0)
 const touchStartTranslateX = ref(0)
 
-// 计算当前是否设计阶段
-const isDesignPhase = computed(() => {
-  return props.currentProject?.status === 'DESIGN' || 
-         props.currentProject?.currentStage === 'DESIGN'
-})
+// Banner 数据
+const bannerList = ref([])
+
+// 资讯数据
+const currentTab = ref('home')
+const newsList = ref([])
+const newsLoading = ref(false)
+const hasMoreNews = ref(true)
+const newsPageNum = ref(1)
+const newsPageSize = 20
+
+// 用户信息
+const userInfo = computed(() => userStore.userInfo)
 
 // 根据状态获取卡片类型样式
 const getCardTypeClass = (project) => {
@@ -226,10 +185,8 @@ watch(() => props.currentProject, (newVal) => {
 
 // 监听projects变化，重新计算位置和高度
 watch(() => props.projects, () => {
-  nextTick(() => {
-    scrollToCard(currentIndex.value)
-    updateHeaderHeight()
-  })
+  scrollToCard(currentIndex.value)
+  updateHeaderHeight()
 }, { deep: true })
 
 // 更新header高度
@@ -237,26 +194,27 @@ const updateHeaderHeight = () => {
   const query = uni.createSelectorQuery().in(getCurrentInstance())
   query.select('.fixed-header').boundingClientRect(rect => {
     if (rect && rect.height > 0) {
-      // 增加额外间距确保内容不被遮挡
-      headerHeight.value = rect.height + 32
-      console.log('[CustomerDashboard] headerHeight:', headerHeight.value, 'rect.height:', rect.height)
+      headerHeight.value = rect.height + 24
     }
   }).exec()
 }
 
-onMounted(() => {
+onMounted(async () => {
   statusBarHeight.value = getStatusBarHeight()
   
-  // 根据状态栏高度预估一个初始值，避免闪烁
-  // 头部内容约 120rpx + 卡片区域约 320rpx + padding约 60rpx = 500rpx ≈ 250px + 状态栏
+  // 预估初始高度
   const screenWidth = uni.getSystemInfoSync().windowWidth
-  const estimatedHeight = (500 / 750) * screenWidth + statusBarHeight.value 
+  const estimatedHeight = (200 / 750) * screenWidth + statusBarHeight.value
   headerHeight.value = estimatedHeight
   
-  // 多次尝试获取精确高度
-  setTimeout(updateHeaderHeight, 150)
-  setTimeout(updateHeaderHeight, 400)
-  setTimeout(updateHeaderHeight, 800)
+  // 获取精确高度
+  setTimeout(updateHeaderHeight, 200)
+  
+  // 加载 Banner 和资讯数据
+  await Promise.all([
+    loadBannerNews(),
+    loadNewsList()
+  ])
 })
 
 // 获取实际卡片宽度（rpx转px）
@@ -331,19 +289,83 @@ const handleCardClick = (index) => {
   }
 }
 
-// 打开外部文档链接
-const openDocLink = () => {
-  const docUrl = 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2'
+// 加载 Banner 资讯
+const loadBannerNews = async () => {
+  try {
+    const data = await getBannerNews()
+    bannerList.value = data || []
+  } catch (error) {
+    console.error('[CustomerDashboard] 加载Banner失败:', error)
+  }
+}
+
+// 加载资讯列表
+const loadNewsList = async (reset = true) => {
+  if (newsLoading.value) return
   
-  // #ifdef MP-WEIXIN
-  uni.navigateTo({
-    url: `/pages/webview/index?url=${encodeURIComponent(docUrl)}&title=项目文档`
-  })
-  // #endif
+  if (reset) {
+    newsPageNum.value = 1
+    hasMoreNews.value = true
+  }
   
-  // #ifdef H5
-  window.open(docUrl, '_blank')
-  // #endif
+  newsLoading.value = true
+  try {
+    const data = await getNewsList(currentTab.value, newsPageNum.value, newsPageSize)
+    
+    if (reset) {
+      newsList.value = data?.list || []
+    } else {
+      newsList.value = [...newsList.value, ...(data?.list || [])]
+    }
+    
+    hasMoreNews.value = data?.hasMore ?? false
+    newsPageNum.value++
+  } catch (error) {
+    console.error('[CustomerDashboard] 加载资讯失败:', error)
+  } finally {
+    newsLoading.value = false
+  }
+}
+
+// Tab 切换
+const handleTabChange = (tab) => {
+  currentTab.value = tab
+  loadNewsList(true)
+}
+
+// 加载更多资讯
+const loadMoreNews = () => {
+  loadNewsList(false)
+}
+
+// Banner 点击
+const handleBannerClick = (item) => {
+  if (item.jumpUrl) {
+    // #ifdef MP-WEIXIN
+    uni.navigateTo({
+      url: `/pages/webview/index?url=${encodeURIComponent(item.jumpUrl)}&title=${encodeURIComponent(item.title)}`
+    })
+    // #endif
+    
+    // #ifdef H5
+    window.open(item.jumpUrl, '_blank')
+    // #endif
+  }
+}
+
+// 资讯点击
+const handleNewsClick = (item) => {
+  if (item.jumpUrl) {
+    // #ifdef MP-WEIXIN
+    uni.navigateTo({
+      url: `/pages/webview/index?url=${encodeURIComponent(item.jumpUrl)}&title=${encodeURIComponent(item.title)}`
+    })
+    // #endif
+    
+    // #ifdef H5
+    window.open(item.jumpUrl, '_blank')
+    // #endif
+  }
 }
 </script>
 
@@ -351,7 +373,7 @@ const openDocLink = () => {
 .customer-dashboard {
   min-height: 100vh;
   background: $glass-bg;
-  padding-bottom: 140rpx; // 为底部TabBar留出空间
+  padding-bottom: 140rpx;
 }
 
 // 固定头部
@@ -367,22 +389,24 @@ const openDocLink = () => {
 
 .header-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 24rpx 48rpx;
+  gap: 24rpx;
+  padding: 24rpx 32rpx;
 }
 
 .header-info {
+  flex: 1;
+  
   .project-name {
     display: block;
-    font-size: 28rpx;
+    font-size: 26rpx;
     color: $glass-text-muted;
-    margin-bottom: 8rpx;
+    margin-bottom: 4rpx;
   }
   
   .project-status {
     display: block;
-    font-size: 40rpx;
+    font-size: 36rpx;
     font-weight: 700;
     color: $glass-text-main;
     
@@ -399,10 +423,27 @@ const openDocLink = () => {
   flex-shrink: 0;
 }
 
-// 项目卡片滑动区域
+// 可滚动内容
+.scroll-content {
+  padding-top: 16rpx;
+}
+
+// 项目卡片区域
+.project-cards-section {
+  margin-bottom: 32rpx;
+  
+  .section-title {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: $glass-text-main;
+    padding: 0 32rpx 16rpx;
+  }
+}
+
 .project-cards-wrapper {
   overflow: hidden;
-  padding: 20rpx 0;
+  padding: 16rpx 0;
 }
 
 .project-cards-container {
@@ -412,106 +453,12 @@ const openDocLink = () => {
   will-change: transform;
 }
 
-.project-card {
-  width: 600rpx;
-  min-width: 600rpx;
-  padding: 32rpx;
-  border-radius: 32rpx;
-  flex-shrink: 0;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
-  
-  &.design {
-    background: linear-gradient(145deg, #F3E8FF 0%, #E9D5FF 100%);
-    .progress-fill { background: linear-gradient(90deg, #A855F7 0%, #7C3AED 100%); }
-    .card-status { background: rgba(168, 85, 247, 0.15); color: #7C3AED; }
-  }
-  
-  &.construction {
-    background: linear-gradient(145deg, #DBEAFE 0%, #BFDBFE 100%);
-    .progress-fill { background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%); }
-    .card-status { background: rgba(59, 130, 246, 0.15); color: #2563EB; }
-  }
-  
-  &.completed {
-    background: linear-gradient(145deg, #D1FAE5 0%, #A7F3D0 100%);
-    .progress-fill { background: linear-gradient(90deg, #10B981 0%, #059669 100%); }
-    .card-status { background: rgba(16, 185, 129, 0.15); color: #059669; }
-  }
-  
-  &.pending {
-    background: linear-gradient(145deg, #F3F4F6 0%, #E5E7EB 100%);
-    .progress-fill { background: linear-gradient(90deg, #9CA3AF 0%, #6B7280 100%); }
-    .card-status { background: rgba(107, 114, 128, 0.15); color: #6B7280; }
-  }
-  
-  &.active {
-    transform: scale(1.02);
-    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
-  }
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20rpx;
-}
-
-.card-name {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #1F2937;
-  flex: 1;
-  white-space: normal;
-  word-break: break-all;
-}
-
-.card-status {
-  font-size: 24rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 100rpx;
-  font-weight: 500;
-  flex-shrink: 0;
-  margin-left: 16rpx;
-}
-
-.card-stage {
-  font-size: 28rpx;
-  color: #4B5563;
-  margin-bottom: 24rpx;
-  text { opacity: 0.9; }
-}
-
-.card-progress {
-  .progress-bar {
-    height: 16rpx;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 8rpx;
-    overflow: hidden;
-    margin-bottom: 16rpx;
-  }
-  
-  .progress-fill {
-    height: 100%;
-    border-radius: 8rpx;
-    transition: width 0.3s ease;
-  }
-  
-  .progress-info {
-    display: flex;
-    justify-content: space-between;
-    font-size: 24rpx;
-    color: #6B7280;
-  }
-}
-
 // 指示器
 .card-indicators {
   display: flex;
   justify-content: center;
   gap: 12rpx;
-  margin-top: 6rpx;
+  margin-top: 16rpx;
 }
 
 .indicator {
@@ -528,153 +475,42 @@ const openDocLink = () => {
   }
 }
 
+// 资讯区域
+.news-section {
+  padding-top: 16rpx;
+}
+
+.news-list {
+  min-height: 200rpx;
+}
+
+.loading-more,
+.load-more,
+.no-more,
+.empty-news {
+  padding: 32rpx;
+  text-align: center;
+  
+  text {
+    font-size: 26rpx;
+    color: $glass-text-muted;
+  }
+}
+
+.load-more {
+  text {
+    color: $glass-accent;
+  }
+}
+
 // 无项目提示
 .no-project {
-  padding: 48rpx;
+  padding: 100rpx 48rpx;
   text-align: center;
-  text { font-size: 28rpx; color: $glass-text-muted; }
-}
-
-// 可滚动内容
-.scroll-content {
-  padding-top: 24rpx;
-  padding-bottom: 40rpx; // 减少这里的padding，因为父容器已经有padding-bottom
-}
-
-// 功能菜单
-.menu-section {
-  padding: 0 48rpx;
-  margin-bottom: 32rpx;
-}
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24rpx;
-}
-
-.menu-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.menu-icon-box {
-  width: 100rpx;
-  height: 100rpx;
-  background: white;
-  border-radius: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: $shadow-card;
-}
-
-.menu-text {
-  font-size: 24rpx;
-  font-weight: 500;
-  color: $glass-text-main;
-}
-
-// 内容区域
-.content-section {
-  padding: 0 48rpx;
-  margin-bottom: 48rpx;
-}
-
-.section-title {
-  display: block;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: $glass-text-main;
-  margin-bottom: 24rpx;
-}
-
-.section-header {
-  margin-bottom: 24rpx;
-  .section-title { margin-bottom: 0; }
-}
-
-.view-all {
-  font-size: 24rpx;
-  color: $glass-text-muted;
-}
-
-// 设计预览
-.design-preview {
-  padding: 0;
-  overflow: hidden;
-}
-
-.design-image {
-  width: 100%;
-  height: 320rpx;
-  display: block;
-}
-
-.design-info {
-  padding: 24rpx;
-}
-
-.design-title {
-  display: block;
-  font-weight: 600;
-  font-size: 28rpx;
-  margin-bottom: 8rpx;
-}
-
-.design-update {
-  display: block;
-  font-size: 24rpx;
-  color: $glass-text-muted;
-}
-
-.view-link {
-  color: $glass-accent;
-  font-size: 28rpx;
-}
-
-// 日志预览
-.log-preview {
-  display: flex;
-  gap: 24rpx;
-  padding: 24rpx;
-}
-
-.log-image {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 16rpx;
-  flex-shrink: 0;
-}
-
-.log-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.log-header {
-  margin-bottom: 8rpx;
-}
-
-.log-title {
-  font-weight: 600;
-  font-size: 28rpx;
-}
-
-.log-time {
-  font-size: 24rpx;
-  color: $glass-text-muted;
-}
-
-.log-desc {
-  font-size: 24rpx;
-  color: $glass-text-muted;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.6;
+  
+  text {
+    font-size: 28rpx;
+    color: $glass-text-muted;
+  }
 }
 </style>
