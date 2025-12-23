@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.app.mapper.AppNewsMapper">
+
+    <!-- 查询资讯列表 -->
+    <select id="selectNewsByPosition" resultType="com.ruoyi.app.dto.response.NewsItemVO">
+        SELECT 
+            id,
+            title,
+            subtitle,
+            cover_image as coverImage,
+            jump_url as jumpUrl,
+            publish_time as publishTime
+        FROM news_consultation
+        WHERE publish_position = #{position}
+          AND publish_status = 'PUBLISHED'
+          AND deleted_at IS NULL
+        ORDER BY sort_order DESC
+    </select>
+
+    <!-- 统计资讯数量 -->
+    <select id="countNewsByPosition" resultType="Long">
+        SELECT COUNT(*)
+        FROM news_consultation
+        WHERE publish_position = #{position}
+          AND publish_status = 'PUBLISHED'
+          AND deleted_at IS NULL
+    </select>
+
+</mapper>
