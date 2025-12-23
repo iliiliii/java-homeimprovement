@@ -10,7 +10,7 @@
 
       <!-- 统计卡片 -->
       <el-row :gutter="16" class="stats-row">
-        <el-col :xs="12" :sm="12" :md="6">
+        <el-col :xs="24" :sm="8">
           <div class="stat-card">
             <div class="stat-icon customer">
               <el-icon><User /></el-icon>
@@ -22,7 +22,7 @@
             </div>
           </div>
         </el-col>
-        <el-col :xs="12" :sm="12" :md="6">
+        <el-col :xs="24" :sm="8">
           <div class="stat-card">
             <div class="stat-icon project">
               <el-icon><Folder /></el-icon>
@@ -34,7 +34,7 @@
             </div>
           </div>
         </el-col>
-        <el-col :xs="12" :sm="12" :md="6">
+        <el-col :xs="24" :sm="8">
           <div class="stat-card">
             <div class="stat-icon budget">
               <el-icon><Money /></el-icon>
@@ -46,62 +46,52 @@
             </div>
           </div>
         </el-col>
-        <!-- <el-col :xs="12" :sm="12" :md="6">
-          <div class="stat-card">
-            <div class="stat-icon quality">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">质检通过率</div>
-              <div class="stat-value quality">{{ stats.qualityPassRate }}<span class="stat-unit">%</span></div>
-              <div class="stat-extra">不通过 {{ stats.qualityFailCount }} 次</div>
-            </div>
-          </div>
-        </el-col> -->
       </el-row>
 
-      <!-- 重点客户管理 -->
-      <el-card class="section-card" shadow="never">
-        <template #header>
-          <div class="section-header">
-            <div class="section-title">
-              <el-icon class="section-icon customer"><Trophy /></el-icon>
-              <span>重点客户管理</span>
-            </div>
-            <el-button type="primary" link @click="goToCustomers">
-              查看全部 <el-icon><ArrowRight /></el-icon>
-            </el-button>
-          </div>
-        </template>
-        <div class="customer-list" v-loading="customersLoading">
-          <div v-for="customer in topCustomers" :key="customer.id" class="customer-item" @click="goToCustomerDetail(customer.id)">
-            <div class="customer-avatar">
-              <el-icon><Avatar /></el-icon>
-            </div>
-            <div class="customer-info">
-              <div class="customer-name">{{ customer.name }}</div>
-              <div class="customer-contact">
-                <el-icon><Phone /></el-icon>
-                <span>{{ customer.phone || '-' }}</span>
-                <el-icon style="margin-left: 12px;"><Location /></el-icon>
-                <span>{{ customer.address || '-' }}</span>
+      <!-- 重点客户管理与进行中的项目 -->
+      <el-row :gutter="16" class="main-row">
+        <!-- 重点客户管理 -->
+        <el-col :xs="24" :lg="12">
+          <el-card class="section-card" shadow="never">
+            <template #header>
+              <div class="section-header">
+                <div class="section-title">
+                  <el-icon class="section-icon customer"><Trophy /></el-icon>
+                  <span>重点客户管理</span>
+                </div>
+                <el-button type="primary" link @click="goToCustomers">
+                  查看全部 <el-icon><ArrowRight /></el-icon>
+                </el-button>
               </div>
-              <div class="customer-stats">
-                <span>项目数量：<b>{{ customer.projectCount || 0 }}</b></span>
-                <span class="divider">·</span>
-                <span>合同总额：<b class="amount">¥{{ formatMoney(customer.totalBudget) }}万</b></span>
-                <span v-if="customer.inProgressCount > 0" class="in-progress-tag">进行中 {{ customer.inProgressCount }} 个</span>
+            </template>
+            <div class="customer-list scrollable-content" v-loading="customersLoading">
+              <div v-for="customer in topCustomers" :key="customer.id" class="customer-item" @click="goToCustomerDetail(customer.id)">
+                <div class="customer-avatar">
+                  <el-icon><Avatar /></el-icon>
+                </div>
+                <div class="customer-info">
+                  <div class="customer-name">{{ customer.name }}</div>
+                  <div class="customer-contact">
+                    <el-icon><Phone /></el-icon>
+                    <span>{{ customer.phone || '-' }}</span>
+                    <el-icon style="margin-left: 12px;"><Location /></el-icon>
+                    <span>{{ customer.address || '-' }}</span>
+                  </div>
+                  <div class="customer-stats">
+                    <span>项目数量：<b>{{ customer.projectCount || 0 }}</b></span>
+                    <span class="divider">·</span>
+                    <span>合同总额：<b class="amount">¥{{ formatMoney(customer.totalBudget) }}万</b></span>
+                    <span v-if="customer.inProgressCount > 0" class="in-progress-tag">进行中 {{ customer.inProgressCount }} 个</span>
+                  </div>
+                </div>
               </div>
+              <el-empty v-if="!customersLoading && topCustomers.length === 0" description="暂无客户数据" :image-size="80" />
             </div>
-          </div>
-          <el-empty v-if="!customersLoading && topCustomers.length === 0" description="暂无客户数据" :image-size="80" />
-        </div>
-      </el-card>
+          </el-card>
+        </el-col>
 
-      <!-- 项目与待办 -->
-      <el-row :gutter="16" class="bottom-row">
         <!-- 进行中的项目 -->
-        <el-col :xs="24" :lg="14">
+        <el-col :xs="24" :lg="12">
           <el-card class="section-card" shadow="never">
             <template #header>
               <div class="section-header">
@@ -115,7 +105,7 @@
                 </el-button>
               </div>
             </template>
-            <div class="project-list" v-loading="projectsLoading">
+            <div class="project-list scrollable-content" v-loading="projectsLoading">
               <div v-for="project in inProgressProjects" :key="project.id" class="project-item" @click="goToProjectDetail(project.id)">
                 <div class="project-header">
                   <span class="project-name">{{ project.name }}</span>
@@ -644,14 +634,56 @@ onMounted(() => {
   margin-bottom: 16px;
   border-radius: 12px;
   border: none;
-  
+
   :deep(.el-card__header) {
     padding: 16px 20px;
     border-bottom: 1px solid #f0f0f0;
   }
-  
+
   :deep(.el-card__body) {
     padding: 0;
+  }
+
+  // 主行卡片固定高度
+  .main-row & {
+    height: 480px;
+    display: flex;
+    flex-direction: column;
+
+    :deep(.el-card__header) {
+      flex-shrink: 0;
+    }
+
+    :deep(.el-card__body) {
+      flex: 1;
+      overflow: hidden;
+    }
+  }
+}
+
+// 可滚动内容区域
+.scrollable-content {
+  height: 100%;
+  overflow-y: auto;
+  padding: 8px 0;
+
+  // 自定义滚动条样式
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c0c4cc;
+    border-radius: 3px;
+
+    &:hover {
+      background: #909399;
+    }
   }
 }
 
@@ -680,7 +712,7 @@ onMounted(() => {
 
 // ========== 客户列表 ==========
 .customer-list {
-  padding: 8px 0;
+  // padding 由 .scrollable-content 处理
 }
 
 .customer-item {
@@ -770,7 +802,7 @@ onMounted(() => {
 
 // ========== 项目列表 ==========
 .project-list {
-  padding: 8px 0;
+  // padding 由 .scrollable-content 处理
 }
 
 .project-item {
@@ -925,7 +957,7 @@ onMounted(() => {
   }
 }
 
-.bottom-row {
+.main-row {
   .el-col {
     margin-bottom: 16px;
   }

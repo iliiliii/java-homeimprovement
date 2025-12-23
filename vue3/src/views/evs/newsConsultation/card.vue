@@ -31,13 +31,7 @@
         
         <el-table-column label="发布位置" width="120" align="center">
           <template #default="scope">
-            <el-tag 
-              :type="scope.row.publishPosition === 'Banner区域' ? 'danger' : 'primary'"
-              effect="plain"
-              size="small"
-            >
-              {{ scope.row.publishPosition || '未设置' }}
-            </el-tag>
+            <dict-tag :options="decoration_news_position" :value="scope.row.publishPosition" />
           </template>
         </el-table-column>
         
@@ -133,8 +127,12 @@
         </el-form-item>
         <el-form-item label="发布位置" prop="publishPosition">
           <el-select v-model="form.publishPosition" placeholder="请选择发布位置" style="width: 100%">
-            <el-option label="Banner区域" value="Banner区域" />
-            <el-option label="资讯区域" value="资讯区域" />
+            <el-option
+              v-for="dict in decoration_news_position"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="发布时间" prop="publishTime">
@@ -209,6 +207,7 @@ import { useUploadManager, uploadPresets } from '@/composables/useUploadManager'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
 
 const { proxy } = getCurrentInstance()
+const { decoration_news_position } = proxy.useDict('decoration_news_position')
 
 const newsConsultationList = ref([])
 const open = ref(false)
