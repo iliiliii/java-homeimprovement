@@ -342,13 +342,14 @@ watch(() => [props.visible, props.isEdit, props.editRecord], async ([visible, is
 
       // 处理编辑模式下的图片回显
       if (images.length > 0) {
-        imagesFileList.value = uploadRef.value?.parseFileIdsToList?.(images) ||
-          images.map((url, index) => ({
-            uid: `existing-${index}`,
-            name: `image-${index}.jpg`,
-            url: url.startsWith('http') ? url : (import.meta.env.VITE_APP_BASE_API + url),
-            status: 'success'
-          }))
+        // 直接使用后端返回的路径，不拼接任何前缀
+        // 后端返回格式：/profile/upload/xxx.jpg 或 http://...
+        imagesFileList.value = images.map((url, index) => ({
+          uid: `existing-${index}`,
+          name: `image-${index}.jpg`,
+          url: url,  // 直接使用，不拼接 VITE_APP_BASE_API
+          status: 'success'
+        }))
       }
       console.log('表单数据已预填充', acceptanceForm.value)
     } catch (error) {

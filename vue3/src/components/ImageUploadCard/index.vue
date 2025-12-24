@@ -886,33 +886,26 @@ function extractImageUrls(fileList) {
       try {
         // 优先使用后端返回的文件名
         if (file.response?.code === 200 && file.response.fileName) {
-          // 如果返回的是相对路径，确保以/开头
-          let path = file.response.fileName
-          if (!path.startsWith('/')) {
-            path = '/' + path
-          }
-          return path
+          // 直接返回后端返回的路径（已经是 /profile/xxx 格式）
+          return file.response.fileName
         }
 
         // 处理完整URL
         if (file.url) {
           if (file.url.startsWith('http')) {
-            // 移除完整URL前缀，仅保留相对路径
-            const baseUrl = import.meta.env.VITE_APP_BASE_API
-            if (file.url.startsWith(baseUrl)) {
-              let path = file.url.substring(baseUrl.length)
-              // 确保以/开头
-              if (!path.startsWith('/')) {
-                path = '/' + path
-              }
-              return path
-            }
-            // 如果不以baseUrl开头，可能是完整CDN URL，直接返回原路径
+            // CDN URL等完整URL，直接返回
             return file.url
           }
 
-          // 相对路径，确保以/开头
+          // 处理相对路径
           let path = file.url
+
+          // 兼容处理：如果路径包含 /dev-api 前缀，移除它
+          if (path.startsWith('/dev-api/')) {
+            path = path.substring(9)  // 移除 /dev-api 前缀
+          }
+
+          // 确保以 / 开头
           if (!path.startsWith('/')) {
             path = '/' + path
           }

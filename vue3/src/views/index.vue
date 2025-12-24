@@ -18,7 +18,6 @@
             <div class="stat-content">
               <div class="stat-label">客户总数</div>
               <div class="stat-value customer">{{ stats.customerCount }}<span class="stat-unit">位</span></div>
-              <div class="stat-extra">活跃客户 {{ stats.activeCustomerCount }} 位</div>
             </div>
           </div>
         </el-col>
@@ -30,7 +29,6 @@
             <div class="stat-content">
               <div class="stat-label">项目总数</div>
               <div class="stat-value project">{{ stats.projectCount }}<span class="stat-unit">个</span></div>
-              <div class="stat-extra">进行中 {{ stats.inProgressCount }} · 已完成 {{ stats.completedCount }}</div>
             </div>
           </div>
         </el-col>
@@ -40,9 +38,8 @@
               <el-icon><Money /></el-icon>
             </div>
             <div class="stat-content">
-              <div class="stat-label">预算总额</div>
+              <div class="stat-label">合同总额</div>
               <div class="stat-value budget">¥{{ formatMoney(stats.totalBudget) }}<span class="stat-unit">万</span></div>
-              <div class="stat-extra">已支出 ¥{{ formatMoney(stats.totalCost) }}万</div>
             </div>
           </div>
         </el-col>
@@ -541,7 +538,6 @@ onMounted(() => {
 .dashboard-container {
   padding: 20px;
   background: #f5f7fa;
-  min-height: calc(100vh - 84px);
 }
 
 .page-header {
@@ -644,9 +640,9 @@ onMounted(() => {
     padding: 0;
   }
 
-  // 主行卡片固定高度
+  // 主行卡片继承父容器高度
   .main-row & {
-    height: 480px;
+    height: 100%;
     display: flex;
     flex-direction: column;
 
@@ -958,8 +954,11 @@ onMounted(() => {
 }
 
 .main-row {
+  height: calc(100vh - 300px); // 减去上方固定内容的高度（header + stats + padding）
+
   .el-col {
-    margin-bottom: 16px;
+    height: 100%;
+    margin-bottom: 0;
   }
 }
 

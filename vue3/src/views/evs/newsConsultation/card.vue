@@ -367,10 +367,12 @@ function handleUpdate(row) {
         // 将封面图片转换为ImageUploadCard可识别的格式
         const coverImageUrl = form.value.coverImage
         if (coverImageUrl) {
-          coverImageFileList.value = uploadRef.value?.parseFileIdsToList?.([coverImageUrl]) || [{
+          // 直接使用后端返回的路径，不拼接任何前缀
+          // 后端返回格式：/profile/upload/xxx.jpg 或 http://...
+          coverImageFileList.value = [{
             uid: 'existing-cover',
             name: 'cover-image.jpg',
-            url: coverImageUrl.startsWith('http') ? coverImageUrl : (import.meta.env.VITE_APP_BASE_API + coverImageUrl),
+            url: coverImageUrl,  // 直接使用，不拼接 VITE_APP_BASE_API
             status: 'success'
           }]
         }

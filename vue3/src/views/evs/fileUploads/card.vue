@@ -168,7 +168,7 @@ async function handleFileUploadSuccess(fileData) {
       mimeType: mimeType,
       size: fileData.size || 0,
       path: fileNameWithoutPrefix,
-      url: import.meta.env.VITE_APP_BASE_API + (fileName.startsWith('/') ? fileName : '/' + fileName),
+      url: fileName,  // 直接使用后端返回的路径
       type: extension,
       category: form.category || autoCategory,
       remarks: form.remarks || ''

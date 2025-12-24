@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">质量检查</h2>
+        <h2 class="page-title">验收节点</h2>
         <p class="page-subtitle">跟踪进行中项目的质量验收</p>
       </div>
     </div>
@@ -161,10 +161,12 @@
         </el-form-item>
         <el-form-item label="问题分类" prop="category" required>
           <el-select v-model="issueForm.category" placeholder="请选择问题分类" style="width: 100%;">
-            <el-option label="一般问题" value="GENERAL" />
-            <el-option label="红线问题" value="CRITICAL" />
-            <el-option label="紧急问题" value="URGENT" />
-            <el-option label="其他" value="OTHER" />
+            <el-option
+              v-for="dict in decoration_issue_severity"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="问题位置" prop="location">
@@ -278,7 +280,7 @@ import QualityIssuesPanel from './components/QualityIssuesPanel.vue'
 import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
-const { decoration_project_status } = proxy.useDict('decoration_project_status')
+const { decoration_project_status, decoration_issue_severity } = proxy.useDict('decoration_project_status', 'decoration_issue_severity')
 
 // 用户存储
 const userStore = useUserStore()
@@ -822,6 +824,12 @@ function getIssueCategoryType(category) {
 
 /** 获取问题分类文本 */
 function getIssueCategoryText(category) {
+  // 优先使用字典数据
+  const dictItem = decoration_issue_severity.value.find(item => item.value === category)
+  if (dictItem) {
+    return dictItem.label
+  }
+  // 后备映射
   const textMap = {
     'GENERAL': '一般问题',
     'CRITICAL': '红线问题',
@@ -860,7 +868,7 @@ function previewIssueImages(issue) {
     if (images && images.length > 0) {
       // 显示第一张图片
       const firstImage = images[0]
-      dialogImageUrl.value = firstImage.startsWith('http') ? firstImage : import.meta.env.VITE_APP_BASE_API + firstImage
+      dialogImageUrl.value = firstImage  // 直接使用，Vite 代理已处理
       dialogImageVisible.value = true
     } else {
       proxy.$modal.msgWarning('该问题暂无图片')
@@ -878,7 +886,7 @@ function previewFixImages(fix) {
     if (images && images.length > 0) {
       // 显示第一张图片
       const firstImage = images[0]
-      dialogImageUrl.value = firstImage.startsWith('http') ? firstImage : import.meta.env.VITE_APP_BASE_API + firstImage
+      dialogImageUrl.value = firstImage  // 直接使用，Vite 代理已处理
       dialogImageVisible.value = true
     } else {
       proxy.$modal.msgWarning('该整改记录暂无图片')

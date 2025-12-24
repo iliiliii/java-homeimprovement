@@ -313,7 +313,7 @@ function handleUpdate(row) {
             imageUrls.map((url, index) => ({
               uid: `existing-${index}`,
               name: `image-${index}.jpg`,
-              url: url.startsWith('http') ? url : (import.meta.env.VITE_APP_BASE_API + url),
+              url: url,  // 直接使用后端返回的路径
               status: 'success'
             }))
 
