@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">人员管理</h2>
+        <h2 class="page-title">用户管理</h2>
         <p class="page-subtitle">管理团队成员信息</p>
       </div>
       <el-button type="primary" icon="Plus" @click="handleAdd" v-hasPermi="['system:user:add']">
@@ -11,7 +11,7 @@
       </el-button>
     </div>
 
-    <!-- 角色统计卡片 -->
+    <!-- 角色统计卡片
     <el-row :gutter="20" class="role-stats">
       <el-col :span="6">
         <div class="stat-card stat-card-blue">
@@ -58,7 +58,7 @@
         </div>
       </el-col>
     </el-row>
-
+ -->
     <!-- 筛选表单区域 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" class="search-form">
       <el-form-item label="用户名称" prop="userName">
