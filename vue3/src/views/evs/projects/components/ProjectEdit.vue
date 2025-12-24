@@ -58,25 +58,14 @@
 
       <!-- 编辑模式专属字段 -->
       <template v-if="isEdit">
-        <el-form-item label="项目编号" prop="projectCode">
-          <el-input v-model="form.projectCode" placeholder="系统自动生成" disabled />
-        </el-form-item>
 
-        <el-form-item label="预算金额" prop="budget">
-          <el-input v-model="form.budget" placeholder="请输入预算金额(元)" />
-        </el-form-item>
-
-        <el-form-item label="实际费用" prop="actualCost">
-          <el-input v-model="form.actualCost" placeholder="请输入实际费用(元)" />
-        </el-form-item>
-
-        <el-form-item label="实际完工日期" prop="actualEndDate">
+        <el-form-item label="入住日期" prop="actualEndDate">
           <el-date-picker
             clearable
             v-model="form.actualEndDate"
             type="date"
             value-format="YYYY-MM-DD"
-            placeholder="请选择实际完工日期"
+            placeholder="请选择入住日期"
             style="width: 100%"
           />
         </el-form-item>

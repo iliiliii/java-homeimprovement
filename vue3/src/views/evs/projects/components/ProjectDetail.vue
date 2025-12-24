@@ -342,7 +342,7 @@ function calculateProgress(actual, total) {
 /** 计算剩余天数 */
 function calculateDaysRemaining(endDate, actualEndDate) {
   if (actualEndDate) {
-    // 如果有实际完工日期，显示"已完成"
+    // 如果有入住日期，显示"已完成"
     return "已完成"
   }
   if (!endDate) {

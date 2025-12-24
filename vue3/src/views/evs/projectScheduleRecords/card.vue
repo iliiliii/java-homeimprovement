@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">进度跟踪</h2>
+        <h2 class="page-title">进度巡查</h2>
         <p class="page-subtitle">跟踪和管理项目施工进度</p>
       </div>
     </div>
