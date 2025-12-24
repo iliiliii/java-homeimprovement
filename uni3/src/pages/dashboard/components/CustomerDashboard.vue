@@ -220,7 +220,8 @@ onMounted(async () => {
 // 获取实际卡片宽度（rpx转px）
 const getCardWidthPx = () => {
   const screenWidth = uni.getSystemInfoSync().windowWidth
-  return (620 / 750) * screenWidth
+  // 卡片宽度为 100vw - 64rpx，转换为px
+  return screenWidth - (64 / 750) * screenWidth
 }
 
 // Touch事件处理 - 带回弹效果
@@ -449,7 +450,7 @@ const handleNewsClick = (item) => {
 .project-cards-container {
   display: flex;
   gap: 20rpx;
-  padding: 0 calc((100vw - 600rpx) / 2);
+  padding: 0 32rpx;
   will-change: transform;
 }
 

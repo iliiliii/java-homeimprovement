@@ -18,7 +18,7 @@
         <view class="banner-item">
           <image 
             class="banner-image" 
-            :src="item.coverImage" 
+            :src="getFullImageUrl(item.coverImage)" 
             mode="aspectFill"
           />
           <view class="banner-overlay">
@@ -32,6 +32,7 @@
 </template>
 
 <script setup>
+import { getFullImageUrl } from '@/utils/request.js'
 const props = defineProps({
   /** Banner列表 */
   banners: {

@@ -252,6 +252,26 @@ export const del = (url, data, options = {}) => {
 }
 
 // 导出BASE_URL供其他模块使用
-export { BASE_URL }
+export { BASE_URL, getBaseUrl }
+
+/**
+ * 获取完整图片URL
+ * 小程序不支持相对路径，需要拼接完整域名
+ * @param {string} url - 图片URL（可能是相对路径或绝对路径）
+ * @returns {string} 完整的图片URL
+ */
+export const getFullImageUrl = (url) => {
+  if (!url) return ''
+  
+  // 已经是完整URL（http/https开头）
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  
+  // 相对路径，拼接BASE_URL
+  // 确保路径以/开头
+  const path = url.startsWith('/') ? url : `/${url}`
+  return BASE_URL + path
+}
 
 export default request

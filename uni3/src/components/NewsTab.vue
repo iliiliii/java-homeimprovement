@@ -2,14 +2,19 @@
   <view class="news-tab">
     <!-- Tab 头部 -->
     <view class="tab-header">
+      <!-- 滑动背景 -->
       <view 
-        v-for="tab in tabs" 
+        class="tab-slider"
+        :class="{ 'slider-right': current === 'commercial' }"
+      ></view>
+      
+      <view 
+        v-for="(tab, index) in tabs" 
         :key="tab.key" 
         :class="['tab-item', { active: current === tab.key }]"
-        @click="handleTabClick(tab.key)"
+        @click="handleTabClick(tab.key, index)"
       >
         <text class="tab-text">{{ tab.label }}</text>
-        <view v-if="current === tab.key" class="tab-indicator"></view>
       </view>
     </view>
     
@@ -39,7 +44,8 @@ const props = defineProps({
 
 const emit = defineEmits(['change'])
 
-const handleTabClick = (key) => {
+// 点击Tab
+const handleTabClick = (key, index) => {
   if (key !== props.current) {
     emit('change', key)
   }
@@ -53,39 +59,61 @@ const handleTabClick = (key) => {
 
 .tab-header {
   display: flex;
-  gap: 48rpx;
-  padding-bottom: 16rpx;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+  position: relative;
+  background: #f5f5f5;
+  border-radius: 16rpx;
   margin-bottom: 24rpx;
+  border: none;
+  outline: none;
+}
+
+// 滑动背景块
+.tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: $glass-accent;
+  border-radius: 16rpx;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+  border: none;
+  outline: none;
+  
+  &.slider-right {
+    left: 50%;
+  }
 }
 
 .tab-item {
+  flex: 1;
   position: relative;
-  padding: 16rpx 0;
+  z-index: 1;
+  padding: 20rpx 0;
+  text-align: center;
+  background: transparent;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
   
   .tab-text {
-    font-size: 30rpx;
-    color: $glass-text-muted;
+    font-size: 28rpx;
+    color: #666;
     transition: color 0.3s ease;
+    font-weight: 500;
   }
   
   &.active {
     .tab-text {
       font-weight: 600;
-      color: $glass-text-main;
+      color: #fff;
     }
   }
-}
-
-.tab-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40rpx;
-  height: 6rpx;
-  background: $glass-accent;
-  border-radius: 3rpx;
+  
+  &:active {
+    opacity: 0.8;
+  }
 }
 
 .tab-content {

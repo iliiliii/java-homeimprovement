@@ -2,7 +2,7 @@
   <view class="news-item" @click="handleClick">
     <image 
       class="news-image" 
-      :src="item.coverImage" 
+      :src="getFullImageUrl(item.coverImage)" 
       mode="aspectFill"
     />
     <view class="news-content">
@@ -14,6 +14,7 @@
 </template>
 
 <script setup>
+import { getFullImageUrl } from '@/utils/request.js'
 const props = defineProps({
   /** 资讯项数据 */
   item: {

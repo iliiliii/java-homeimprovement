@@ -2,249 +2,255 @@
   <view class="profile-page">
     <!-- 固定头部区域 -->
     <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <!-- 标题 -->
-      <view class="header-title">
-        <text class="page-title">我的</text>
-      </view>
-      
-      <!-- 用户信息 -->
-      <view class="user-header">
-        <view class="user-avatar">
-          <SvgIcon name="account" size="80rpx" color="#C9B0D4" />
-        </view>
-        <view class="user-info">
-          <text class="user-phone">{{ userInfo.phone }}</text>
-          <text class="user-project">项目编号: {{ currentProject.code }}</text>
-        </view>
-      </view>
-      
-      <!-- 项目切换卡片 -->
-      <!-- <view class="project-switcher">
-        <scroll-view scroll-x class="projects-scroll" :scroll-left="scrollLeft">
-          <view class="projects-container">
-            <view 
-              class="project-card"
-              :class="{ active: currentProjectIndex === index }"
-              v-for="(project, index) in projects"
-              :key="project.id"
-              @click="switchProject(index)"
-            >
-              <view class="project-card-header">
-                <text class="project-card-name">{{ project.name }}</text>
-                <text class="project-card-status" :class="project.statusClass">{{ project.status }}</text>
-              </view>
-              <view class="project-card-detail">
-                <text class="project-card-info">{{ project.area }}㎡ · {{ project.style }}</text>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
+      <!-- 头部信息 -->
+      <view class="header-content">
+        <!-- 左侧头像 -->
+        <UserAvatar 
+          :avatar="userInfo.avatar" 
+          :name="userInfo.name" 
+          size="80rpx"
+        />
         
-        <view v-if="projects.length > 1" class="project-indicator">
-          <view 
-            class="indicator-dot"
-            :class="{ active: currentProjectIndex === index }"
-            v-for="(_, index) in projects"
-            :key="index"
-          ></view>
+        <!-- 用户信息 -->
+        <view class="header-info">
+          <text class="user-name">
+            {{ userInfo.name || '未登录' }}
+          </text>
+          <text class="user-phone" v-if="userInfo.phone">
+            {{ userInfo.phone }}
+          </text>
         </view>
-      </view> -->
+      </view>
     </view>
     
     <!-- 头部占位 -->
-    <view :style="{ height: headerHeight + 'px' }"></view>
+    <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
     
-    <!-- 可滚动内容 -->
-    <view class="scroll-content">
-      <!-- 功能菜单 -->
-      <view class="menu-list">
-        <!-- <view class="menu-item" @click="handleMenu('contract')">
-          <view class="menu-icon" style="background: rgba(201, 176, 212, 0.15);">
-            <SvgIcon name="file-text" size="40rpx" color="#C9B0D4" />
+    <!-- 可滚动内容区域 -->
+    <scroll-view class="scroll-content" scroll-y>
+      <!-- 费用统计四宫格 -->
+      <view class="expense-section">
+        <view class="expense-grid">
+          <view 
+            v-for="(item, index) in expenseList" 
+            :key="index"
+            class="expense-item glass-card"
+            @click="handleExpenseClick(item)"
+          >
+            <text class="expense-label">{{ item.label }}</text>
+            <text class="expense-value">{{ formatAmount(item.value) }}</text>
           </view>
-          <text class="menu-text">合同文件</text>
-          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
-        </view> -->
-        
-        <!-- <view class="menu-item" @click="handleMenu('payment')">
-          <view class="menu-icon" style="background: rgba(232, 180, 76, 0.15);">
-            <SvgIcon name="rmb-circle" size="40rpx" color="#E8B44C" />
-          </view>
-          <text class="menu-text">付款记录</text>
-          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
-        </view> -->
-        
-        <!-- <view class="menu-item" @click="handleMenu('feedback')">
-          <view class="menu-icon" style="background: rgba(157, 193, 131, 0.15);">
-            <SvgIcon name="chat" size="40rpx" color="#9DC183" />
-          </view>
-          <text class="menu-text">意见反馈</text>
-          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
-        </view> -->
-        
-        <view class="menu-item" @click="handleMenu('service')">
-          <view class="menu-icon" style="background: rgba(167, 185, 211, 0.15);">
-            <SvgIcon name="kefu-ermai" size="40rpx" color="#A7B9D3" />
-          </view>
-          <text class="menu-text">联系客服</text>
-          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
-        </view>
-        
-        <view class="menu-item" @click="handleMenu('about')">
-          <view class="menu-icon" style="background: rgba(100, 116, 139, 0.1);">
-            <SvgIcon name="info-circle" size="40rpx" color="#64748B" />
-          </view>
-          <text class="menu-text">关于我们</text>
-          <SvgIcon name="arrow-right" size="28rpx" color="#ccc" />
         </view>
       </view>
       
-      <!-- 退出登录 -->
-      <view class="logout-btn" @click="handleLogout">
-        <text>退出登录</text>
+      <!-- 底部按钮区域 -->
+      <view class="bottom-buttons">
+        <view class="glass-btn" @click="showContactDialog = true">
+          <text>联系客服</text>
+        </view>
+        <view class="glass-btn glass-btn--secondary" @click="handleAbout">
+          <text>关于我们</text>
+        </view>
+        <view class="glass-btn glass-btn--outline" @click="handleLogout">
+          <text>退出登录</text>
+        </view>
       </view>
-      
-      <!-- 版本信息 -->
-      <view class="version-info">
-        <text>{{ APP_CONFIG.name }} {{ APP_CONFIG.version.name }}</text>
+    </scroll-view>
+    
+    <!-- 联系客服弹窗 --> 
+    <view v-if="showContactDialog" class="contact-dialog" @click.self="showContactDialog = false">
+      <view class="dialog-content" @click.stop>
+        <!-- 关闭按钮 -->
+        <view class="dialog-close" @click="showContactDialog = false">
+          <text>×</text>
+        </view>
+        
+        <!-- 标题 -->
+        <view class="dialog-title">
+          <text>联系客服</text>
+        </view>
+        
+        <!-- 二维码 -->
+        <view class="qr-code-container">
+          <image 
+            class="qr-code-image" 
+            :src="contactInfo.qrCode" 
+            mode="aspectFit"
+          />
+        </view>
+        
+        <!-- 联系方式 -->
+        <view class="contact-methods">
+          <view class="contact-method-item" @click="handleCall(contactInfo.phone)">
+            <view class="method-icon">
+              <text>📞</text>
+            </view>
+            <view class="method-info">
+              <text class="method-label">电话</text>
+              <text class="method-value">{{ contactInfo.phone }}</text>
+            </view>
+          </view>
+          
+          <view class="contact-method-item" @click="handleCopy(contactInfo.wechat)">
+            <view class="method-icon">
+              <text>💬</text>
+            </view>
+            <view class="method-info">
+              <text class="method-label">微信</text>
+              <text class="method-value">{{ contactInfo.wechat }}</text>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
-    
-    <!-- 底部占位 -->
-    <view class="tab-bar-placeholder"></view>
-    
-    <!-- 自定义TabBar -->
-    <CustomTabBar :current="3" />
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import CustomTabBar from '@/components/CustomTabBar.vue'
-import SvgIcon from '@/components/SvgIcon.vue'
-import { APP_CONFIG } from '@/config/app.js'
-import { getStatusBarHeight } from '@/utils/system.js'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useUserStore } from '@/store/user.js'
-import { logout as logoutApi } from '@/api/auth.js'
+import { getStatusBarHeight } from '@/utils/system.js'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const userStore = useUserStore()
 
+// 状态
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
-const scrollLeft = ref(0)
+const showContactDialog = ref(false)
 
-const userInfo = ref({
-  phone: '138****3967'
+// 用户信息
+const userInfo = computed(() => userStore.userInfo)
+
+// 联系信息（测试数据）
+const contactInfo = ref({
+  qrCode: 'https://via.placeholder.com/300x300?text=QR+Code', // 测试二维码图片
+  phone: '400-123-4567',
+  wechat: 'wechat_service_001'
 })
 
-// 多项目支持
-const projects = ref([
-  {
-    id: 1,
-    code: 'PJ-20251125-01',
-    name: '御景壹号',
-    status: '施工中',
-    statusClass: 'active',
-    area: 150,
-    style: '现代简约',
-    budget: '500,000'
-  },
-  {
-    id: 2,
-    code: 'PJ-20251201-02',
-    name: '翡翠湾别墅',
-    status: '设计中',
-    statusClass: 'design',
-    area: 320,
-    style: '新中式',
-    budget: '1,200,000'
-  }
+// 费用统计（测试数据）
+const expenseList = ref([
+  { label: '设计费用', value: 15000, url: '' }, // url 预留，后续从接口获取
+  { label: '工程费用', value: 85000, url: '' },
+  { label: '门窗费用', value: 32000, url: '' },
+  { label: '柜体费用', value: 48000, url: '' }
 ])
 
-const currentProjectIndex = ref(0)
-
-const currentProject = computed(() => {
-  return projects.value[currentProjectIndex.value] || projects.value[0]
-})
-
-const switchProject = (index) => {
-  currentProjectIndex.value = index
-  // 保存当前选择的项目
-  uni.setStorageSync('currentProjectIndex', index)
-}
-
-onMounted(() => {
-  statusBarHeight.value = getStatusBarHeight()
-  
-  // 恢复上次选择的项目
-  const savedIndex = uni.getStorageSync('currentProjectIndex')
-  if (savedIndex !== '' && savedIndex < projects.value.length) {
-    currentProjectIndex.value = savedIndex
-  }
-  
-  // 读取用户信息
-  const storedInfo = uni.getStorageSync('userInfo')
-  if (storedInfo) {
-    userInfo.value.phone = storedInfo.phone || userInfo.value.phone
-  }
-  
-  nextTick(() => {
-    const query = uni.createSelectorQuery()
-    query.select('.fixed-header').boundingClientRect(rect => {
-      if (rect) {
-        headerHeight.value = rect.height
-      }
-    }).exec()
-  })
-})
-
-const handleMenu = (type) => {
-  if (type === 'about') {
+// 费用卡片点击事件（预留跳转到http页面）
+const handleExpenseClick = (item) => {
+  if (item.url) {
+    // #ifdef MP-WEIXIN
     uni.navigateTo({
-      url: '/pages/brand/index'
+      url: `/pages/webview/index?url=${encodeURIComponent(item.url)}&title=${encodeURIComponent(item.label)}`
     })
-    return
+    // #endif
+    
+    // #ifdef H5
+    window.open(item.url, '_blank')
+    // #endif
+  } else {
+    // 暂时显示提示，等接口数据返回后会自动跳转
+    console.log('费用详情URL未配置:', item.label)
   }
-  
-  const titles = {
-    contract: '合同文件',
-    payment: '付款记录',
-    feedback: '意见反馈',
-    service: '联系客服'
+}
+
+// 格式化金额（过万显示为1.xx万或100万）
+const formatAmount = (amount) => {
+  if (amount >= 1000000) {
+    const wan = Math.floor(amount / 10000)
+    return `${wan}万`
+  } else if (amount >= 10000) {
+    const wan = amount / 10000
+    // 保留两位小数，去掉末尾的0
+    const formatted = wan.toFixed(2).replace(/\.?0+$/, '')
+    return `${formatted}万`
+  } else {
+    return `¥${amount.toLocaleString()}`
   }
-  
-  uni.showToast({
-    title: titles[type] || '功能开发中',
-    icon: 'none'
+}
+
+// 更新header高度
+const updateHeaderHeight = () => {
+  const query = uni.createSelectorQuery().in(getCurrentInstance())
+  query.select('.fixed-header').boundingClientRect(rect => {
+    if (rect && rect.height > 0) {
+      headerHeight.value = rect.height + 24
+    }
+  }).exec()
+}
+
+// 拨打电话
+const handleCall = (phone) => {
+  uni.makePhoneCall({
+    phoneNumber: phone,
+    fail: (err) => {
+      console.error('拨打电话失败:', err)
+      uni.showToast({
+        title: '拨打电话失败',
+        icon: 'none'
+      })
+    }
   })
 }
 
+// 复制微信号
+const handleCopy = (text) => {
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({
+        title: '已复制到剪贴板',
+        icon: 'success'
+      })
+    },
+    fail: () => {
+      uni.showToast({
+        title: '复制失败',
+        icon: 'none'
+      })
+    }
+  })
+}
+
+// 关于我们
+const handleAbout = () => {
+  uni.navigateTo({
+    url: '/pages/brand/index'
+  })
+}
+
+// 退出登录
 const handleLogout = () => {
   uni.showModal({
     title: '提示',
     content: '确定要退出登录吗？',
-    success: async (res) => {
+    success: (res) => {
       if (res.confirm) {
-        try {
-          // 调用后端退出登录接口
-          await logoutApi()
-        } catch (error) {
-          // 即使后端调用失败，也继续清除本地状态
-          console.warn('退出登录API调用失败:', error)
-        }
-        // 清除本地状态并跳转登录页
         userStore.logout()
       }
     }
   })
 }
+
+onMounted(() => {
+  statusBarHeight.value = getStatusBarHeight()
+  
+  // 预估初始高度
+  const screenWidth = uni.getSystemInfoSync().windowWidth
+  const estimatedHeight = (200 / 750) * screenWidth + statusBarHeight.value
+  headerHeight.value = estimatedHeight
+  
+  // 获取精确高度
+  setTimeout(updateHeaderHeight, 200)
+})
 </script>
 
 <style lang="scss" scoped>
 .profile-page {
   min-height: 100vh;
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
+  background: $glass-bg;
+  padding-bottom: 140rpx; // 为底部TabBar留出空间
 }
 
 // 固定头部
@@ -255,216 +261,219 @@ const handleLogout = () => {
   right: 0;
   z-index: 100;
   background: $glass-bg;
+  padding-bottom: 16rpx;
 }
 
-.header-title {
-  padding: 24rpx 48rpx 16rpx;
-  text-align: center;
-}
-
-.page-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: $glass-text-main;
-}
-
-// 用户头部
-.user-header {
+.header-content {
   display: flex;
   align-items: center;
-  padding: 16rpx 48rpx;
   gap: 24rpx;
+  padding: 24rpx 32rpx;
 }
 
-.user-avatar {
-  width: 100rpx;
-  height: 100rpx;
-  background: $glass-accent-light;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.user-info {
+.header-info {
   flex: 1;
+  
+  .user-name {
+    display: block;
+    font-size: 36rpx;
+    font-weight: 700;
+    color: $glass-text-main;
+    margin-bottom: 4rpx;
+  }
+  
+  .user-phone {
+    display: block;
+    font-size: 26rpx;
+    color: $glass-text-muted;
+  }
 }
 
-.user-phone {
-  display: block;
-  font-size: 36rpx;
-  font-weight: 700;
-  color: $glass-text-main;
-  margin-bottom: 4rpx;
-}
-
-.user-project {
-  display: block;
-  font-size: 24rpx;
-  color: $glass-text-muted;
-}
-
-// 项目切换
-.project-switcher {
-  padding: 16rpx 0 24rpx;
-}
-
-.projects-scroll {
-  white-space: nowrap;
-  padding: 0 48rpx;
-}
-
-.projects-container {
-  display: inline-flex;
-  gap: 24rpx;
-}
-
-.project-card {
-  width: 280rpx;
-  background: white;
-  border-radius: 24rpx;
-  padding: 24rpx;
-  box-shadow: $shadow-card;
-  border: 2rpx solid transparent;
+// 头部占位
+.header-placeholder {
+  width: 100%;
   flex-shrink: 0;
-  
-  &.active {
-    border-color: $glass-accent;
-    background: rgba(45, 91, 255, 0.05);
-  }
-}
-
-.project-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8rpx;
-}
-
-.project-card-name {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: $glass-text-main;
-}
-
-.project-card-status {
-  font-size: 20rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 100rpx;
-  
-  &.active {
-    background: rgba(45, 91, 255, 0.1);
-    color: $glass-accent;
-  }
-  
-  &.design {
-    background: rgba(255, 176, 32, 0.1);
-    color: $glass-warning;
-  }
-  
-  &.done {
-    background: rgba(0, 194, 178, 0.1);
-    color: $glass-success;
-  }
-}
-
-.project-card-detail {
-  margin-top: 8rpx;
-}
-
-.project-card-info {
-  font-size: 22rpx;
-  color: $glass-text-muted;
-}
-
-// 项目指示器
-.project-indicator {
-  display: flex;
-  justify-content: center;
-  gap: 12rpx;
-  margin-top: 16rpx;
-}
-
-.indicator-dot {
-  width: 12rpx;
-  height: 12rpx;
-  background: #ddd;
-  border-radius: 50%;
-  
-  &.active {
-    background: $glass-accent;
-    width: 24rpx;
-    border-radius: 6rpx;
-  }
 }
 
 // 可滚动内容
 .scroll-content {
-  padding-top: 16rpx;
+  height: calc(100vh - 140rpx); // 减去头部高度
+  padding: 16rpx 32rpx;
 }
 
-// 功能菜单 - 修复水平布局
-.menu-list {
-  margin: 0 48rpx;
-  background: white;
-  border-radius: 32rpx;
-  overflow: hidden;
-  box-shadow: $shadow-card;
+// 费用统计区域
+.expense-section {
+  margin-bottom: 48rpx;
 }
 
-.menu-item {
+.expense-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.expense-item {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  padding: 28rpx 32rpx;
-  border-bottom: 1rpx solid $glass-bg;
+  justify-content: center;
+  padding: 32rpx 24rpx;
+  text-align: center;
+  min-height: 160rpx;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: transform 0.2s ease;
   
-  &:last-child {
-    border-bottom: none;
+  &:active {
+    transform: scale(0.98);
   }
 }
 
-.menu-icon {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 18rpx;
+.expense-label {
+  font-size: 26rpx;
+  color: $glass-text-muted;
+  margin-bottom: 16rpx;
+}
+
+.expense-value {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: $glass-accent;
+}
+
+// 底部按钮区域
+.bottom-buttons {
+  margin-top: 48rpx;
+  margin-bottom: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  padding: 0;
+}
+
+// 联系客户弹窗
+.contact-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10rpx);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 24rpx;
+  padding: 32rpx;
+}
+
+.dialog-content {
+  background: $glass-surface;
+  backdrop-filter: blur($blur-amount);
+  -webkit-backdrop-filter: blur($blur-amount);
+  border: 1rpx solid $glass-border;
+  border-radius: $radius-l;
+  padding: 48rpx 32rpx;
+  width: calc(100% - 64rpx);
+  max-width: 600rpx;
+  position: relative;
+  box-shadow: $shadow-glass;
+  margin: 0 auto;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 48rpx;
+  color: $glass-text-muted;
+  line-height: 1;
+  
+  &:active {
+    background: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.dialog-title {
+  text-align: center;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: $glass-text-main;
+  margin-bottom: 32rpx;
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 32rpx;
+  padding: 24rpx;
+  background: white;
+  border-radius: $radius-m;
+}
+
+.qr-code-image {
+  width: 400rpx;
+  height: 400rpx;
+}
+
+.contact-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.contact-method-item {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 24rpx;
+  background: $glass-surface-strong;
+  border-radius: $radius-m;
+  border: 1rpx solid $glass-border;
+  
+  &:active {
+    background: rgba(201, 176, 212, 0.1);
+  }
+}
+
+.method-icon {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  background: white;
+  border-radius: $radius-m;
   flex-shrink: 0;
 }
 
-.menu-text {
+.method-info {
   flex: 1;
-  font-size: 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.method-label {
+  font-size: 24rpx;
+  color: $glass-text-muted;
+}
+
+.method-value {
+  font-size: 28rpx;
   color: $glass-text-main;
-}
-
-// 退出登录
-.logout-btn {
-  margin: 48rpx;
-  padding: 28rpx;
-  background: white;
-  border-radius: 24rpx;
-  text-align: center;
-  box-shadow: $shadow-card;
-  
-  text {
-    font-size: 28rpx;
-    color: $glass-danger;
-  }
-}
-
-// 版本信息
-.version-info {
-  text-align: center;
-  padding: 24rpx;
-  
-  text {
-    font-size: 24rpx;
-    color: $glass-text-muted;
-  }
+  font-weight: 600;
 }
 </style>
+

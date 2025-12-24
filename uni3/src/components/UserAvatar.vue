@@ -3,7 +3,7 @@
     <image 
       v-if="avatar" 
       class="avatar-image" 
-      :src="avatar" 
+      :src="getFullImageUrl(avatar)" 
       mode="aspectFill"
     />
     <text v-else class="avatar-text" :style="textStyle">{{ initial }}</text>
@@ -12,6 +12,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { getFullImageUrl } from '@/utils/request.js'
 
 const props = defineProps({
   /** 头像URL */

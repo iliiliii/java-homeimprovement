@@ -145,7 +145,6 @@ const handleViewProject = (project) => {
 
 <style lang="scss" scoped>
 .dashboard-page {
-  min-height: 100vh;
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
