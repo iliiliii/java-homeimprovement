@@ -1,27 +1,29 @@
 <template>
-  <view class="tabbar-wrapper">
+  <view class="tabbar-container">
     <!-- 占位元素 -->
     <view class="tabbar-placeholder"></view>
     
     <!-- TabBar 主体 -->
-    <view class="custom-tabbar">
+    <view class="tabbar">
       <view 
         v-for="(item, index) in tabList" 
         :key="index" 
-        class="tab-item"
+        class="tabbar-item"
         @click="switchTab(item, index)"
       >
-        <view class="tab-icon-box">
+        <view class="tabbar-icon">
           <SvgIcon 
             :name="item.icon" 
-            size="44rpx"
-            :color="currentIndex === index ? '#C9B0D4' : '#999999'"
+            size="48rpx"
+            :color="currentIndex === index ? '#2C3E50' : '#8E8E93'"
           />
         </view>
         <text 
-          class="tab-text"
-          :style="{ color: currentIndex === index ? '#C9B0D4' : '#999999' }"
-        >{{ item.text }}</text>
+          class="tabbar-text"
+          :class="{ 'tabbar-text-active': currentIndex === index }"
+        >
+          {{ item.text }}
+        </text>
       </view>
     </view>
   </view>
@@ -30,7 +32,6 @@
 <script setup>
 import { computed } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-
 
 const props = defineProps({
   current: {
@@ -43,7 +44,7 @@ const emit = defineEmits(['change'])
 
 const currentIndex = computed(() => props.current)
 
-// 4个 Tab 配置
+// TabBar 配置
 const tabList = [
   { 
     pagePath: '/pages/dashboard/index', 
@@ -79,11 +80,12 @@ const switchTab = (item, index) => {
 </script>
 
 <style lang="scss" scoped>
-.tabbar-wrapper {
+/* TabBar 容器 */
+.tabbar-container {
   width: 100%;
 }
 
-// 占位元素
+/* 占位元素 */
 .tabbar-placeholder {
   width: 100%;
   height: 100rpx;
@@ -91,54 +93,94 @@ const switchTab = (item, index) => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// TabBar 主体
-.custom-tabbar {
+/* TabBar 主体 */
+.tabbar {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 9999;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
   height: 100rpx;
-  background: #ffffff !important;
-  box-shadow: 0 -2rpx 20rpx rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+  border-top: 1rpx solid #E5E5EA;
+  box-shadow: 0 -1rpx 0 0 rgba(0, 0, 0, 0.05);
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// Tab 项
-.tab-item {
+/* TabBar 项目 */
+.tabbar-item {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  background: transparent !important;
-  border: none !important;
-  
-  &:active {
-    opacity: 0.7;
-  }
+  padding: 8rpx 0;
+  transition: opacity 0.2s ease;
 }
 
-// Tab 图标容器
-.tab-icon-box {
+.tabbar-item:active {
+  opacity: 0.7;
+}
+
+/* 图标容器 */
+.tabbar-icon {
   width: 48rpx;
   height: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 4rpx;
-  background: transparent !important;
 }
 
-// Tab 文字
-.tab-text {
-  font-size: 22rpx;
+/* 文字样式 */
+.tabbar-text {
+  font-size: 20rpx;
+  color: #8E8E93;
   line-height: 1.2;
-  background: transparent !important;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.tabbar-text-active {
+  color: #2C3E50;
+  font-weight: 600;
+}
+
+/* 响应式适配 */
+@media (max-width: 750rpx) {
+  .tabbar {
+    height: 90rpx;
+  }
+  
+  .tabbar-placeholder {
+    height: 90rpx;
+  }
+  
+  .tabbar-icon {
+    width: 44rpx;
+    height: 44rpx;
+  }
+  
+  .tabbar-text {
+    font-size: 18rpx;
+  }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .tabbar {
+    background-color: #1C1C1E;
+    border-top-color: #38383A;
+  }
+  
+  .tabbar-text {
+    color: #8E8E93;
+  }
+  
+  .tabbar-text-active {
+    color: #FFFFFF;
+  }
 }
 </style>
