@@ -2,32 +2,22 @@
   <view class="customer-dashboard">
     <!-- 固定头部区域 -->
     <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <!-- 头部信息 -->
-      <view class="header-content">
-        <!-- 左侧头像 -->
-        <UserAvatar 
-          :avatar="userInfo.avatar" 
-          :name="userInfo.name" 
-          size="80rpx"
-        />
-        
-        <!-- 项目信息 -->
-        <view class="header-info">
-          <text class="project-name" v-if="currentProject">
-            {{ currentProject.name }} · {{ currentProject.area }}㎡
-          </text>
-          <text class="project-status" :class="getCardTypeClass(currentProject)">
-            {{ currentProject?.statusText || '暂无项目' }}
-          </text>
-        </view>
+      <!-- 标题 -->
+      <view class="header-title">
+        <text class="page-title">项目概况</text>
+        <text v-if="currentProject" class="project-name">{{ currentProject.name }}</text>
       </view>
     </view>
     
-    <!-- 头部占位 -->
-    <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
-    
     <!-- 可滚动内容区域 -->
-    <view class="scroll-content" v-if="projects.length > 0">
+    <scroll-view 
+      class="scroll-content" 
+      scroll-y
+      :show-scrollbar="false" 
+      v-if="projects.length > 0"
+    >
+      <!-- 头部占位：优先使用测量高度，失败则使用粗略估算高度 (状态栏 + 导航栏 + 副标题 + 边距) -->
+      <view :style="{ height: (headerHeight || (statusBarHeight + 44 + 40)) + 'px' }"></view>
       <!-- Banner 轮播 -->
       <BannerSwiper 
         :banners="bannerList" 
@@ -53,6 +43,7 @@
               v-for="(project, index) in projects"
               :key="project.id"
               :project="project"
+              :user-info="userInfo"
               :active="index === currentIndex"
               @click="handleCardClick(index)"
             />
@@ -99,17 +90,20 @@
           </view>
         </NewsTab>
       </view>
-    </view>
+      
+      <!-- 底部安全距离占位，确保内容不被 TabBar 遮挡
+      <view style="height: 160rpx;"></view> -->
+    </scroll-view>
     
     <!-- 无项目提示 -->
-    <view class="no-project" v-else>
+    <view class="no-project" v-else :style="{ paddingTop: (headerHeight || (statusBarHeight + 88)) + 'px' }">
       <text>暂无关联项目</text>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
 import { useUserStore } from '@/store/user.js'
 import { getBannerNews, getNewsList } from '@/api/news.js'
 import { getStatusBarHeight } from '@/utils/system.js'
@@ -189,26 +183,32 @@ watch(() => props.projects, () => {
   updateHeaderHeight()
 }, { deep: true })
 
-// 更新header高度
+// 更新头部高度
 const updateHeaderHeight = () => {
-  const query = uni.createSelectorQuery().in(getCurrentInstance())
-  query.select('.fixed-header').boundingClientRect(rect => {
-    if (rect && rect.height > 0) {
-      headerHeight.value = rect.height + 24
-    }
-  }).exec()
+  // 立即尝试一次
+  getHeaderRect()
+  // 延时重试，确保渲染完成
+  setTimeout(getHeaderRect, 500)
 }
+
+const getHeaderRect = () => {
+  nextTick(() => {
+    const query = uni.createSelectorQuery().in(getCurrentInstance())
+    query.select('.fixed-header').boundingClientRect(rect => {
+      if (rect && rect.height > 0) {
+        headerHeight.value = rect.height
+      }
+    }).exec()
+  })
+}
+
+
 
 onMounted(async () => {
   statusBarHeight.value = getStatusBarHeight()
+  updateHeaderHeight()
   
-  // 预估初始高度
-  const screenWidth = uni.getSystemInfoSync().windowWidth
-  const estimatedHeight = (200 / 750) * screenWidth + statusBarHeight.value
-  headerHeight.value = estimatedHeight
-  
-  // 获取精确高度
-  setTimeout(updateHeaderHeight, 200)
+  // 加载 Banner 和资讯数据
   
   // 加载 Banner 和资讯数据
   await Promise.all([
@@ -372,10 +372,10 @@ const handleNewsClick = (item) => {
 
 <style lang="scss" scoped>
 .customer-dashboard {
-  min-height: 100vh;
   background: $glass-bg;
-  padding-bottom: 140rpx;
+  /* 移除外部 padding-bottom，避免双重滚动条 */
 }
+
 
 // 固定头部
 .fixed-header {
@@ -385,48 +385,30 @@ const handleNewsClick = (item) => {
   right: 0;
   z-index: 100;
   background: $glass-bg;
-  padding-bottom: 16rpx;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-  padding: 24rpx 32rpx;
+.header-title {
+  padding: 24rpx 48rpx;
+  text-align: center;
 }
 
-.header-info {
-  flex: 1;
-  
-  .project-name {
-    display: block;
-    font-size: 26rpx;
-    color: $glass-text-muted;
-    margin-bottom: 4rpx;
-  }
-  
-  .project-status {
-    display: block;
-    font-size: 36rpx;
-    font-weight: 700;
-    color: $glass-text-main;
-    
-    &.design { color: #7C3AED; }
-    &.construction { color: #2563EB; }
-    &.completed { color: #059669; }
-    &.pending { color: #6B7280; }
-  }
+.page-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: $glass-text-main;
 }
 
-// 头部占位
-.header-placeholder {
-  width: 100%;
-  flex-shrink: 0;
+.project-name {
+  display: block;
+  font-size: 24rpx;
+  color: $glass-text-muted;
+  margin-top: 8rpx;
 }
 
 // 可滚动内容
 .scroll-content {
-  padding-top: 16rpx;
+  box-sizing: border-box;
 }
 
 // 项目卡片区域
@@ -459,7 +441,7 @@ const handleNewsClick = (item) => {
   display: flex;
   justify-content: center;
   gap: 12rpx;
-  margin-top: 16rpx;
+  padding-bottom: 32rpx; // 增加底部边距
 }
 
 .indicator {

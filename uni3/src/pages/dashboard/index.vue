@@ -31,8 +31,8 @@
       <view class="login-btn" @click="goLogin">去登录</view>
     </view>
     
-    <!-- 底部占位 -->
-    <view class="tab-bar-placeholder"></view>
+    <!-- 底部占位 (仅员工端需要，客户端使用内部滚动) -->
+    <view class="tab-bar-placeholder" v-if="userType !== 'customer'"></view>
     
     <!-- 自定义TabBar -->
     <CustomTabBar :current="0" />
