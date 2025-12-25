@@ -28,31 +28,33 @@
     
     <!-- 可滚动内容区域 -->
     <scroll-view class="scroll-content" scroll-y>
-      <!-- 费用统计四宫格 -->
-      <view class="expense-section">
-        <view class="expense-grid">
-          <view 
-            v-for="(item, index) in expenseList" 
-            :key="index"
-            class="expense-item glass-card"
-            @click="handleExpenseClick(item)"
-          >
-            <text class="expense-label">{{ item.label }}</text>
-            <text class="expense-value">{{ formatAmount(item.value) }}</text>
+      <view class="content-wrapper">
+        <!-- 费用统计四宫格 -->
+        <view class="expense-section">
+          <view class="expense-grid">
+            <view 
+              v-for="(item, index) in expenseList" 
+              :key="index"
+              class="expense-item glass-card"
+              @click="handleExpenseClick(item)"
+            >
+              <text class="expense-label">{{ item.label }}</text>
+              <text class="expense-value">{{ formatAmount(item.value) }}</text>
+            </view>
           </view>
         </view>
-      </view>
-      
-      <!-- 底部按钮区域 -->
-      <view class="bottom-buttons">
-        <view class="glass-btn" @click="showContactDialog = true">
-          <text>联系客服</text>
-        </view>
-        <view class="glass-btn glass-btn--secondary" @click="handleAbout">
-          <text>关于我们</text>
-        </view>
-        <view class="glass-btn glass-btn--outline" @click="handleLogout">
-          <text>退出登录</text>
+        
+        <!-- 底部按钮区域 -->
+        <view class="bottom-buttons">
+          <view class="glass-btn" @click="showContactDialog = true">
+            <text>联系客服</text>
+          </view>
+          <view class="glass-btn glass-btn--secondary" @click="handleAbout">
+            <text>关于我们</text>
+          </view>
+          <view class="glass-btn glass-btn--outline" @click="handleLogout">
+            <text>退出登录</text>
+          </view>
         </view>
       </view>
     </scroll-view>
@@ -103,6 +105,8 @@
         </view>
       </view>
     </view>
+    <!-- Custom TabBar -->
+    <CustomTabBar :current="3" />
   </view>
 </template>
 
@@ -111,6 +115,7 @@ import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useUserStore } from '@/store/user.js'
 import { getStatusBarHeight } from '@/utils/system.js'
 import UserAvatar from '@/components/UserAvatar.vue'
+import CustomTabBar from '@/components/CustomTabBar.vue'
 
 const userStore = useUserStore()
 
@@ -298,7 +303,11 @@ onMounted(() => {
 // 可滚动内容
 .scroll-content {
   height: calc(100vh - 140rpx); // 减去头部高度
+}
+
+.content-wrapper {
   padding: 16rpx 32rpx;
+  width: 100%;
 }
 
 // 费用统计区域
