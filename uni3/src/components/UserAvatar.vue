@@ -33,7 +33,7 @@ const props = defineProps({
   /** 背景色（无头像时） */
   bgColor: {
     type: String,
-    default: '#C9B0D4'
+    default: '#C40016'
   },
   /** 文字颜色 */
   textColor: {

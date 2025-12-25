@@ -2,19 +2,16 @@
   <view class="news-tab">
     <!-- Tab 头部 -->
     <view class="tab-header">
-      <!-- 滑动背景 -->
-      <view 
-        class="tab-slider"
-        :class="{ 'slider-right': current === 'commercial' }"
-      ></view>
-      
       <view 
         v-for="(tab, index) in tabs" 
         :key="tab.key" 
         :class="['tab-item', { active: current === tab.key }]"
         @click="handleTabClick(tab.key, index)"
       >
+        <!-- 装饰点 -->
+        <view class="tab-dot left-dot"></view>
         <text class="tab-text">{{ tab.label }}</text>
+        <view class="tab-dot right-dot"></view>
       </view>
     </view>
     
@@ -59,60 +56,100 @@ const handleTabClick = (key, index) => {
 
 .tab-header {
   display: flex;
+  gap: 20rpx;
   position: relative;
-  background: #f5f5f5;
+  background: $color-white;
   border-radius: 16rpx;
   margin-bottom: 24rpx;
-  border: none;
-  outline: none;
-}
-
-// 滑动背景块
-.tab-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  background: $glass-accent;
-  border-radius: 16rpx;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 0;
-  border: none;
-  outline: none;
-  
-  &.slider-right {
-    left: 50%;
-  }
 }
 
 .tab-item {
   flex: 1;
   position: relative;
-  z-index: 1;
-  padding: 20rpx 0;
+  padding: 24rpx 16rpx;
   text-align: center;
-  background: transparent;
-  border: none;
-  outline: none;
-  box-sizing: border-box;
+  background: $color-gray-50;
+  border: 2rpx solid $color-border;
+  border-radius: 16rpx;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  overflow: hidden;
   
   .tab-text {
     font-size: 28rpx;
-    color: #666;
-    transition: color 0.3s ease;
+    color: $color-text-tertiary;
+    transition: all 0.3s ease;
     font-weight: 500;
+    position: relative;
+    z-index: 1;
+  }
+  
+  // 装饰点
+  .tab-dot {
+    width: 8rpx;
+    height: 8rpx;
+    border-radius: 50%;
+    background: $color-gray-300;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: scale(0);
   }
   
   &.active {
+    background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+    border-color: $color-brand;
+    animation: breathe 2s ease-in-out infinite;
+    
     .tab-text {
       font-weight: 600;
-      color: #fff;
+      color: $color-white;
+      text-shadow: none;
+    }
+    
+    .tab-dot {
+      background: $color-white-alpha-60;
+      opacity: 1;
+      transform: scale(1);
+      animation: dotPulse 1.5s ease-in-out infinite;
+    }
+    
+    .left-dot {
+      animation-delay: 0s;
+    }
+    
+    .right-dot {
+      animation-delay: 0.75s;
     }
   }
   
-  &:active {
-    opacity: 0.8;
+  &:not(.active):active {
+    background: $color-gray-100;
+    transform: scale(0.98);
+  }
+}
+
+// 呼吸动画
+@keyframes breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(196, 0, 22, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8rpx rgba(196, 0, 22, 0.1);
+  }
+}
+
+// 装饰点脉冲动画
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
   }
 }
 

@@ -4,6 +4,11 @@
     :class="[cardTypeClass, { active: active }]"
     @click="$emit('click', project)"
   >
+    <!-- 动画气泡装饰 -->
+    <view class="bubble bubble-1"></view>
+    <view class="bubble bubble-2"></view>
+    <view class="bubble bubble-3"></view>
+    
     <view class="card-content">
       <!-- 左侧头像 -->
       <view class="card-avatar">
@@ -11,6 +16,8 @@
           :avatar="userInfo?.avatar" 
           :name="userInfo?.name" 
           size="80rpx"
+          bgColor="#ffffff"
+          textColor="#C40016"
         />
       </view>
       
@@ -79,76 +86,29 @@ const cardTypeClass = computed(() => {
   border-radius: $radius-xl;
   flex-shrink: 0;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  box-shadow: $shadow-card;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   cursor: pointer;
   
-  // 基础背景 - 使用品牌色系的渐变
-  background: linear-gradient(145deg, $color-white 0%, $color-bg-secondary 100%);
-  border: 2rpx solid $color-border-light;
+  // 统一背景色 - 使用品牌红色渐变
+  background: linear-gradient(135deg, $color-brand 0%, $color-brand-700 100%);
+  border: none;
   
-  // 不同状态的主题色彩 - 黑红白主题
-  &.design {
-    background: linear-gradient(145deg, $color-white 0%, $color-gray-50 100%);
-    border-color: $color-brand-200;
-    
-    .card-status { 
-      background: $color-brand-50; 
-      color: $color-brand-600;
-      border: 1rpx solid $color-brand-200;
-    }
-    
-    &::before {
-      background: linear-gradient(45deg, $color-brand 0%, $color-brand-600 100%);
-    }
+  // 统一样式 - 所有状态使用同一颜色
+  .card-status { 
+    background: $color-white-alpha-20; 
+    color: $color-white;
+    border: 1rpx solid $color-white-alpha-40;
   }
   
-  &.construction {
-    background: linear-gradient(145deg, $color-white 0%, $color-gray-50 100%);
-    border-color: $color-gray-300;
-    
-    .card-status { 
-      background: $color-gray-100; 
-      color: $color-gray-700;
-      border: 1rpx solid $color-gray-300;
-    }
-    
-    &::before {
-      background: linear-gradient(45deg, $color-gray-600 0%, $color-gray-700 100%);
-    }
+  &::before {
+    background: $color-white-alpha-20;
   }
   
-  &.completed {
-    background: linear-gradient(145deg, $color-white 0%, $color-gray-50 100%);
-    border-color: $color-success;
-    
-    .card-status { 
-      background: rgba(16, 185, 129, 0.1); 
-      color: $color-success;
-      border: 1rpx solid rgba(16, 185, 129, 0.2);
-    }
-    
-    &::before {
-      background: linear-gradient(45deg, $color-success 0%, #0D9488 100%);
-    }
-  }
-  
-  &.pending {
-    background: linear-gradient(145deg, $color-white 0%, $color-gray-50 100%);
-    border-color: $color-gray-300;
-    
-    .card-status { 
-      background: $color-gray-100; 
-      color: $color-gray-600;
-      border: 1rpx solid $color-gray-300;
-    }
-    
-    &::before {
-      background: linear-gradient(45deg, $color-gray-400 0%, $color-gray-500 100%);
-    }
+  .bubble {
+    background: $color-white-alpha-10;
   }
   
   // 左侧装饰条
@@ -165,33 +125,88 @@ const cardTypeClass = computed(() => {
   // 激活状态
   &.active {
     transform: scale(1.02) translateY(-4rpx);
-    box-shadow: $shadow-glass;
-    
-    &.design {
-      box-shadow: 0 12rpx 32rpx rgba(196, 0, 22, 0.15);
-    }
-    
-    &.construction {
-      box-shadow: 0 12rpx 32rpx rgba(167, 185, 211, 0.2);
-    }
-    
-    &.completed {
-      box-shadow: 0 12rpx 32rpx rgba(157, 193, 131, 0.2);
-    }
-    
-    &.pending {
-      box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.08);
-    }
   }
   
   // 悬停效果（H5）
   &:hover {
-    transform: translateY(-2rpx);
-    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+    transform: translateY(-4rpx);
+    
+    .bubble {
+      animation-play-state: running;
+    }
   }
   
   &.active:hover {
     transform: scale(1.02) translateY(-6rpx);
+  }
+}
+
+// 动画气泡
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation-play-state: paused;
+}
+
+.bubble-1 {
+  width: 120rpx;
+  height: 120rpx;
+  top: -30rpx;
+  right: 60rpx;
+  animation: float1 4s ease-in-out infinite;
+}
+
+.bubble-2 {
+  width: 80rpx;
+  height: 80rpx;
+  bottom: -20rpx;
+  right: 160rpx;
+  animation: float2 5s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.bubble-3 {
+  width: 60rpx;
+  height: 60rpx;
+  top: 50%;
+  right: 20rpx;
+  transform: translateY(-50%);
+  animation: float3 3.5s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+@keyframes float1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-10rpx, 15rpx) scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes float2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(15rpx, -10rpx) scale(1.15);
+    opacity: 0.7;
+  }
+}
+
+@keyframes float3 {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(-50%) translate(-8rpx, 8rpx) scale(1.2);
+    opacity: 0.6;
   }
 }
 
@@ -206,9 +221,11 @@ const cardTypeClass = computed(() => {
 .card-avatar {
   flex-shrink: 0;
   
-  // 为头像添加微妙的阴影
+  // 头像容器样式 - 白色背景配合边框和阴影
   :deep(.user-avatar) {
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+    background: $color-white !important;
+    border: 3rpx solid $color-white;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
   }
 }
 
@@ -233,13 +250,14 @@ const cardTypeClass = computed(() => {
 .card-name {
   font-size: 32rpx;
   font-weight: 600;
-  color: $color-text-primary;
+  color: $color-white;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-right: $spacing-s;
   line-height: 1.3;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
 }
 
 .card-status {
@@ -255,7 +273,7 @@ const cardTypeClass = computed(() => {
 .card-meta-row {
   .card-stage {
     font-size: 26rpx;
-    color: $color-text-secondary;
+    color: $color-white-alpha-80;
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -272,13 +290,13 @@ const cardTypeClass = computed(() => {
   
   .meta-item {
     font-size: 24rpx;
-    color: $color-text-tertiary;
+    color: $color-white-alpha-60;
     font-weight: 400;
     
     &:not(:last-child)::after {
       content: '·';
       margin-left: $spacing-s;
-      color: $color-text-quaternary;
+      color: $color-white-alpha-40;
     }
   }
 }
@@ -300,52 +318,21 @@ const cardTypeClass = computed(() => {
       font-size: 22rpx;
     }
   }
-}
-
-// 深色模式适配（预留）
-@media (prefers-color-scheme: dark) {
-  .project-card {
-    background: linear-gradient(145deg, $color-gray-800 0%, $color-gray-700 100%);
-    border-color: $color-gray-600;
-    
-    .card-name {
-      color: $color-white;
-    }
-    
-    .card-stage {
-      color: $color-gray-300;
-    }
-    
-    .meta-item {
-      color: $color-gray-400;
-    }
-    
-    &.design {
-      background: linear-gradient(145deg, rgba(196, 0, 22, 0.1) 0%, rgba(196, 0, 22, 0.05) 100%);
-      
-      .card-status {
-        background: rgba(196, 0, 22, 0.2);
-        color: $color-brand-300;
-      }
-    }
-    
-    &.construction {
-      background: linear-gradient(145deg, rgba(167, 185, 211, 0.1) 0%, rgba(167, 185, 211, 0.05) 100%);
-      
-      .card-status {
-        background: rgba(167, 185, 211, 0.2);
-        color: #A7B9D3;
-      }
-    }
-    
-    &.completed {
-      background: linear-gradient(145deg, rgba(157, 193, 131, 0.1) 0%, rgba(157, 193, 131, 0.05) 100%);
-      
-      .card-status {
-        background: rgba(157, 193, 131, 0.2);
-        color: #10B981;
-      }
-    }
+  
+  .bubble-1 {
+    width: 100rpx;
+    height: 100rpx;
+  }
+  
+  .bubble-2 {
+    width: 60rpx;
+    height: 60rpx;
+  }
+  
+  .bubble-3 {
+    width: 40rpx;
+    height: 40rpx;
   }
 }
+
 </style>

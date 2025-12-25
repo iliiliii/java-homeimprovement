@@ -16,14 +16,13 @@
       <view class="header-right"></view>
     </view>
     
-    <!-- 悬浮操作按钮 -->
+    <!-- 悬浮操作按钮 
     <view class="viewer-side-actions">
-      <!-- 仅保留下载按钮，因为左上角已有返回/关闭按钮 -->
       <view class="side-btn" @click="handleSave">
         <SvgIcon name="download" size="44rpx" color="#fff" />
       </view>
     </view>
-    
+    -->
     <!-- 图片滑动区域 -->
     <swiper 
       class="viewer-swiper"
@@ -54,8 +53,8 @@
               class="viewer-image"
               :src="getImageUrl(img)"
               mode="aspectFit"
-              @load="handleImageLoad"
-              @error="handleImageError"
+              @load="handleImageLoad(index)"
+              @error="handleImageError(index)"
               @click="handleImageClick"
               @longpress="handleLongPress"
             />
@@ -221,13 +220,13 @@ const goToImage = (index) => {
 }
 
 // 图片加载完成
-const handleImageLoad = () => {
-  loading.value[currentIndex.value] = false
+const handleImageLoad = (index) => {
+  loading.value[index] = false
 }
 
 // 图片加载失败
-const handleImageError = () => {
-  loading.value[currentIndex.value] = false
+const handleImageError = (index) => {
+  loading.value[index] = false
   uni.showToast({
     title: '图片加载失败',
     icon: 'none'

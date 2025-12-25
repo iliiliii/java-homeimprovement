@@ -238,12 +238,12 @@ onMounted(() => {
   
   &::before {
     left: 0;
-    background: linear-gradient(to right, $color-bg-secondary, transparent);
+    background: linear-gradient(to right, $color-white, transparent);
   }
   
   &::after {
     right: 0;
-    background: linear-gradient(to left, $color-bg-secondary, transparent);
+    background: linear-gradient(to left, $color-white, transparent);
   }
 }
 
@@ -347,7 +347,8 @@ onMounted(() => {
   }
 }
 
-// 深色模式适配（预留）
+// 深色模式适配 - 已禁用
+/*
 @media (prefers-color-scheme: dark) {
   .project-cards-wrapper {
     &::before {
@@ -371,4 +372,5 @@ onMounted(() => {
     }
   }
 }
+*/
 </style>
