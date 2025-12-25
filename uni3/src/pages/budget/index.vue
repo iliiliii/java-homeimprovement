@@ -83,7 +83,7 @@ const categories = ref([
     amount: 20000,
     spent: 20000,
     progress: 100,
-    color: '#FF6B6B'
+    color: '#C40016'
   },
   {
     name: '硬装施工',
@@ -91,7 +91,7 @@ const categories = ref([
     amount: 180000,
     spent: 108000,
     progress: 60,
-    color: '#4ECDC4'
+    color: '#212121'
   },
   {
     name: '全屋定制',
@@ -99,7 +99,7 @@ const categories = ref([
     amount: 150000,
     spent: 45000,
     progress: 30,
-    color: '#45B7D1'
+    color: '#757575'
   },
   {
     name: '软装家电',
@@ -107,7 +107,7 @@ const categories = ref([
     amount: 150000,
     spent: 15000,
     progress: 10,
-    color: '#96CEB4'
+    color: '#424242'
   }
 ])
 
@@ -208,7 +208,7 @@ const viewCategory = (item) => {
 .cat-icon {
   width: 80rpx;
   height: 80rpx;
-  background: $glass-bg;
+  background: $color-gray-100;
   border-radius: 20rpx;
   display: flex;
   align-items: center;
@@ -235,7 +235,7 @@ const viewCategory = (item) => {
 
 .progress-bar {
   height: 12rpx;
-  background: $glass-bg;
+  background: $color-gray-100;
   border-radius: 6rpx;
   margin: 16rpx 0;
   overflow: hidden;

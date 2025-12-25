@@ -35,7 +35,7 @@
             <u-icon 
               :name="task.completed ? 'checkmark' : 'circle'" 
               :size="32"
-              :color="task.completed ? '#00C2B2' : '#ddd'"
+              :color="task.completed ? '#10B981' : '#ddd'"
             />
             <text class="task-text">{{ task.name }}</text>
           </view>
@@ -149,11 +149,11 @@ const viewPhaseDetail = (phase) => {
   }
   
   &.done::before {
-    background: $glass-success;
+    background: $color-success;
   }
   
   &.active::before {
-    background: $glass-accent;
+    background: $color-brand;
   }
 }
 
@@ -176,11 +176,11 @@ const viewPhaseDetail = (phase) => {
   font-weight: 600;
   
   &.done {
-    color: $glass-success;
+    color: $color-success;
   }
   
   &.active {
-    color: $glass-accent;
+    color: $color-brand;
   }
   
   &.pending {
@@ -224,7 +224,7 @@ const viewPhaseDetail = (phase) => {
 }
 
 .view-detail-text {
-  color: $glass-accent;
+  color: $color-brand;
   font-size: 24rpx;
   font-weight: 600;
 }

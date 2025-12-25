@@ -74,7 +74,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .protocol-container {
   min-height: 100vh;
-  background: $glass-bg;
+  background: $color-white;
 }
 
 .protocol-content {

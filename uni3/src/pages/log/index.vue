@@ -47,16 +47,6 @@
               +{{ log.images.length - 3 }}
             </view>
           </view>
-          
-          <!-- 日志标签 -->
-          <view class="log-tags">
-            <view class="log-tag" :class="log.type">
-              {{ getTypeText(log.type) }}
-            </view>
-            <view v-if="log.phase" class="log-tag phase">
-              {{ log.phase }}
-            </view>
-          </view>
         </view>
       </view>
     </view>
@@ -71,12 +61,22 @@
     
     <!-- 自定义TabBar -->
     <CustomTabBar :current="2" />
+    
+    <!-- 图片查看器 -->
+    <ImageViewer 
+      v-model:visible="viewerVisible"
+      :images="viewerImages"
+      :start-index="viewerIndex"
+      :show-thumbnail="true"
+    />
   </view>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick, getCurrentInstance, computed } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import ImageViewer from '@/components/ImageViewer/index.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
 import PageHeader from '@/components/PageHeader.vue'
 import { useUserStore } from '@/store/user.js'
@@ -86,6 +86,11 @@ const currentProject = computed(() => userStore.currentProject)
 
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
+
+// 图片查看器状态
+const viewerVisible = ref(false)
+const viewerIndex = ref(0)
+const viewerImages = ref([])
 
 const logs = ref([
   {
@@ -152,10 +157,9 @@ const getTypeText = (type) => {
 }
 
 const previewImage = (images, index) => {
-  uni.previewImage({
-    urls: images,
-    current: index
-  })
+  viewerImages.value = images
+  viewerIndex.value = index
+  viewerVisible.value = true
 }
 
 const viewLogDetail = (log) => {
@@ -171,6 +175,19 @@ const loadMore = () => {
     icon: 'none'
   })
 }
+
+// 加载日志数据（目前是mock数据，后续替换为API）
+const loadLogs = async () => {
+  // TODO: 替换为实际API调用
+  // const data = await getProjectLogs(currentProject.value?.id)
+  // logs.value = data || []
+}
+
+// 下拉刷新
+onPullDownRefresh(async () => {
+  await loadLogs()
+  uni.stopPullDownRefresh()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -217,8 +234,8 @@ const loadMore = () => {
   flex-shrink: 0;
   
   &.highlight {
-    background: $glass-accent;
-    box-shadow: 0 0 0 8rpx rgba(45, 91, 255, 0.2);
+    background: $color-brand;
+    box-shadow: 0 0 0 8rpx rgba(196, 0, 22, 0.2);
   }
 }
 
@@ -279,7 +296,7 @@ const loadMore = () => {
   width: 140rpx;
   height: 140rpx;
   border-radius: 16rpx;
-  background: $glass-bg;
+  background: $color-gray-100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -299,27 +316,27 @@ const loadMore = () => {
   border-radius: 8rpx;
   
   &.inspection {
-    background: rgba(45, 91, 255, 0.1);
-    color: $glass-accent;
+    background: rgba(196, 0, 22, 0.1);
+    color: $color-brand;
   }
   
   &.progress {
-    background: rgba(0, 194, 178, 0.1);
-    color: $glass-success;
+    background: rgba(33, 33, 33, 0.1);
+    color: $color-gray-800;
   }
   
   &.material {
-    background: rgba(255, 176, 32, 0.1);
-    color: $glass-warning;
+    background: rgba(117, 117, 117, 0.1);
+    color: $color-gray-600;
   }
   
   &.issue {
-    background: rgba(255, 107, 107, 0.1);
-    color: $glass-danger;
+    background: rgba(196, 0, 22, 0.1);
+    color: $color-brand;
   }
   
   &.phase {
-    background: $glass-bg;
+    background: $color-gray-100;
     color: $glass-text-muted;
   }
 }

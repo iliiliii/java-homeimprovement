@@ -45,7 +45,7 @@
                 @click="selectOption(option)"
               >
                 <text>{{ option }}</text>
-                <SvgIcon v-if="searchKeyword === option" name="check" size="28rpx" color="#C9B0D4" />
+                <SvgIcon v-if="searchKeyword === option" name="check" size="28rpx" color="#C40016" />
               </view>
             </scroll-view>
           </view>
@@ -65,7 +65,7 @@
     
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-state">
-      <u-loading-icon size="48" color="#C9B0D4" />
+      <u-loading-icon size="48" color="#C40016" />
       <text class="loading-text">加载中...</text>
     </view>
     
@@ -152,7 +152,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import { onShow, onBackPress } from '@dcloudio/uni-app'
+import { onShow, onBackPress, onPullDownRefresh } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
@@ -327,12 +327,18 @@ onBackPress((e) => {
     return true
   }
 })
+
+// 下拉刷新
+onPullDownRefresh(async () => {
+  await loadRooms()
+  uni.stopPullDownRefresh()
+})
 </script>
 
 <style lang="scss" scoped>
 .design-page {
   min-height: 100vh;
-  background: $glass-bg;
+  background: $color-white;
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -415,7 +421,7 @@ onBackPress((e) => {
   }
   
   &.active {
-    color: $glass-accent;
+    color: $color-brand;
     font-weight: 500;
   }
 }
@@ -565,8 +571,8 @@ onBackPress((e) => {
 
 .room-type-tag {
   font-size: 22rpx;
-  color: $glass-accent;
-  background: rgba(201, 176, 212, 0.15);
+  color: $color-brand;
+  background: rgba(196, 0, 22, 0.1);
   padding: 4rpx 16rpx;
   border-radius: 8rpx;
 }

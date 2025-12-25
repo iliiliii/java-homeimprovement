@@ -181,7 +181,7 @@ const formatNumber = (num) => {
 
 .tab-item {
   padding: 16rpx 32rpx;
-  border-radius: 100rpx;
+  border-radius: 10rpx;
   background: white;
   color: $glass-text-muted;
   font-size: 28rpx;
@@ -255,7 +255,7 @@ const formatNumber = (num) => {
   font-size: 24rpx;
   
   &.pending {
-    color: $glass-warning;
+    color: $color-brand;
   }
   
   &.purchased {
