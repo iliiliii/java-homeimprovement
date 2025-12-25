@@ -31,13 +31,13 @@ export const getSystemInfo = () => {
             navBarHeight = menuButtonHeight + (menuButtonTop - statusBarHeight) * 2
         } catch (e) {
             // 如果获取失败，使用默认值
-            navBarHeight = 44
+            navBarHeight = 56
         }
         // #endif
 
         // #ifndef MP-WEIXIN
         // H5 和其他平台使用固定高度
-        navBarHeight = 44
+        navBarHeight = 56
         // #endif
     } catch (e) {
         console.error('获取系统信息失败:', e)
@@ -47,7 +47,7 @@ export const getSystemInfo = () => {
             windowHeight: 667
         }
         statusBarHeight = 20
-        navBarHeight = 44
+        navBarHeight = 56
     }
 
     return systemInfo
