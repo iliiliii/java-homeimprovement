@@ -111,7 +111,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: $glass-bg;
+  background: $color-white;
 }
 
 .header-content {
@@ -144,10 +144,6 @@ onMounted(() => {
     opacity: 0.7;
   }
 }
-// Removed color: $glass-text-main to allow inheritance or override via slot/style, but for now icon is text.
-// Let's rely on currentColor or prop. Ideally use titleStyle color for back icon too or separate prop.
-// For now, let's leave it as is, or use 'inherit'.
-
 
 .center-container {
   position: absolute;

@@ -48,12 +48,12 @@ const props = defineProps({
   // 标题颜色
   titleColor: {
     type: String,
-    default: '#1A2B3C'
+    default: '#212121'
   },
   // 图标颜色
   iconColor: {
     type: String,
-    default: '#1A2B3C'
+    default: '#212121'
   },
   // 是否显示底部边框
   showBorder: {
