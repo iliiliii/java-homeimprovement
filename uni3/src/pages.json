@@ -19,21 +19,27 @@
       "path": "pages/dashboard/index",
       "style": {
         "navigationBarTitleText": "项目概况",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
       }
     },
     {
       "path": "pages/design/index",
       "style": {
         "navigationBarTitleText": "设计方案",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
       }
     },
     {
       "path": "pages/log/index",
       "style": {
         "navigationBarTitleText": "施工日志",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
       }
     },
     {
@@ -54,6 +60,13 @@
       "path": "pages/brand/index",
       "style": {
         "navigationBarTitleText": "品牌介绍",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/contact/index",
+      "style": {
+        "navigationBarTitleText": "联系客服",
         "navigationStyle": "custom"
       }
     },
@@ -121,7 +134,7 @@
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "逅时代设计",
-    "navigationBarBackgroundColor": "#F0F4F8",
-    "backgroundColor": "#F0F4F8"
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#FFFFFF"
   }
 }

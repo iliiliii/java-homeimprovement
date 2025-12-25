@@ -7,6 +7,7 @@
   "transformPx": false,
   "locale": "zh-Hans",
   "app-plus": {
+    "darkmode" : false,
     "usingComponents": true,
     "nvueStyleCompiler": "uni-app",
     "compilerVersion": 3,
@@ -15,6 +16,13 @@
       "waiting": true,
       "autoclose": true,
       "delay": 0
+    },
+    "safearea": { //iOS平台的安全区域
+      "background": "#ffffff",
+      "backgroundDark": "#2f0508", // HX 3.1.19+支持
+      "bottom": {
+        "offset": "none" // 在没有 tabBar 时，底部区域是否需要占位
+      }
     },
     "modules": {},
     "distribute": {
@@ -43,6 +51,7 @@
   },
   "quickapp": {},
   "mp-weixin": {
+    "darkmode": false,
     "appid": "touristappid",
     "setting": {
       "urlCheck": false,

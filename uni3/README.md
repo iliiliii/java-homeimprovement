@@ -46,12 +46,13 @@ uni3/
 
 ## 设计风格
 
-采用 **Glassmorphism（毛玻璃）** 设计风格：
+采用 **黑红白** 简约设计风格：
 
-- **主色调**: Electric Blue `#2D5BFF`
-- **成功色**: Teal `#00C2B2`
-- **警告色**: Orange `#FFB020`
-- **背景色**: Light Gray `#F0F4F8`
+- **品牌红**: `#C40016` - 主色调，源自逅时代 Logo
+- **黑色系**: `#212121` - 主要文字和深色背景
+- **白色系**: `#FFFFFF` - 背景和卡片
+- **灰色系**: `#757575` - 次要文字
+- **成功色**: `#10B981` - 成功状态
 - **圆角**: 大圆角设计 (24rpx)
 - **阴影**: 柔和投影效果
 
@@ -135,12 +136,12 @@ npm run build:h5
 在 `src/styles/variables.scss` 中定义：
 
 ```scss
-$glass-accent: #2D5BFF;      // 主色
-$glass-success: #00C2B2;     // 成功
-$glass-warning: #FFB020;     // 警告
-$glass-bg: #F0F4F8;          // 背景
-$glass-text-main: #1A2B3C;   // 主文字
-$glass-text-muted: #64748B;  // 次要文字
+$color-brand: #C40016;       // 品牌红
+$color-black: #000000;       // 纯黑
+$color-gray-900: #212121;    // 主文字
+$color-gray-600: #757575;    // 次要文字
+$color-white: #FFFFFF;       // 白色
+$color-success: #10B981;     // 成功色
 ```
 
 ## 注意事项
