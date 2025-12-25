@@ -1,16 +1,16 @@
 <template>
   <view class="staff-dashboard">
     <!-- 固定头部区域 -->
-    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <!-- 头部信息 -->
-      <view class="header-content">
-        <view class="header-info">
-          <text class="greeting">工作台</text>
-          <text class="sub-title">管理您负责的项目</text>
-        </view>
-      </view>
-      
-      <!-- 待办统计 -->
+    <PageHeader 
+      title="工作台" 
+      subtitle="管理您负责的项目" 
+      :show-back="false"
+      bg-color="linear-gradient(135deg, #C40016 0%, #E33E4A 100%)"
+      text-color="#ffffff"
+    />
+    
+    <!-- 待办统计 (固定在Header下方) -->
+    <view class="todo-stats-fixed" :style="{ top: (statusBarHeight + 56) + 'px' }">
       <view class="todo-stats">
         <view class="stat-item" @click="$emit('navigate', '/pages/inspection/list')">
           <text class="stat-value">{{ todoStats.pendingInspections }}</text>
@@ -112,6 +112,7 @@
 import { ref, onMounted, nextTick, getCurrentInstance } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
+import PageHeader from '@/components/PageHeader.vue'
 
 const props = defineProps({
   projects: {
@@ -135,14 +136,9 @@ const headerHeight = ref(0)
 
 // 更新header高度
 const updateHeaderHeight = () => {
-  const query = uni.createSelectorQuery().in(getCurrentInstance())
-  query.select('.fixed-header').boundingClientRect(rect => {
-    if (rect && rect.height > 0) {
-      // 增加额外间距确保内容不被遮挡
-      headerHeight.value = rect.height + 32
-      console.log('[StaffDashboard] headerHeight:', headerHeight.value, 'rect.height:', rect.height)
-    }
-  }).exec()
+  // Header (44) + StatusBar + Stats (approx 120rpx/60px) + Padding
+  // 简单计算：Stats height 140rpx approx
+  headerHeight.value = statusBarHeight.value + 44 + uni.upx2px(140) + 32
 }
 
 onMounted(() => {
@@ -188,37 +184,22 @@ const getStatusClass = (status) => {
   flex-shrink: 0;
 }
 
-// 固定头部
-.fixed-header {
+// 待办统计固定容器
+.todo-stats-fixed {
   position: fixed;
-  top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 99;
   background: linear-gradient(135deg, #2D5BFF 0%, #5B7FFF 100%);
   padding-bottom: 32rpx;
   border-radius: 0 0 40rpx 40rpx;
+  margin-top: -1rpx; // 消除缝隙
 }
 
-.header-content {
-  padding: 24rpx 48rpx;
-}
+// 移除原 .fixed-header 样式, 保留 .todo-stats
+// .header-content 移除
 
-.header-info {
-  .greeting {
-    display: block;
-    font-size: 40rpx;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 8rpx;
-  }
-  
-  .sub-title {
-    display: block;
-    font-size: 26rpx;
-    color: rgba(255, 255, 255, 0.8);
-  }
-}
+
 
 // 待办统计
 .todo-stats {
