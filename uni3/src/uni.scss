@@ -1,68 +1,70 @@
 /**
  * uni.scss - uview-plus 主题定制
- * 基于 iPhone 17 配色方案
+ * 黑红白配色方案
  */
 
-// ==================== iPhone 17 配色 ====================
+// ==================== 黑红白配色方案 ====================
 
-// 薰衣草紫 Lavender
-$color-lavender: #E5D4ED;
-$color-lavender-dark: #C9B0D4;
+// 品牌红色
+$color-brand: #C40016;
+$color-brand-dark: #A50012;
 
-// 鼠尾草绿 Sage
-$color-sage: #9DC183;
+// 黑色系统
+$color-black: #212121;
+$color-gray: #757575;
 
-// 雾蓝 Mist Blue
-$color-mist-blue: #A7B9D3;
+// 白色系统
+$color-white: #FFFFFF;
 
-// 黑白
-$color-black: #1A1A1A;
-$color-gray: #64748B;
+// 功能色
+$color-success: #10B981;
+$color-warning: #F59E0B;
+$color-error: #C40016;
 
 // ==================== uview-plus 必需变量 ====================
 
 // 文字颜色
 $u-main-color: $color-black;
 $u-content-color: $color-gray;
-$u-tips-color: #94A3B8;
-$u-light-color: #CBD5E1;
-$u-disabled-color: #c8c9cc;
+$u-tips-color: #9E9E9E;
+$u-light-color: #BDBDBD;
+$u-disabled-color: #E0E0E0;
 
 // 边框颜色
-$u-border-color: rgba(255, 255, 255, 0.9);
+$u-border-color: #EEEEEE;
 
 // 背景颜色
-$u-bg-color: #F8F8FA;
+$u-bg-color: #FAFAFA;
 
-// 主题色 - Primary (薰衣草紫)
-$u-primary: $color-lavender-dark;
-$u-primary-dark: #B89BC0;
-$u-primary-disabled: #E5D4ED;
-$u-primary-light: #F2EAF6;
+// 主题色 - Primary (品牌红)
+$u-primary: $color-brand;
+$u-primary-dark: $color-brand-dark;
+$u-primary-disabled: #FFEBEB;
+$u-primary-light: #FFF5F5;
 
-// 主题色 - Warning (柔和金色)
-$u-warning: #E8B44C;
-$u-warning-dark: #D4A03A;
-$u-warning-disabled: #F4D99E;
-$u-warning-light: #FCF5E8;
+// 主题色 - Warning (警告橙)
+$u-warning: $color-warning;
+$u-warning-dark: #D97706;
+$u-warning-disabled: #FEF3C7;
+$u-warning-light: #FFFBEB;
 
-// 主题色 - Success (鼠尾草绿)
-$u-success: $color-sage;
-$u-success-dark: #7BA362;
-$u-success-disabled: #C8DDB8;
-$u-success-light: #E3F0DA;
+// 主题色 - Success (成功绿)
+$u-success: $color-success;
+$u-success-dark: #059669;
+$u-success-disabled: #D1FAE5;
+$u-success-light: #ECFDF5;
 
-// 主题色 - Error (柔和红)
-$u-error: #D4847A;
-$u-error-dark: #C06B60;
-$u-error-disabled: #E8BAB4;
-$u-error-light: #FAEAE8;
+// 主题色 - Error (错误红)
+$u-error: $color-error;
+$u-error-dark: #A50012;
+$u-error-disabled: #FFEBEB;
+$u-error-light: #FFF5F5;
 
-// 主题色 - Info (雾蓝)
-$u-info: $color-mist-blue;
-$u-info-dark: #7E96B8;
-$u-info-disabled: #D0DCE9;
-$u-info-light: #E8EEF5;
+// 主题色 - Info (信息灰)
+$u-info: $color-gray;
+$u-info-dark: #616161;
+$u-info-disabled: #F5F5F5;
+$u-info-light: #FAFAFA;
 
 // 字体大小
 $u-font-size-xs: 22rpx;

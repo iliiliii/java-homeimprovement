@@ -1,81 +1,135 @@
 // ===========================================
-// 智享家 Pro - 设计变量定义
-// 基于 iPhone 17 配色方案
+// 智享家 Pro - 黑红白配色方案
+// 现代简约 · 专业高效
 // ===========================================
 
-// ==================== iPhone 17 核心色彩 ====================
-// 薰衣草紫 Lavender - 主题强调色
-$color-lavender: #E5D4ED;
-$color-lavender-dark: #C9B0D4;
-$color-lavender-light: #F2EAF6;
+// ==================== 核心色彩系统 ====================
+// 品牌红色 - 活力朱红 (主色调)
+$color-brand: #C40016;
+$color-brand-50: #FFF5F5;
+$color-brand-100: #FFEBEB;
+$color-brand-200: #FECACA;
+$color-brand-300: #FCA5A5;
+$color-brand-400: #F87171;
+$color-brand-500: #C40016; // 主色
+$color-brand-600: #A50012;
+$color-brand-700: #7F1D1D;
+$color-brand-800: #651818;
+$color-brand-900: #450A0A;
 
-// 鼠尾草绿 Sage - 成功/辅助色
-$color-sage: #9DC183;
-$color-sage-dark: #7BA362;
-$color-sage-light: #E3F0DA;
+// 黑色系统 - 主要文字和背景
+$color-black: #000000;
+$color-gray-50: #FAFAFA;
+$color-gray-100: #F5F5F5;
+$color-gray-200: #EEEEEE;
+$color-gray-300: #E0E0E0;
+$color-gray-400: #BDBDBD;
+$color-gray-500: #9E9E9E;
+$color-gray-600: #757575;
+$color-gray-700: #616161;
+$color-gray-800: #424242;
+$color-gray-900: #212121;
 
-// 雾蓝 Mist Blue - 信息/次级强调
-$color-mist-blue: #A7B9D3;
-$color-mist-blue-dark: #7E96B8;
-$color-mist-blue-light: #E8EEF5;
-
-// 白色 White
+// 白色系统
 $color-white: #FFFFFF;
-$color-off-white: #F8F8FA;
+$color-white-alpha-90: rgba(255, 255, 255, 0.9);
+$color-white-alpha-80: rgba(255, 255, 255, 0.8);
+$color-white-alpha-60: rgba(255, 255, 255, 0.6);
+$color-white-alpha-40: rgba(255, 255, 255, 0.4);
+$color-white-alpha-20: rgba(255, 255, 255, 0.2);
+$color-white-alpha-10: rgba(255, 255, 255, 0.1);
 
-// 黑色 Black
-$color-black: #1A1A1A;
-$color-gray-dark: #3D3D3D;
-$color-gray: #64748B;
-$color-gray-light: #94A3B8;
+// 黑色透明度系统
+$color-black-alpha-90: rgba(0, 0, 0, 0.9);
+$color-black-alpha-80: rgba(0, 0, 0, 0.8);
+$color-black-alpha-60: rgba(0, 0, 0, 0.6);
+$color-black-alpha-40: rgba(0, 0, 0, 0.4);
+$color-black-alpha-20: rgba(0, 0, 0, 0.2);
+$color-black-alpha-10: rgba(0, 0, 0, 0.1);
+$color-black-alpha-05: rgba(0, 0, 0, 0.05);
 
 // ==================== 语义化颜色 ====================
-// 主要颜色
-$glass-bg: $color-off-white;
-$glass-surface: rgba(255, 255, 255, 0.85);
-$glass-surface-strong: rgba(255, 255, 255, 0.95);
-$glass-border: rgba(255, 255, 255, 0.9);
+// 背景色系统
+$color-bg-primary: $color-white;
+$color-bg-secondary: $color-gray-50;
+$color-bg-tertiary: $color-gray-100;
+$color-bg-dark: $color-gray-900;
+$color-bg-black: $color-black;
+
+// 文字色系统
+$color-text-primary: $color-gray-900;
+$color-text-secondary: $color-gray-700;
+$color-text-tertiary: $color-gray-600;
+$color-text-quaternary: $color-gray-500;
+$color-text-disabled: $color-gray-400;
+$color-text-white: $color-white;
+$color-text-brand: $color-brand;
+
+// 边框色系统
+$color-border-light: $color-gray-100;
+$color-border: $color-gray-200;
+$color-border-medium: $color-gray-300;
+$color-border-dark: $color-gray-400;
+
+// 功能色系统
+$color-success: #10B981;
+$color-warning: #F59E0B;
+$color-error: $color-brand;
+$color-info: $color-gray-600;
+
+// ==================== 主题色彩别名 ====================
+// 玻璃态效果
+$glass-bg: $color-bg-secondary;
+$glass-surface: $color-white-alpha-90;
+$glass-surface-strong: $color-white-alpha-80;
+$glass-border: $color-black-alpha-05;
 
 // 文字颜色
-$glass-text-main: $color-black;
-$glass-text-muted: $color-gray;
+$glass-text-main: $color-text-primary;
+$glass-text-muted: $color-text-tertiary;
+$glass-text-white: $color-text-white;
 
 // 主题色
-$glass-accent: $color-lavender-dark;  // 薰衣草紫作为主强调色
-$glass-accent-light: $color-lavender-light;
-$glass-success: $color-sage;          // 鼠尾草绿作为成功色
-$glass-info: $color-mist-blue;        // 雾蓝作为信息色
-$glass-warning: #E8B44C;              // 柔和橙黄
-$glass-danger: #D4847A;               // 柔和红
+$glass-accent: $color-brand;
+$glass-accent-light: $color-brand-100;
+$glass-success: $color-success;
+$glass-info: $color-info;
+$glass-warning: $color-warning;
+$glass-danger: $color-brand;
 
-// ==================== 功能图标配色 ====================
-$icon-design: $color-lavender-dark;   // 设计图 - 薰衣草紫
-$icon-schedule: $color-mist-blue;     // 排期 - 雾蓝
-$icon-log: $color-mist-blue-dark;     // 日志 - 雾蓝深色
-$icon-list: $color-sage;              // 清单 - 鼠尾草绿
-$icon-budget: #E8B44C;                // 预算 - 柔和金色
-
-// ==================== 效果 ====================
+// ==================== 效果系统 ====================
 $blur-amount: 20px;
-$shadow-glass: 0 8px 32px rgba(201, 176, 212, 0.12);
-$shadow-card: 0 4px 16px rgba(0, 0, 0, 0.04);
-$shadow-btn: 0 4px 16px rgba(201, 176, 212, 0.35);
+$shadow-light: 0 2px 8px $color-black-alpha-05;
+$shadow-card: 0 4px 16px $color-black-alpha-10;
+$shadow-glass: 0 8px 32px $color-black-alpha-10;
+$shadow-btn: 0 4px 12px rgba(196, 0, 22, 0.25);
+$shadow-btn-hover: 0 6px 16px rgba(196, 0, 22, 0.35);
 
-// ==================== 字体 ====================
+// ==================== 字体系统 ====================
 $font-main: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
 
-// ==================== 圆角 ====================
-$radius-xl: 32rpx;
-$radius-l: 24rpx;
-$radius-m: 16rpx;
-$radius-s: 12rpx;
+// ==================== 圆角系统 ====================
+$radius-xs: 4rpx;
+$radius-s: 8rpx;
+$radius-m: 12rpx;
+$radius-l: 16rpx;
+$radius-xl: 24rpx;
+$radius-2xl: 32rpx;
+$radius-full: 9999rpx;
 
-// ==================== 间距 ====================
-$spacing-xs: 8rpx;
-$spacing-s: 16rpx;
-$spacing-m: 24rpx;
-$spacing-l: 32rpx;
-$spacing-xl: 48rpx;
+// ==================== 间距系统 ====================
+$spacing-xs: 4rpx;
+$spacing-s: 8rpx;
+$spacing-m: 16rpx;
+$spacing-l: 24rpx;
+$spacing-xl: 32rpx;
+$spacing-2xl: 48rpx;
+$spacing-3xl: 64rpx;
 
 // ==================== uview-plus 主题变量覆盖 ====================
 $u-primary: $glass-accent;
