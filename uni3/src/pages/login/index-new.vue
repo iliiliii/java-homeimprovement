@@ -1,31 +1,39 @@
 <template>
   <view class="login-container">
-    <!-- 背景装饰 -->
-    <view class="bg-blob blob-1"></view>
-    <view class="bg-blob blob-2"></view>
+    <!-- 顶部装饰背景 -->
+    <view class="header-bg">
+      <view class="bg-blob blob-1"></view>
+      <view class="bg-blob blob-2"></view>
+    </view>
     
     <!-- Logo 区域 -->
     <view class="logo-section">
-      <view class="icon-logo">
-        <SvgIcon name="home" size="80rpx" color="#fff" />
-      </view>
+      <image 
+        class="logo-image" 
+        src="@/styles/logo.png" 
+        mode="aspectFit"
+      />
+       <!-- 
       <text class="app-title">{{ APP_CONFIG.name }}</text>
       <text class="app-subtitle">{{ APP_CONFIG.subtitle }}</text>
+      -->
     </view>
     
     <!-- 登录表单 -->
     <view class="glass-card login-form">
       <!-- 微信一键登录 -->
       <view v-if="loginMode === 'wechat'" class="login-mode-content">
-        <view class="mode-title">微信一键登录</view>
-        <view class="mode-desc">快速安全，无需输入密码</view>
+        <view class="mode-header">
+          <view class="mode-title">微信一键登录</view>
+          <view class="mode-desc">快速安全，无需输入密码</view>
+        </view>
         
         <button 
           class="glass-btn primary-btn wechat-btn" 
           open-type="getPhoneNumber" 
           @getphonenumber="handleWechatLogin"
         >
-          <SvgIcon name="brand-wechat" size="24rpx" style="margin-right: 12rpx" />
+          <SvgIcon name="brand-wechat" size="42rpx" style="margin-right: 12rpx;" color="#fff"/>
           微信一键登录
         </button>
         
@@ -552,107 +560,150 @@ const devSkipToHome = () => {
 }
 </script>
 
+
 <style lang="scss" scoped>
 .login-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 64rpx;
-  padding-top: 120rpx;
+  background: linear-gradient(180deg, $color-gray-50 0%, $color-white 100%);
   position: relative;
   overflow: hidden;
+}
+
+// 顶部装饰背景
+.header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 400rpx;
+  background: linear-gradient(135deg, $color-brand 0%, $color-brand-700 100%);
+  border-radius: 0 0 60rpx 60rpx;
+  z-index: 0;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -40rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 80rpx;
+    background: linear-gradient(135deg, $color-brand 0%, $color-brand-700 100%);
+    filter: blur(40rpx);
+    opacity: 0.3;
+  }
 }
 
 // 背景装饰球
 .bg-blob {
   position: absolute;
-  width: 600rpx;
-  height: 600rpx;
-  background: $glass-accent;
   border-radius: 50%;
-  filter: blur(160rpx);
-  opacity: 0.15;
-  z-index: -1;
+  z-index: 1;
 }
 
 .blob-1 {
-  top: -100rpx;
-  left: -100rpx;
+  width: 300rpx;
+  height: 300rpx;
+  background: $color-white-alpha-10;
+  top: -80rpx;
+  right: -60rpx;
 }
 
 .blob-2 {
-  bottom: -100rpx;
-  right: -100rpx;
-  background: $glass-success;
+  width: 200rpx;
+  height: 200rpx;
+  background: $color-white-alpha-10;
+  top: 200rpx;
+  left: -60rpx;
 }
 
 // Logo 区域
 .logo-section {
-  margin-bottom: 80rpx;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 180rpx;
+  padding-bottom: 40rpx;
 }
 
-.icon-logo {
-  width: 128rpx;
-  height: 128rpx;
-  background: $glass-accent;
-  border-radius: 32rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 48rpx;
-  box-shadow: 0 20rpx 40rpx rgba(201, 176, 212, 0.35);
+.logo-image {
+  width: 180rpx;
+  height: 350rpx;
+  margin-bottom: 24rpx;
+  filter: drop-shadow(0 8rpx 24rpx rgba(0, 0, 0, 0.15));
 }
 
 .app-title {
   display: block;
-  font-size: 56rpx;
+  font-size: 44rpx;
   font-weight: 700;
-  margin-bottom: 16rpx;
-  color: $glass-text-main;
+  color: $color-white;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+  margin-bottom: 8rpx;
 }
 
 .app-subtitle {
   display: block;
-  font-size: 28rpx;
-  color: $glass-text-muted;
+  font-size: 26rpx;
+  color: $color-white-alpha-80;
 }
 
 // 登录表单
 .login-form {
+  position: relative;
+  z-index: 2;
+  margin: 0 48rpx;
+  margin-top: 40rpx;
+  background: $color-white;
+  border-radius: $radius-2xl;
+  padding: $spacing-2xl;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.08);
+  
   .login-mode-content {
-    margin-bottom: 32rpx;
+    margin-bottom: 24rpx;
+  }
+  
+  .mode-header {
+    text-align: center;
+    margin-bottom: 40rpx;
   }
   
   .mode-title {
-    font-size: 32rpx;
+    font-size: 36rpx;
     font-weight: 600;
-    color: $glass-text-main;
+    color: $color-text-primary;
     margin-bottom: 12rpx;
   }
   
   .mode-desc {
-    font-size: 24rpx;
-    color: $glass-text-muted;
-    margin-bottom: 40rpx;
+    font-size: 26rpx;
+    color: $color-text-tertiary;
   }
   
   .form-item {
-    margin-bottom: 32rpx;
-  }
-  
-  .form-label {
-    display: block;
-    margin-bottom: 16rpx;
-    font-size: 28rpx;
-    font-weight: 500;
-    color: $glass-text-main;
+    margin-bottom: 28rpx;
   }
   
   .glass-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 22rpx 28rpx;
-    height: auto;
+    padding: 24rpx 28rpx;
+    height: 88rpx;
+    background: $color-gray-50;
+    border: 2rpx solid $color-border;
+    border-radius: $radius-l;
+    font-size: 28rpx;
+    transition: all 0.3s ease;
+    
+    &:focus {
+      border-color: $color-brand;
+      background: $color-white;
+      box-shadow: 0 0 0 4rpx rgba(196, 0, 22, 0.08);
+    }
   }
   
   .code-input-wrapper {
@@ -665,44 +716,56 @@ const devSkipToHome = () => {
   }
   
   .code-btn {
-    padding: 22rpx 24rpx;
-    background: rgba(255, 255, 255, 0.3);
-    border: 2rpx solid rgba(255, 255, 255, 0.5);
-    border-radius: 16rpx;
+    padding: 0 24rpx;
+    height: 88rpx;
+    line-height: 88rpx;
+    background: $color-brand-50;
+    border: 2rpx solid $color-brand-200;
+    border-radius: $radius-l;
     font-size: 24rpx;
-    color: $glass-text-main;
+    color: $color-brand;
     white-space: nowrap;
+    font-weight: 500;
     
     &:disabled {
       opacity: 0.5;
+      background: $color-gray-100;
+      border-color: $color-border;
+      color: $color-text-quaternary;
     }
   }
   
   .glass-btn {
     margin-top: 24rpx;
-    padding: 18rpx 48rpx;
-    height: auto;
-    line-height: 1.4;
+    padding: 0 48rpx;
+    height: 88rpx;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 30rpx;
+    font-weight: 600;
+    border-radius: $radius-full;
     
     &.primary-btn {
-      background: #07c160;
+      background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
       border: none;
+      color: $color-white;
+      box-shadow: 0 8rpx 24rpx rgba(196, 0, 22, 0.3);
       
       &:active {
-        background: #06ad56;
+        transform: translateY(2rpx);
+        box-shadow: 0 4rpx 12rpx rgba(196, 0, 22, 0.3);
       }
     }
     
     &.secondary-btn {
-      background: rgba(255, 255, 255, 0.4);
-      border: 2rpx solid rgba(255, 255, 255, 0.6);
-      color: $glass-text-main;
+      background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+      border: none;
+      color: $color-white;
+      box-shadow: 0 8rpx 24rpx rgba(196, 0, 22, 0.3);
       
       &:active {
-        background: rgba(255, 255, 255, 0.5);
+        transform: translateY(2rpx);
       }
     }
   }
@@ -710,15 +773,15 @@ const devSkipToHome = () => {
   .switch-mode {
     margin-top: 32rpx;
     text-align: center;
-    font-size: 24rpx;
-    color: $glass-text-muted;
+    font-size: 26rpx;
+    color: $color-text-tertiary;
     
     text {
-      color: $glass-accent;
+      color: $color-brand;
       
       &.divider {
-        margin: 0 16rpx;
-        color: $glass-text-muted;
+        margin: 0 20rpx;
+        color: $color-border-medium;
       }
     }
   }
@@ -727,17 +790,18 @@ const devSkipToHome = () => {
 // 协议勾选
 .agreement-section {
   display: flex;
-  align-items: center;
-  margin-top: 32rpx;
+  align-items: flex-start;
+  margin-top: 28rpx;
   padding: 0 8rpx;
 }
 
 .checkbox {
   width: 36rpx;
   height: 36rpx;
-  border: 2rpx solid $glass-text-muted;
+  border: 2rpx solid $color-border-medium;
   border-radius: 8rpx;
   margin-right: 16rpx;
+  margin-top: 2rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -745,30 +809,31 @@ const devSkipToHome = () => {
   flex-shrink: 0;
   
   &.checked {
-    background: $glass-accent;
-    border-color: $glass-accent;
+    background: $color-brand;
+    border-color: $color-brand;
   }
 }
 
 .agreement-text {
   font-size: 24rpx;
-  color: $glass-text-muted;
+  color: $color-text-tertiary;
   flex: 1;
+  line-height: 1.6;
 }
 
 .link {
-  color: $glass-accent;
+  color: $color-brand;
   display: inline;
 }
 
-// 开发者模式
+// 开发者模式 - 黑红白主题
 .dev-mode {
   position: fixed;
   bottom: 120rpx;
   left: 32rpx;
   right: 32rpx;
-  background: rgba(255, 152, 0, 0.1);
-  border: 2rpx solid rgba(255, 152, 0, 0.3);
+  background: $color-black-alpha-80;
+  border: 2rpx solid $color-brand-600;
   border-radius: 16rpx;
   overflow: hidden;
   backdrop-filter: blur(20rpx);
@@ -780,17 +845,17 @@ const devSkipToHome = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 152, 0, 0.15);
+  background: $color-brand-900;
   
   text {
     font-size: 28rpx;
     font-weight: 600;
-    color: #ff9800;
+    color: $color-white;
   }
   
   .arrow {
     font-size: 24rpx;
-    color: #ff9800;
+    color: $color-brand-300;
   }
 }
 
@@ -800,13 +865,13 @@ const devSkipToHome = () => {
 
 .dev-mode-tips {
   padding: 16rpx 24rpx;
-  background: rgba(255, 152, 0, 0.1);
+  background: $color-brand-900;
   border-radius: 12rpx;
   margin-bottom: 24rpx;
   
   text {
     font-size: 24rpx;
-    color: #ff9800;
+    color: $color-brand-200;
     line-height: 1.5;
   }
 }
@@ -825,18 +890,19 @@ const devSkipToHome = () => {
   border: none;
   
   &.customer-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
+    background: linear-gradient(135deg, $color-gray-700 0%, $color-gray-800 100%);
+    color: $color-white;
+    border: 1rpx solid $color-gray-600;
   }
   
   &.staff-btn {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: #fff;
+    background: linear-gradient(135deg, $color-brand-700 0%, $color-brand-800 100%);
+    color: $color-white;
   }
   
   &.skip-btn {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: #fff;
+    background: linear-gradient(135deg, $color-white 0%, $color-gray-100 100%);
+    color: $color-gray-900;
   }
   
   &:active {
@@ -848,11 +914,11 @@ const devSkipToHome = () => {
 // 版权信息
 .copyright {
   margin-top: auto;
-  padding: 60rpx 0;
-  padding-bottom: calc(60rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
+  padding: 40rpx 0;
+  padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
   text-align: center;
   font-size: 24rpx;
-  color: $glass-text-muted;
+  color: $color-text-quaternary;
 }
 </style>

@@ -41,6 +41,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
 import { getCustomerDashboard, getStaffDashboard } from '@/api/dashboard.js'
 import CustomTabBar from '@/components/CustomTabBar.vue'
@@ -141,6 +142,12 @@ const handleViewProject = (project) => {
     url: `/pages/project/detail?projectId=${project.id}`
   })
 }
+
+// 下拉刷新
+onPullDownRefresh(async () => {
+  await loadDashboardData()
+  uni.stopPullDownRefresh()
+})
 </script>
 
 <style lang="scss" scoped>

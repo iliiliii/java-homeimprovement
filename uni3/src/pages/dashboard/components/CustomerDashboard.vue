@@ -252,7 +252,7 @@ const handleNewsClick = (item) => {
 
 <style lang="scss" scoped>
 .customer-dashboard {
-  background: $color-bg-secondary;
+  background: $color-white;
   min-height: 100vh;
   position: relative;
 }
@@ -260,16 +260,13 @@ const handleNewsClick = (item) => {
 // 可滚动内容
 .scroll-content {
   box-sizing: border-box;
-  background: $color-bg-secondary;
+  background: $color-white;
 }
 
 // 资讯区域
 .news-section {
-  padding-top: $spacing-s;
-  background: $color-bg-primary;
-  border-radius: $radius-l $radius-l 0 0;
-  margin-top: $spacing-m;
-  box-shadow: $shadow-card;
+  padding-top: $spacing-m;
+  background: $color-white;
 }
 
 .news-list {
@@ -320,10 +317,8 @@ const handleNewsClick = (item) => {
 .no-project {
   padding: 200rpx $spacing-xl;
   text-align: center;
-  background: $color-bg-primary;
-  border-radius: $radius-l;
+  background: $color-white;
   margin: $spacing-l;
-  box-shadow: $shadow-card;
   
   text {
     font-size: 32rpx;
@@ -348,39 +343,12 @@ const handleNewsClick = (item) => {
 
 // 响应式优化
 @media (max-width: 750rpx) {
-  .news-section {
-    margin-top: $spacing-s;
-  }
-  
   .no-project {
     margin: $spacing-s;
     padding: 160rpx $spacing-l;
     
     text {
       font-size: 28rpx;
-    }
-  }
-}
-
-// 深色模式适配（预留）
-@media (prefers-color-scheme: dark) {
-  .customer-dashboard {
-    background: $color-gray-900;
-  }
-  
-  .scroll-content {
-    background: $color-gray-900;
-  }
-  
-  .news-section {
-    background: $color-gray-800;
-  }
-  
-  .no-project {
-    background: $color-gray-800;
-    
-    text {
-      color: $color-gray-300;
     }
   }
 }

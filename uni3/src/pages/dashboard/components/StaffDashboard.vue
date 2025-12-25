@@ -39,7 +39,7 @@
         <text>新建巡检</text>
       </view>
       <view class="action-btn" @click="$emit('navigate', '/pages/issue/create')">
-        <SvgIcon name="warning" size="36rpx" color="#E8B44C" />
+        <SvgIcon name="warning" size="36rpx" color="#C40016" />
         <text>问题上报</text>
       </view>
     </view>
@@ -174,7 +174,7 @@ const getStatusClass = (status) => {
 <style lang="scss" scoped>
 .staff-dashboard {
   min-height: 100vh;
-  background: $glass-bg;
+  background: $color-white;
   padding-bottom: 140rpx; // 为底部TabBar留出空间
 }
 
@@ -190,7 +190,7 @@ const getStatusClass = (status) => {
   left: 0;
   right: 0;
   z-index: 99;
-  background: linear-gradient(135deg, #2D5BFF 0%, #5B7FFF 100%);
+  background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
   padding-bottom: 32rpx;
   border-radius: 0 0 40rpx 40rpx;
   margin-top: -1rpx; // 消除缝隙
@@ -225,7 +225,7 @@ const getStatusClass = (status) => {
   color: white;
   
   &.warning {
-    color: #FFD93D;
+    color: #FFFFFF;
   }
 }
 
@@ -331,18 +331,18 @@ const getStatusClass = (status) => {
   border-radius: 100rpx;
   
   &.design {
-    background: rgba(124, 77, 255, 0.1);
-    color: #7C4DFF;
+    background: rgba(196, 0, 22, 0.1);
+    color: $color-brand;
   }
   
   &.progress {
-    background: rgba(45, 91, 255, 0.1);
-    color: #2D5BFF;
+    background: rgba(33, 33, 33, 0.1);
+    color: $color-gray-800;
   }
   
   &.completed {
-    background: rgba(0, 194, 178, 0.1);
-    color: #00C2B2;
+    background: rgba(16, 185, 129, 0.1);
+    color: $color-success;
   }
   
   &.pending {
@@ -401,7 +401,7 @@ const getStatusClass = (status) => {
 }
 
 .role-tag {
-  background: $glass-bg;
+  background: $color-gray-100;
   padding: 6rpx 16rpx;
   border-radius: 8rpx;
   
@@ -416,7 +416,7 @@ const getStatusClass = (status) => {
   position: absolute;
   top: 28rpx;
   right: 28rpx;
-  background: #FF6B6B;
+  background: $color-brand;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   

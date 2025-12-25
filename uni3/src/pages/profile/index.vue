@@ -33,19 +33,37 @@
               @click="handleExpenseClick(item)"
             >
               <text class="expense-label">{{ item.label }}</text>
-              <text class="expense-value">{{ formatAmount(item.value) }}</text>
+              <view class="expense-value">
+                <text class="value-number">{{ formatAmount(item.value).number }}</text>
+                <text class="value-unit">{{ formatAmount(item.value).unit }}</text>
+              </view>
             </view>
           </view>
         </view>
         
         <!-- 底部按钮区域 -->
         <view class="bottom-buttons">
-          <view class="action-btn" @click="showContactDialog = true">
+          <view class="action-btn" @click="handleContact">
             <text>联系客服</text>
           </view>
           <view class="action-btn" @click="handleAbout">
             <text>关于我们</text>
           </view>
+          
+          <!-- 品牌突出按钮 
+          <view class="brand-btn" @click="handleBrand">
+            <view class="brand-btn-bg">
+              <view class="brand-bubble bubble-1"></view>
+              <view class="brand-bubble bubble-2"></view>
+            </view>
+            <image class="brand-logo" src="@/styles/logo.png" mode="aspectFit" />
+            <view class="brand-btn-text">
+              <text class="brand-title">了解品牌</text>
+              <text class="brand-subtitle">探索我们的故事</text>
+            </view>
+            <view class="brand-arrow">›</view>
+          </view>
+          -->
           <view class="action-btn" @click="handleLogout">
             <text>退出登录</text>
           </view>
@@ -53,52 +71,6 @@
       </view>
     </scroll-view>
     
-    <!-- 联系客服弹窗 --> 
-    <view v-if="showContactDialog" class="contact-dialog" @click.self="showContactDialog = false">
-      <view class="dialog-content" @click.stop>
-        <!-- 关闭按钮 -->
-        <view class="dialog-close" @click="showContactDialog = false">
-          <text>×</text>
-        </view>
-        
-        <!-- 标题 -->
-        <view class="dialog-title">
-          <text>联系客服</text>
-        </view>
-        
-        <!-- 二维码 -->
-        <view class="qr-code-container">
-          <image 
-            class="qr-code-image" 
-            :src="contactInfo.qrCode" 
-            mode="aspectFit"
-          />
-        </view>
-        
-        <!-- 联系方式 -->
-        <view class="contact-methods">
-          <view class="contact-method-item" @click="handleCall(contactInfo.phone)">
-            <view class="method-icon">
-              <text>📞</text>
-            </view>
-            <view class="method-info">
-              <text class="method-label">电话</text>
-              <text class="method-value">{{ contactInfo.phone }}</text>
-            </view>
-          </view>
-          
-          <view class="contact-method-item" @click="handleCopy(contactInfo.wechat)">
-            <view class="method-icon">
-              <text>💬</text>
-            </view>
-            <view class="method-info">
-              <text class="method-label">微信</text>
-              <text class="method-value">{{ contactInfo.wechat }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
     <!-- Custom TabBar -->
     <CustomTabBar :current="3" />
   </view>
@@ -117,20 +89,12 @@ const userStore = useUserStore()
 
 // 状态
 const headerHeight = ref(0)
-const showContactDialog = ref(false)
 const projects = ref([])
 const currentProjectIndex = ref(0)
 const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
-
-// 联系信息（测试数据）
-const contactInfo = ref({
-  qrCode: 'https://via.placeholder.com/300x300?text=QR+Code', // 测试二维码图片
-  phone: '400-123-4567',
-  wechat: 'wechat_service_001'
-})
 
 // 费用统计（测试数据）
 const expenseList = ref([
@@ -200,18 +164,18 @@ const handleCardClick = (project) => {
   })
 }
 
-// 格式化金额（过万显示为1.xx万或100万）
+// 格式化金额（过万显示为1.xx万或100万）- 返回数字和单位分开
 const formatAmount = (amount) => {
   if (amount >= 1000000) {
     const wan = Math.floor(amount / 10000)
-    return `${wan}万`
+    return { number: wan, unit: '万' }
   } else if (amount >= 10000) {
     const wan = amount / 10000
     // 保留两位小数，去掉末尾的0
     const formatted = wan.toFixed(2).replace(/\.?0+$/, '')
-    return `${formatted}万`
+    return { number: formatted, unit: '万' }
   } else {
-    return `¥${amount.toLocaleString()}`
+    return { number: `¥${amount.toLocaleString()}`, unit: '' }
   }
 }
 
@@ -231,41 +195,22 @@ const updateHeaderHeight = () => {
   }).exec()
 }
 
-// 拨打电话
-const handleCall = (phone) => {
-  uni.makePhoneCall({
-    phoneNumber: phone,
-    fail: (err) => {
-      console.error('拨打电话失败:', err)
-      uni.showToast({
-        title: '拨打电话失败',
-        icon: 'none'
-      })
-    }
-  })
-}
-
-// 复制微信号
-const handleCopy = (text) => {
-  uni.setClipboardData({
-    data: text,
-    success: () => {
-      uni.showToast({
-        title: '已复制到剪贴板',
-        icon: 'success'
-      })
-    },
-    fail: () => {
-      uni.showToast({
-        title: '复制失败',
-        icon: 'none'
-      })
-    }
+// 联系客服
+const handleContact = () => {
+  uni.navigateTo({
+    url: '/pages/contact/index'
   })
 }
 
 // 关于我们
 const handleAbout = () => {
+  uni.navigateTo({
+    url: '/pages/brand/index'
+  })
+}
+
+// 品牌页面
+const handleBrand = () => {
   uni.navigateTo({
     url: '/pages/brand/index'
   })
@@ -302,7 +247,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .profile-page {
   height: 100vh;
-  background: $glass-bg;
+  background: $color-white;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -361,6 +306,7 @@ onMounted(() => {
 // 费用统计区域
 .expense-section {
   margin-bottom: 48rpx;
+  padding: 0 16rpx;
 }
 
 .expense-grid {
@@ -378,26 +324,92 @@ onMounted(() => {
   justify-content: center;
   padding: 32rpx 24rpx;
   text-align: center;
-  min-height: 160rpx;
+  min-height: 180rpx;
   box-sizing: border-box;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  background: linear-gradient(145deg, $color-white 0%, $color-gray-50 100%);
+  border: 2rpx solid $color-border-light;
+  border-radius: $radius-xl;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  
+  // 装饰角标
+  &::before {
+    content: '';
+    position: absolute;
+    top: -20rpx;
+    right: -20rpx;
+    width: 80rpx;
+    height: 80rpx;
+    background: $color-brand-50;
+    border-radius: 50%;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+  }
+  
+  // 底部装饰线
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 4rpx;
+    background: linear-gradient(90deg, $color-brand 0%, $color-brand-600 100%);
+    border-radius: 4rpx;
+    transition: width 0.3s ease;
+  }
   
   &:active {
-    transform: scale(0.98);
+    transform: scale(0.96);
+    border-color: $color-brand-200;
+    
+    &::before {
+      transform: scale(1.5);
+      opacity: 0.8;
+    }
+    
+    &::after {
+      width: 60%;
+    }
   }
 }
 
 .expense-label {
   font-size: 26rpx;
-  color: $glass-text-muted;
+  color: $color-text-tertiary;
   margin-bottom: 16rpx;
+  position: relative;
+  z-index: 1;
 }
 
 .expense-value {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: $glass-accent;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  
+  .value-number {
+    font-size: 40rpx;
+    font-weight: 700;
+    // 数字光泽效果
+    background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 50%, $color-brand 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .value-unit {
+    font-size: 24rpx;
+    font-weight: 500;
+    color: $color-brand;
+    margin-left: 4rpx;
+    opacity: 0.8;
+  }
 }
 
 // 底部按钮区域
@@ -406,28 +418,181 @@ onMounted(() => {
   margin-bottom: 32rpx;
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
-  padding: 0;
+  gap: 20rpx;
+  padding: 0 16rpx;
 }
 
 .action-btn {
   width: 100%;
-  height: 100rpx;
-  background: white;
-  border-radius: 24rpx;
+  height: 96rpx;
+  background: $color-white;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-xl;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 30rpx;
-  color: $glass-text-main;
+  color: $color-text-primary;
   font-weight: 500;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
-  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  
+  // 左侧装饰条
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6rpx;
+    height: 0;
+    background: linear-gradient(180deg, $color-brand 0%, $color-brand-600 100%);
+    border-radius: 0 6rpx 6rpx 0;
+    transition: height 0.3s ease;
+  }
+  
+  // 右侧箭头指示
+  &::after {
+    content: '›';
+    position: absolute;
+    right: 32rpx;
+    font-size: 36rpx;
+    color: $color-text-quaternary;
+    transition: all 0.3s ease;
+  }
   
   &:active {
     transform: scale(0.98);
-    background: #f9f9f9;
+    background: $color-gray-50;
+    border-color: $color-brand-200;
+    
+    &::before {
+      height: 60%;
+    }
+    
+    &::after {
+      right: 24rpx;
+      color: $color-brand;
+    }
   }
+  
+  // 退出登录按钮特殊样式
+  &:last-child {
+    margin-top: 16rpx;
+    background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+    border: none;
+    color: $color-white;
+    
+    &::before {
+      display: none;
+    }
+    
+    &::after {
+      color: $color-white-alpha-60;
+    }
+    
+    &:active {
+      background: linear-gradient(135deg, $color-brand-600 0%, $color-brand-700 100%);
+      
+      &::after {
+        color: $color-white;
+      }
+    }
+  }
+}
+
+// 品牌突出按钮
+.brand-btn {
+  width: 100%;
+  height: 140rpx;
+  background: linear-gradient(135deg, $color-brand 0%, $color-brand-700 100%);
+  border-radius: $radius-2xl;
+  display: flex;
+  align-items: center;
+  padding: 0 32rpx;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  margin: 16rpx 0;
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.brand-btn-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.brand-bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: $color-white-alpha-10;
+  
+  &.bubble-1 {
+    width: 120rpx;
+    height: 120rpx;
+    top: -40rpx;
+    right: 80rpx;
+    animation: brandFloat1 4s ease-in-out infinite;
+  }
+  
+  &.bubble-2 {
+    width: 80rpx;
+    height: 80rpx;
+    bottom: -30rpx;
+    right: 200rpx;
+    animation: brandFloat2 5s ease-in-out infinite;
+  }
+}
+
+@keyframes brandFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  50% { transform: translate(-10rpx, 15rpx) scale(1.1); opacity: 0.8; }
+}
+
+@keyframes brandFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate(15rpx, -10rpx) scale(1.15); opacity: 0.7; }
+}
+
+.brand-logo {
+  width: 60rpx;
+  height: 100rpx;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4rpx 8rpx rgba(0, 0, 0, 0.2));
+}
+
+.brand-btn-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.brand-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $color-white;
+}
+
+.brand-subtitle {
+  font-size: 24rpx;
+  color: $color-white-alpha-80;
+}
+
+.brand-arrow {
+  font-size: 48rpx;
+  color: $color-white-alpha-60;
+  margin-left: 16rpx;
+  transition: all 0.3s ease;
 }
 
 // 联系客户弹窗
@@ -438,26 +603,45 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10rpx);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16rpx);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 32rpx;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .dialog-content {
-  background: $glass-surface;
-  backdrop-filter: blur($blur-amount);
-  -webkit-backdrop-filter: blur($blur-amount);
-  border: 1rpx solid $glass-border;
-  border-radius: $radius-l;
+  background: $color-white;
+  border-radius: $radius-2xl;
   padding: 48rpx 32rpx;
   width: calc(100% - 64rpx);
   max-width: 600rpx;
   position: relative;
-  box-shadow: $shadow-glass;
+  box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.15);
   margin: 0 auto;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dialog-close {
@@ -470,13 +654,15 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.05);
-  font-size: 48rpx;
-  color: $glass-text-muted;
+  background: $color-gray-100;
+  font-size: 40rpx;
+  color: $color-text-tertiary;
   line-height: 1;
+  transition: all 0.3s ease;
   
   &:active {
-    background: rgba(0, 0, 0, 0.1);
+    background: $color-gray-200;
+    transform: scale(0.95);
   }
 }
 
@@ -484,7 +670,7 @@ onMounted(() => {
   text-align: center;
   font-size: 36rpx;
   font-weight: 700;
-  color: $glass-text-main;
+  color: $color-text-primary;
   margin-bottom: 32rpx;
 }
 
@@ -494,19 +680,21 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 32rpx;
   padding: 24rpx;
-  background: white;
-  border-radius: $radius-m;
+  background: $color-gray-50;
+  border-radius: $radius-xl;
+  border: 2rpx dashed $color-border;
 }
 
 .qr-code-image {
-  width: 400rpx;
-  height: 400rpx;
+  width: 360rpx;
+  height: 360rpx;
+  border-radius: $radius-l;
 }
 
 .contact-methods {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 20rpx;
 }
 
 .contact-method-item {
@@ -514,12 +702,15 @@ onMounted(() => {
   align-items: center;
   gap: 24rpx;
   padding: 24rpx;
-  background: $glass-surface-strong;
-  border-radius: $radius-m;
-  border: 1rpx solid $glass-border;
+  background: $color-gray-50;
+  border-radius: $radius-xl;
+  border: 2rpx solid $color-border-light;
+  transition: all 0.3s ease;
   
   &:active {
-    background: rgba(201, 176, 212, 0.1);
+    background: $color-brand-50;
+    border-color: $color-brand-200;
+    transform: scale(0.98);
   }
 }
 
@@ -529,10 +720,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48rpx;
-  background: white;
-  border-radius: $radius-m;
+  font-size: 40rpx;
+  background: $color-white;
+  border-radius: $radius-l;
   flex-shrink: 0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.06);
 }
 
 .method-info {
@@ -544,12 +736,12 @@ onMounted(() => {
 
 .method-label {
   font-size: 24rpx;
-  color: $glass-text-muted;
+  color: $color-text-tertiary;
 }
 
 .method-value {
   font-size: 28rpx;
-  color: $glass-text-main;
+  color: $color-text-primary;
   font-weight: 600;
 }
 </style>
