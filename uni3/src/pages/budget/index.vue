@@ -1,7 +1,7 @@
 <template>
   <view class="budget-page">
     <!-- 统一导航栏 -->
-    <NavBar title="预算详情" />
+    <PageHeader title="预算详情" />
     
     <!-- 导航栏占位 -->
     <view :style="{ height: navHeight + 'px' }"></view>
@@ -69,9 +69,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import NavBar from '@/components/NavBar.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-import { getTotalNavHeight } from '@/utils/system.js'
+import { getStatusBarHeight } from '@/utils/system.js'
 
 const navHeight = ref(0)
 const totalBudget = ref(500000)
@@ -116,7 +116,7 @@ const usedBudget = computed(() => {
 })
 
 onMounted(() => {
-  navHeight.value = getTotalNavHeight()
+  navHeight.value = getStatusBarHeight() + 56
 })
 
 const formatNumber = (num) => {

@@ -1,7 +1,7 @@
 <template>
   <view class="shopping-page">
     <!-- 统一导航栏 -->
-    <NavBar title="物料清单" />
+    <PageHeader title="物料清单" />
     
     <!-- 导航栏占位 -->
     <view :style="{ height: navHeight + 'px' }"></view>
@@ -62,9 +62,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import NavBar from '@/components/NavBar.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-import { getTotalNavHeight } from '@/utils/system.js'
+import { getStatusBarHeight } from '@/utils/system.js'
 
 const navHeight = ref(0)
 const currentCategory = ref('all')
@@ -132,7 +132,7 @@ const filteredProducts = computed(() => {
 })
 
 onMounted(() => {
-  navHeight.value = getTotalNavHeight()
+  navHeight.value = getStatusBarHeight() + 56
 })
 
 const switchCategory = (key) => {

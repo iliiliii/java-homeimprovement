@@ -1,6 +1,7 @@
 <template>
   <view class="brand-page">
     <!-- 统一导航栏 - 透明背景 -->
+    <!-- 统一导航栏 - 透明背景 -->
     <NavBar 
       title="关于我们" 
       background="transparent" 

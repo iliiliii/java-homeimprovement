@@ -1,7 +1,7 @@
 <template>
   <view class="schedule-page">
     <!-- 统一导航栏 -->
-    <NavBar title="全案排期" />
+    <PageHeader title="全案排期" />
     
     <!-- 导航栏占位 -->
     <view :style="{ height: navHeight + 'px' }"></view>
@@ -50,11 +50,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import NavBar from '@/components/NavBar.vue'
-import { getTotalNavHeight } from '@/utils/system.js'
+import { ref, onMounted, nextTick } from 'vue'
+import PageHeader from '@/components/PageHeader.vue'
+import { getStatusBarHeight } from '@/utils/system.js'
 
 const navHeight = ref(0)
+const statusBarHeight = ref(0)
 
 const phases = ref([
   {
@@ -94,7 +95,9 @@ const phases = ref([
 ])
 
 onMounted(() => {
-  navHeight.value = getTotalNavHeight()
+  statusBarHeight.value = getStatusBarHeight()
+  // PageHeader height = statusBarHeight + 56
+  navHeight.value = statusBarHeight.value + 56
 })
 
 const getStatusText = (status) => {

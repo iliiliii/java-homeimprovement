@@ -1,11 +1,11 @@
 <template>
   <view class="log-page">
-    <!-- 固定头部 -->
-    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="header-title">
-        <text class="page-title">施工日志</text>
-      </view>
-    </view>
+    <!-- 统一头部 -->
+    <PageHeader 
+      title="施工日志" 
+      :subtitle="currentProject?.name"
+      :show-back="false" 
+    />
     
     <!-- 头部占位 -->
     <view :style="{ height: headerHeight + 'px' }"></view>
@@ -75,9 +75,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, getCurrentInstance, computed } from 'vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
+import PageHeader from '@/components/PageHeader.vue'
+import { useUserStore } from '@/store/user.js'
+
+const userStore = useUserStore()
+const currentProject = computed(() => userStore.currentProject)
 
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
@@ -133,14 +138,7 @@ const logs = ref([
 
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
-  nextTick(() => {
-    const query = uni.createSelectorQuery()
-    query.select('.fixed-header').boundingClientRect(rect => {
-      if (rect) {
-        headerHeight.value = rect.height
-      }
-    }).exec()
-  })
+  headerHeight.value = statusBarHeight.value + 66
 })
 
 const getTypeText = (type) => {
@@ -182,26 +180,15 @@ const loadMore = () => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// 固定头部
-.fixed-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: $glass-bg;
-}
+// 移除固定头部样式，保留page-title如果PageHeader没用默认title prop
+// 在template里我用了slot，所以page-title样式需要保留或者调整。
+// PageHeader默认slot没有居中样式? PageHeader的center-container有。
+// PageHeader的title-block也有。
+// 这里的.page-title样式可以直接用PageHeader内置的main-title类，或者保留自定义。
+// 为了简单，我还是用PageHeader的prop title="施工日志" 更方便。
 
-.header-title {
-  padding: 24rpx 48rpx;
-  text-align: center;
-}
+// 修正Template改为使用prop
 
-.page-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: $glass-text-main;
-}
 
 // 时间线
 .timeline {

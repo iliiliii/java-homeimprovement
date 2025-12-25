@@ -1,58 +1,57 @@
 <template>
   <view class="design-page">
     <!-- 固定头部区域 -->
-    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <!-- 标题 -->
-      <view class="header-title">
-        <text class="page-title">设计方案</text>
-        <text v-if="currentProject" class="project-name">{{ currentProject.name }}</text>
-      </view>
-      
-      <!-- 筛选区域 -->
-      <view class="filter-section" v-if="rooms.length > 0">
-        <view class="filter-input-wrapper">
-          <view class="search-icon">
-            <SvgIcon name="search" size="32rpx" color="#999" />
-          </view>
-          <input 
-            class="filter-input"
-            type="text"
-            placeholder="搜索或选择房间"
-            v-model="searchKeyword"
-            @input="handleSearchInput"
-            @focus="showDropdown = true"
-          />
-          <view 
-            v-if="searchKeyword" 
-            class="clear-btn"
-            @click="clearSearch"
-          >
-            <SvgIcon name="close" size="28rpx" color="#999" />
-          </view>
-          <view 
-            class="dropdown-toggle"
-            @click="toggleDropdown"
-          >
-          </view>
-        </view>
-        
-        <!-- 下拉选项 -->
-        <view v-if="showDropdown && dropdownOptions.length > 0" class="dropdown-list">
-          <scroll-view scroll-y class="dropdown-scroll">
-            <view 
-              v-for="option in dropdownOptions"
-              :key="option"
-              class="dropdown-item"
-              :class="{ active: searchKeyword === option }"
-              @click="selectOption(option)"
-            >
-              <text>{{ option }}</text>
-              <SvgIcon v-if="searchKeyword === option" name="check" size="28rpx" color="#C9B0D4" />
+    <PageHeader 
+      title="设计方案"
+      :subtitle="currentProject?.name"
+      :show-back="false"
+    >
+      <template #bottom>
+        <view class="filter-section" v-if="rooms.length > 0">
+          <view class="filter-input-wrapper">
+            <view class="search-icon">
+              <SvgIcon name="search" size="32rpx" color="#999" />
             </view>
-          </scroll-view>
+            <input 
+              class="filter-input"
+              type="text"
+              placeholder="搜索或选择房间"
+              v-model="searchKeyword"
+              @input="handleSearchInput"
+              @focus="showDropdown = true"
+            />
+            <view 
+              v-if="searchKeyword" 
+              class="clear-btn"
+              @click="clearSearch"
+            >
+              <SvgIcon name="close" size="28rpx" color="#999" />
+            </view>
+            <view 
+              class="dropdown-toggle"
+              @click="toggleDropdown"
+            >
+            </view>
+          </view>
+          
+          <!-- 下拉选项 -->
+          <view v-if="showDropdown && dropdownOptions.length > 0" class="dropdown-list">
+            <scroll-view scroll-y class="dropdown-scroll">
+              <view 
+                v-for="option in dropdownOptions"
+                :key="option"
+                class="dropdown-item"
+                :class="{ active: searchKeyword === option }"
+                @click="selectOption(option)"
+              >
+                <text>{{ option }}</text>
+                <SvgIcon v-if="searchKeyword === option" name="check" size="28rpx" color="#C9B0D4" />
+              </view>
+            </scroll-view>
+          </view>
         </view>
-      </view>
-    </view>
+      </template>
+    </PageHeader>
     
     <!-- 头部占位 -->
     <view :style="{ height: headerHeight + 'px' }"></view>
@@ -159,6 +158,7 @@ import ImageViewer from '@/components/ImageViewer/index.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
 import { useUserStore } from '@/store/user'
+import PageHeader from '@/components/PageHeader.vue'
 import { getProjectRooms } from '@/api/dashboard'
 import { BASE_URL } from '@/utils/request'
 
@@ -287,14 +287,10 @@ const openRoom = (room) => {
 
 // 更新头部高度
 const updateHeaderHeight = () => {
-  nextTick(() => {
-    const query = uni.createSelectorQuery()
-    query.select('.fixed-header').boundingClientRect(rect => {
-      if (rect) {
-        headerHeight.value = rect.height
-      }
-    }).exec()
-  })
+  // PageHeader (56) + StatusBar + Filter (80+24=104rpx approx)
+  // 如果有筛选区域，高度增加
+  let filterHeight = rooms.value.length > 0 ? uni.upx2px(124) : 0
+  headerHeight.value = statusBarHeight.value + 30 + filterHeight
 }
 
 onMounted(() => {
@@ -341,34 +337,9 @@ onBackPress((e) => {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-// 固定头部
-.fixed-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: $glass-bg;
-}
 
-.header-title {
-  padding: 24rpx 48rpx;
-  text-align: center;
-}
+// 移除 .fixed-header, .header-title
 
-.page-title {
-  display: block;
-  font-size: 36rpx;
-  font-weight: 600;
-  color: $glass-text-main;
-}
-
-.project-name {
-  display: block;
-  font-size: 24rpx;
-  color: $glass-text-muted;
-  margin-top: 8rpx;
-}
 
 // 筛选区域
 .filter-section {
