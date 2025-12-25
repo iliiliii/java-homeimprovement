@@ -1,34 +1,28 @@
 <template>
   <view class="profile-page">
     <!-- 固定头部区域 -->
-    <view class="fixed-header" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <!-- 头部信息 -->
-      <view class="header-content">
-        <!-- 左侧头像 -->
-        <UserAvatar 
-          :avatar="userInfo.avatar" 
-          :name="userInfo.name" 
-          size="80rpx"
-        />
-        
-        <!-- 用户信息 -->
-        <view class="header-info">
-          <text class="user-name">
-            {{ userInfo.name || '未登录' }}
-          </text>
-          <text class="user-phone" v-if="userInfo.phone">
-            {{ userInfo.phone }}
-          </text>
-        </view>
-      </view>
-    </view>
-    
+    <PageHeader 
+      title="个人中心"
+      :show-back="false"
+    />
     <!-- 头部占位 -->
     <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
-    
+    <!-- 项目概况卡片 -->
+        <view class="project-brief-section" v-if="projects.length > 0">
+          <ProjectCardSwiper
+            :projects="projects"
+            :user-info="userInfo"
+            :current="currentProjectIndex"
+            @update:current="index => currentProjectIndex = index"
+            @change="handleSwiperChange"
+            @click="handleCardClick"
+          />
+        </view>
     <!-- 可滚动内容区域 -->
     <scroll-view class="scroll-content" scroll-y>
       <view class="content-wrapper">
+        
+
         <!-- 费用统计四宫格 -->
         <view class="expense-section">
           <view class="expense-grid">
@@ -46,13 +40,13 @@
         
         <!-- 底部按钮区域 -->
         <view class="bottom-buttons">
-          <view class="glass-btn" @click="showContactDialog = true">
+          <view class="action-btn" @click="showContactDialog = true">
             <text>联系客服</text>
           </view>
-          <view class="glass-btn glass-btn--secondary" @click="handleAbout">
+          <view class="action-btn" @click="handleAbout">
             <text>关于我们</text>
           </view>
-          <view class="glass-btn glass-btn--outline" @click="handleLogout">
+          <view class="action-btn" @click="handleLogout">
             <text>退出登录</text>
           </view>
         </view>
@@ -113,16 +107,20 @@
 <script setup>
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useUserStore } from '@/store/user.js'
-import { getStatusBarHeight } from '@/utils/system.js'
+import { getCustomerDashboard } from '@/api/dashboard.js'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
+import ProjectCardSwiper from '@/components/ProjectCardSwiper.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const userStore = useUserStore()
 
 // 状态
-const statusBarHeight = ref(0)
 const headerHeight = ref(0)
 const showContactDialog = ref(false)
+const projects = ref([])
+const currentProjectIndex = ref(0)
+const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
@@ -160,6 +158,48 @@ const handleExpenseClick = (item) => {
   }
 }
 
+// 加载项目数据
+const loadProjectData = async () => {
+  try {
+    const data = await getCustomerDashboard()
+    const list = data?.projects || []
+    projects.value = list
+    
+    if (list.length > 0) {
+      // 优先使用本地存储的选中项目
+      const savedProjectId = uni.getStorageSync('currentProjectId')
+      let index = 0
+      if (savedProjectId) {
+         index = list.findIndex(p => p.id === savedProjectId)
+         if (index === -1) index = 0
+      }
+      currentProjectIndex.value = index
+    }
+  } catch (error) {
+    console.error('获取项目数据失败:', error)
+  }
+}
+
+// 切换项目
+const handleSwiperChange = (index) => {
+  if (index !== currentProjectIndex.value) {
+    currentProjectIndex.value = index
+  }
+}
+
+// 点击项目卡片
+const handleCardClick = (project) => {
+  // 保存当前选中的项目ID
+  if (project) {
+     uni.setStorageSync('currentProjectId', project.id)
+  }
+  
+  // 跳转到首页并选中该项目
+  uni.switchTab({
+    url: '/pages/dashboard/index'
+  })
+}
+
 // 格式化金额（过万显示为1.xx万或100万）
 const formatAmount = (amount) => {
   if (amount >= 1000000) {
@@ -178,9 +218,15 @@ const formatAmount = (amount) => {
 // 更新header高度
 const updateHeaderHeight = () => {
   const query = uni.createSelectorQuery().in(getCurrentInstance())
-  query.select('.fixed-header').boundingClientRect(rect => {
+  query.select('.page-header').boundingClientRect(rect => {
     if (rect && rect.height > 0) {
-      headerHeight.value = rect.height + 24
+      // 头部高度 + 间距，确保内容不被遮挡
+      headerHeight.value = rect.height
+    } else {
+       // 如果获取失败，使用默认高度
+    if (!headerHeight.value) {
+      headerHeight.value = (uni.getSystemInfoSync().statusBarHeight || 20) + 56
+    }
     }
   }).exec()
 }
@@ -239,58 +285,52 @@ const handleLogout = () => {
 }
 
 onMounted(() => {
-  statusBarHeight.value = getStatusBarHeight()
+  // statusBarHeight removed
   
-  // 预估初始高度
-  const screenWidth = uni.getSystemInfoSync().windowWidth
-  const estimatedHeight = (200 / 750) * screenWidth + statusBarHeight.value
-  headerHeight.value = estimatedHeight
+  // 预估初始高度 (status bar + 44)
+  const sys = uni.getSystemInfoSync()
+  headerHeight.value = (sys.statusBarHeight || 20) + 56
   
   // 获取精确高度
   setTimeout(updateHeaderHeight, 200)
+  
+  // 加载项目数据
+  loadProjectData()
 })
 </script>
 
 <style lang="scss" scoped>
 .profile-page {
-  min-height: 100vh;
+  height: 100vh;
   background: $glass-bg;
-  padding-bottom: 140rpx; // 为底部TabBar留出空间
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-// 固定头部
-.fixed-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: $glass-bg;
-  padding-bottom: 16rpx;
-}
-
-.header-content {
+// 固定头部样式已移入PageHeader
+// 自定义头部用户信息样式
+.header-user-info {
   display: flex;
   align-items: center;
   gap: 24rpx;
-  padding: 24rpx 32rpx;
 }
 
-.header-info {
-  flex: 1;
+.user-text-info {
+  display: flex;
+  flex-direction: column;
   
   .user-name {
-    display: block;
-    font-size: 36rpx;
+    font-size: 32rpx;
     font-weight: 700;
     color: $glass-text-main;
-    margin-bottom: 4rpx;
+    line-height: 1.2;
   }
   
   .user-phone {
-    display: block;
-    font-size: 26rpx;
+    font-size: 24rpx;
     color: $glass-text-muted;
+    margin-top: 4rpx;
   }
 }
 
@@ -302,12 +342,20 @@ onMounted(() => {
 
 // 可滚动内容
 .scroll-content {
-  height: calc(100vh - 140rpx); // 减去头部高度
+  flex: 1;
+  height: 0; // 关键：让scroll-view在flex容器中正确滚动
+  width: 100%;
 }
 
 .content-wrapper {
-  padding: 16rpx 32rpx;
+  padding: 16rpx 32rpx 140rpx; // 底部padding移到这里，防止被TabBar遮挡
   width: 100%;
+  box-sizing: border-box;
+}
+
+// 项目概况区域
+.project-brief-section {
+  margin-bottom: 32rpx;
 }
 
 // 费用统计区域
@@ -360,6 +408,26 @@ onMounted(() => {
   flex-direction: column;
   gap: 24rpx;
   padding: 0;
+}
+
+.action-btn {
+  width: 100%;
+  height: 100rpx;
+  background: white;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: $glass-text-main;
+  font-weight: 500;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
+  transition: all 0.2s;
+  
+  &:active {
+    transform: scale(0.98);
+    background: #f9f9f9;
+  }
 }
 
 // 联系客户弹窗

@@ -403,78 +403,101 @@ const devSkipToHome = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 64rpx;
+  padding: $spacing-3xl;
   padding-top: 120rpx;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, $color-black 0%, $color-gray-900 100%);
 }
 
-// 背景装饰球
+// 背景装饰球 - 黑红白主题
 .bg-blob {
   position: absolute;
   width: 600rpx;
   height: 600rpx;
-  background: $glass-accent;
   border-radius: 50%;
   filter: blur(160rpx);
-  opacity: 0.15;
+  opacity: 0.1;
   z-index: -1;
 }
 
 .blob-1 {
   top: -100rpx;
   left: -100rpx;
+  background: $color-brand;
 }
 
 .blob-2 {
   bottom: -100rpx;
   right: -100rpx;
-  background: $glass-success;
+  background: $color-white;
+  opacity: 0.05;
 }
 
 // Logo 区域
 .logo-section {
   margin-bottom: 80rpx;
+  text-align: center;
 }
 
 .icon-logo {
   width: 128rpx;
   height: 128rpx;
-  background: $glass-accent;
-  border-radius: 32rpx;
+  background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+  border-radius: $radius-2xl;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 48rpx;
-  box-shadow: 0 20rpx 40rpx rgba(201, 176, 212, 0.35);
+  margin: 0 auto $spacing-2xl;
+  box-shadow: $shadow-btn;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -2rpx;
+    background: linear-gradient(135deg, $color-brand, $color-white);
+    border-radius: $radius-2xl;
+    z-index: -1;
+    opacity: 0.3;
+  }
 }
 
 .app-title {
   display: block;
   font-size: 56rpx;
-  font-weight: 700;
-  margin-bottom: 16rpx;
-  color: $glass-text-main;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-m;
+  color: $color-white;
+  text-shadow: 0 2rpx 8rpx $color-black-alpha-40;
 }
 
 .app-subtitle {
   display: block;
   font-size: 28rpx;
-  color: $glass-text-muted;
+  color: $color-white-alpha-60;
+  font-weight: $font-weight-normal;
 }
 
-// 登录表单
+// 登录表单 - 玻璃态效果
 .login-form {
+  background: $color-white-alpha-10;
+  backdrop-filter: blur($blur-amount);
+  border: 1rpx solid $color-white-alpha-20;
+  border-radius: $radius-2xl;
+  padding: $spacing-2xl;
+  box-shadow: $shadow-glass;
+  
   .form-item {
-    margin-bottom: 40rpx;
+    margin-bottom: $spacing-2xl;
   }
   
   .form-label {
     display: block;
-    margin-bottom: 16rpx;
+    margin-bottom: $spacing-m;
     font-size: 28rpx;
-    font-weight: 500;
-    color: $glass-text-main;
+    font-weight: $font-weight-medium;
+    color: $color-white;
   }
   
   .glass-input {
@@ -482,33 +505,54 @@ const devSkipToHome = () => {
     box-sizing: border-box;
     padding: 22rpx 28rpx;
     height: auto;
+    background: $color-white-alpha-10;
+    border: 1rpx solid $color-white-alpha-20;
+    border-radius: $radius-l;
+    color: $color-white;
+    font-size: 28rpx;
+    
+    &::placeholder {
+      color: $color-white-alpha-40;
+    }
+    
+    &:focus {
+      border-color: $color-brand;
+      background: $color-white-alpha-20;
+    }
   }
   
   .glass-btn {
-    margin-top: 24rpx;
-    padding: 18rpx 48rpx;
+    margin-top: $spacing-l;
+    padding: 18rpx $spacing-2xl;
     height: auto;
     line-height: 1.4;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: $radius-full;
+    font-weight: $font-weight-medium;
+    transition: all 0.3s ease;
     
     &.primary-btn {
-      background: #07c160;
+      background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
       border: none;
+      color: $color-white;
+      box-shadow: $shadow-btn;
       
       &:active {
-        background: #06ad56; // darken(#07c160, 5%)
+        transform: translateY(2rpx);
+        box-shadow: $shadow-light;
       }
     }
     
     &.secondary-btn {
-      background: rgba(255, 255, 255, 0.4);
-      border: 2rpx solid rgba(255, 255, 255, 0.6);
-      color: $glass-text-main;
+      background: $color-white-alpha-10;
+      border: 1rpx solid $color-white-alpha-40;
+      color: $color-white;
       
       &:active {
-        background: rgba(255, 255, 255, 0.5);
+        background: $color-white-alpha-20;
+        transform: translateY(2rpx);
       }
     }
   }
@@ -518,84 +562,87 @@ const devSkipToHome = () => {
 .agreement-section {
   display: flex;
   align-items: center;
-  margin-bottom: 32rpx;
-  padding: 0 8rpx;
+  margin-bottom: $spacing-l;
+  padding: 0 $spacing-s;
 }
 
 .checkbox {
   width: 36rpx;
   height: 36rpx;
-  border: 2rpx solid $glass-text-muted;
-  border-radius: 8rpx;
-  margin-right: 16rpx;
+  border: 2rpx solid $color-white-alpha-40;
+  border-radius: $radius-s;
+  margin-right: $spacing-m;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
   
   &.checked {
-    background: $glass-accent;
-    border-color: $glass-accent;
+    background: $color-brand;
+    border-color: $color-brand;
+    box-shadow: 0 0 0 4rpx rgba(196, 0, 22, 0.2);
   }
 }
 
 .agreement-text {
   font-size: 24rpx;
-  color: $glass-text-muted;
+  color: $color-white-alpha-80;
   flex: 1;
+  line-height: 1.5;
 }
 
 .link {
-  color: $glass-accent;
+  color: $color-brand-300;
   display: inline;
+  text-decoration: underline;
 }
 
-// 开发者模式
+// 开发者模式 - 黑红白主题
 .dev-mode {
   position: fixed;
   bottom: 120rpx;
-  left: 32rpx;
-  right: 32rpx;
-  background: rgba(255, 152, 0, 0.1);
-  border: 2rpx solid rgba(255, 152, 0, 0.3);
-  border-radius: 16rpx;
+  left: $spacing-l;
+  right: $spacing-l;
+  background: $color-black-alpha-80;
+  border: 1rpx solid $color-brand-600;
+  border-radius: $radius-l;
   overflow: hidden;
-  backdrop-filter: blur(20rpx);
+  backdrop-filter: blur($blur-amount);
   z-index: 999;
 }
 
 .dev-mode-header {
-  padding: 24rpx 32rpx;
+  padding: $spacing-l $spacing-l;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 152, 0, 0.15);
+  background: $color-brand-900;
   
   text {
     font-size: 28rpx;
-    font-weight: 600;
-    color: #ff9800;
+    font-weight: $font-weight-semibold;
+    color: $color-white;
   }
   
   .arrow {
     font-size: 24rpx;
-    color: #ff9800;
+    color: $color-brand-300;
   }
 }
 
 .dev-mode-panel {
-  padding: 24rpx;
+  padding: $spacing-l;
 }
 
 .dev-mode-tips {
-  padding: 16rpx 24rpx;
-  background: rgba(255, 152, 0, 0.1);
-  border-radius: 12rpx;
-  margin-bottom: 24rpx;
+  padding: $spacing-m $spacing-l;
+  background: $color-brand-900;
+  border-radius: $radius-m;
+  margin-bottom: $spacing-l;
   
   text {
     font-size: 24rpx;
-    color: #ff9800;
+    color: $color-brand-200;
     line-height: 1.5;
   }
 }
@@ -603,29 +650,31 @@ const devSkipToHome = () => {
 .dev-mode-buttons {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: $spacing-m;
 }
 
 .dev-btn {
-  padding: 24rpx 32rpx;
-  border-radius: 12rpx;
+  padding: $spacing-l $spacing-l;
+  border-radius: $radius-m;
   font-size: 28rpx;
-  font-weight: 600;
+  font-weight: $font-weight-semibold;
   border: none;
+  transition: all 0.3s ease;
   
   &.customer-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
+    background: linear-gradient(135deg, $color-gray-700 0%, $color-gray-800 100%);
+    color: $color-white;
+    border: 1rpx solid $color-gray-600;
   }
   
   &.staff-btn {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: #fff;
+    background: linear-gradient(135deg, $color-brand-700 0%, $color-brand-800 100%);
+    color: $color-white;
   }
   
   &.skip-btn {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: #fff;
+    background: linear-gradient(135deg, $color-white 0%, $color-gray-100 100%);
+    color: $color-gray-900;
   }
   
   &:active {
@@ -642,7 +691,7 @@ const devSkipToHome = () => {
   padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
   text-align: center;
   font-size: 24rpx;
-  color: $glass-text-muted;
+  color: $color-white-alpha-40;
 }
 </style>
 
