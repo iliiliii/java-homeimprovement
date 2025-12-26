@@ -25,7 +25,8 @@
       <view class="card-info">
         <!-- 第一行：名称 + 状态 -->
         <view class="card-row">
-          <text class="card-name">{{ project.name }}</text>
+          <text class="card-name">{{ userInfo.name }} <text class="card-project-name">{{ project.name }}</text></text>
+          
           <view class="card-status" :class="cardTypeClass">
             {{ project.statusText }}
           </view>
@@ -250,6 +251,18 @@ const cardTypeClass = computed(() => {
 .card-name {
   font-size: 32rpx;
   font-weight: 600;
+  color: $color-white;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: $spacing-s;
+  line-height: 1.3;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.card-project-name {
+  font-size: 22rpx;
   color: $color-white;
   flex: 1;
   overflow: hidden;
