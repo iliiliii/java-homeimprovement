@@ -11,8 +11,7 @@
     
     <!-- 头部区域 -->
     <view class="header-section">
-      <!-- 装饰气泡 -->
-      <view class="header-bubble bubble-1"></view>
+      <!-- <view class="header-bubble bubble-1"></view>
       <view class="header-bubble bubble-2"></view>
       
       <view class="header-content">
@@ -21,7 +20,7 @@
         </view>
         <text class="header-title">专属客服</text>
         <text class="header-subtitle">7×24小时为您服务</text>
-      </view>
+      </view> -->
     </view>
     
     <!-- 二维码区域 -->
@@ -47,23 +46,65 @@
       
       <view class="contact-card" @click="handleCall">
         <view class="card-accent"></view>
-        <view class="contact-icon phone-icon">
-          <text>📞</text>
-        </view>
+        <!-- <view class="contact-icon phone-icon">
+          <text></text>
+        </view> -->
         <view class="contact-info">
-          <text class="contact-label">客服热线</text>
+          <text class="contact-label">XX热线</text>
           <text class="contact-value">{{ contactInfo.phone }}</text>
         </view>
-        <view class="contact-action">
+        <!-- <view class="contact-action">
           <text class="action-text">立即拨打</text>
           <text class="action-arrow">›</text>
+        </view> -->
+      </view>
+      <view class="contact-card" @click="handleCall">
+        <view class="card-accent"></view>
+        <!-- <view class="contact-icon phone-icon">
+          <text></text>
+        </view> -->
+        <view class="contact-info">
+          <text class="contact-label">XX热线</text>
+          <text class="contact-value">{{ contactInfo.phone }}</text>
         </view>
+        <!-- <view class="contact-action">
+          <text class="action-text">立即拨打</text>
+          <text class="action-arrow">›</text>
+        </view> -->
+      </view>
+      <view class="contact-card" @click="handleCall">
+        <view class="card-accent"></view>
+        <!-- <view class="contact-icon phone-icon">
+          <text></text>
+        </view> -->
+        <view class="contact-info">
+          <text class="contact-label">XX热线</text>
+          <text class="contact-value">{{ contactInfo.phone }}</text>
+        </view>
+        <!-- <view class="contact-action">
+          <text class="action-text">立即拨打</text>
+          <text class="action-arrow">›</text>
+        </view> -->
+      </view>
+      <view class="contact-card" @click="handleCall">
+        <view class="card-accent"></view>
+        <!-- <view class="contact-icon phone-icon">
+          <text></text>
+        </view> -->
+        <view class="contact-info">
+          <text class="contact-label">XX热线</text>
+          <text class="contact-value">{{ contactInfo.phone }}</text>
+        </view>
+        <!-- <view class="contact-action">
+          <text class="action-text">立即拨打</text>
+          <text class="action-arrow">›</text>
+        </view> -->
       </view>
       
-      <view class="contact-card" @click="handleCopyWechat">
+      <!-- <view class="contact-card" @click="handleCopyWechat">
         <view class="card-accent"></view>
         <view class="contact-icon wechat-icon">
-          <text>💬</text>
+          <text></text>
         </view>
         <view class="contact-info">
           <text class="contact-label">微信号</text>
@@ -73,12 +114,12 @@
           <text class="action-text">复制</text>
           <text class="action-arrow">›</text>
         </view>
-      </view>
+      </view> -->
       
-      <view class="contact-card" @click="handleCopyEmail" v-if="contactInfo.email">
+      <!-- <view class="contact-card" @click="handleCopyEmail" v-if="contactInfo.email">
         <view class="card-accent"></view>
         <view class="contact-icon email-icon">
-          <text>📧</text>
+          <text></text>
         </view>
         <view class="contact-info">
           <text class="contact-label">邮箱</text>
@@ -88,14 +129,14 @@
           <text class="action-text">复制</text>
           <text class="action-arrow">›</text>
         </view>
-      </view>
+      </view> -->
     </view>
     
     <!-- 服务时间 -->
     <view class="service-section">
       <view class="service-card">
         <view class="service-header">
-          <text class="service-icon">🕐</text>
+          <text class="service-icon"></text>
           <text class="service-title">服务时间</text>
         </view>
         <view class="service-content">
