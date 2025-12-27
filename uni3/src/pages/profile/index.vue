@@ -98,10 +98,10 @@ const userInfo = computed(() => userStore.userInfo)
 
 // 费用统计（测试数据）
 const expenseList = ref([
-  { label: '设计费用', value: 15000, url: '' }, // url 预留，后续从接口获取
-  { label: '工程费用', value: 85000, url: '' },
-  { label: '门窗费用', value: 32000, url: '' },
-  { label: '柜体费用', value: 48000, url: '' }
+  { label: '设计合同', value: 15000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' }, // url 预留，后续从接口获取
+  { label: '工程合同', value: 85000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' },
+  { label: '门窗合同', value: 32000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' },
+  { label: '柜体合同', value: 48000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' }
 ])
 
 // 费用卡片点击事件（预留跳转到http页面）
@@ -452,15 +452,6 @@ onMounted(() => {
     transition: height 0.3s ease;
   }
   
-  // 右侧箭头指示
-  &::after {
-    content: '›';
-    position: absolute;
-    right: 32rpx;
-    font-size: 36rpx;
-    color: $color-text-quaternary;
-    transition: all 0.3s ease;
-  }
   
   &:active {
     transform: scale(0.98);

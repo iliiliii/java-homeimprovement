@@ -170,7 +170,7 @@ const promises = ref([
 .hero-section {
   height: 620rpx;
   position: relative;
-  background: linear-gradient(135deg, $color-brand 0%, $color-brand-700 100%);
+  background: linear-gradient(135deg, $color-gray-600 0%, $color-gray-900 100%);
   border-radius: 0 0 64rpx 64rpx;
   overflow: hidden;
   margin-bottom: 0;

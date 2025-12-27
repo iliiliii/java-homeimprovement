@@ -56,7 +56,7 @@
       <!-- 中间突出按钮 - 独立定位 -->
       <view class="center-btn-container" @click="goToBrand">
         <view class="center-btn">
-          <image class="center-logo" src="@/styles/logo.png" mode="aspectFit" />
+          <image class="center-logo" src="@/styles/logo2.png" mode="aspectFit" />
         </view>
       </view>
     </view>
@@ -146,7 +146,6 @@ $center-btn-offset: 24rpx; // 突出高度
   transform: translateX(-50%);
   width: $center-btn-size + 24rpx;
   height: $center-btn-offset + 8rpx;
-  background: #ffffff;
   border-radius: 50rpx 50rpx 0 0;
   
   &::before {
@@ -257,7 +256,6 @@ $center-btn-offset: 24rpx; // 突出高度
 }
 
 .center-logo {
-  width: 40rpx;
   height: 70rpx;
 }
 </style>

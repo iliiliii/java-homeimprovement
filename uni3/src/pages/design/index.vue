@@ -94,7 +94,7 @@
         :key="room.id"
         @click="openRoom(room)"
       >
-        <!-- 房间封面 -->
+        <!-- 左侧：房间封面 -->
         <view class="room-cover">
           <image 
             v-if="room.images && room.images.length > 0"
@@ -103,32 +103,38 @@
             mode="aspectFill"
           />
           <view v-else class="cover-placeholder">
-            <SvgIcon name="photo" size="64rpx" color="#ccc" />
+            <SvgIcon name="photo" size="40rpx" color="#ccc" />
           </view>
           <!-- 图片数量角标 -->
-          <view v-if="room.imageCount > 0" class="image-count">
-            <SvgIcon name="photo" size="24rpx" color="#fff" />
+          <view v-if="room.imageCount > 1" class="image-count">
             <text>{{ room.imageCount }}</text>
           </view>
         </view>
         
-        <!-- 房间信息 -->
-        <view class="room-info">
-          <view class="room-header">
+        <!-- 右侧：房间信息 -->
+        <view class="room-content">
+          <!-- 第一行：房间名称 + 类型 -->
+          <view class="room-title-row">
             <text class="room-name">{{ room.roomName }}</text>
-            <view class="room-type-tag">{{ room.roomTypeText }}</view>
+            <text class="room-type">{{ room.roomTypeText }}</text>
           </view>
-          <view class="room-meta">
-            <text v-if="room.area" class="meta-item">{{ room.area }}㎡</text>
-            <text v-if="room.floor" class="meta-item">{{ room.floor }}楼</text>
+          
+          <!-- 第二行：属性信息 -->
+          <view class="room-info-row">
+            <text class="room-info-text">
+              <text v-if="room.area">{{ room.area }}㎡</text>
+              <text v-if="room.area && (room.floor || room.orientationText || room.description)"> · </text>
+              <text v-if="room.floor && room.floor != '0'">{{ room.floor }}F</text>
+              <text v-if="room.floor && room.floor != '0' && (room.orientationText || room.description)"> · </text>
+              <text v-if="room.orientationText">朝{{ room.orientationText }}</text>
+              <text v-if="room.orientationText && room.description"> · </text>
+              <text v-if="room.description">{{ room.description }}</text>
+            </text>
           </view>
-          <text v-if="room.description" class="room-desc">{{ room.description }}</text>
         </view>
         
         <!-- 箭头 -->
-        <view class="room-arrow">
-          <SvgIcon name="chevron-right" size="32rpx" color="#ccc" />
-        </view>
+        <SvgIcon name="chevron-right" size="32rpx" color="#C0C0C0" class="room-arrow" />
       </view>
     </view>
     
@@ -491,32 +497,32 @@ onPullDownRefresh(async () => {
 
 // 房间列表
 .room-list {
-  padding: 24rpx 32rpx;
+  padding: 20rpx 32rpx;
 }
 
 .room-card {
   display: flex;
   align-items: center;
-  background: white;
-  border-radius: 24rpx;
+  background: #fff;
+  border-radius: 16rpx;
   padding: 24rpx;
-  margin-bottom: 24rpx;
-  box-shadow: $shadow-card;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   
   &:active {
-    opacity: 0.9;
-    transform: scale(0.99);
+    background: #fafafa;
   }
 }
 
 // 房间封面
 .room-cover {
   position: relative;
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 16rpx;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
   overflow: hidden;
   flex-shrink: 0;
+  background: #f5f5f5;
 }
 
 .cover-image {
@@ -530,78 +536,77 @@ onPullDownRefresh(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
 }
 
 .image-count {
   position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
+  top: 6rpx;
+  right: 6rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 4rpx 12rpx;
-  border-radius: 20rpx;
+  justify-content: center;
+  padding: 0 8rpx;
   
   text {
-    font-size: 22rpx;
+    font-size: 20rpx;
     color: #fff;
+    font-weight: 500;
   }
 }
 
-// 房间信息
-.room-info {
+// 房间内容
+.room-content {
   flex: 1;
-  margin-left: 24rpx;
+  margin: 0 20rpx;
   overflow: hidden;
 }
 
-.room-header {
+.room-title-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  margin-bottom: 12rpx;
 }
 
 .room-name {
   font-size: 32rpx;
   font-weight: 600;
-  color: $glass-text-main;
-}
-
-.room-type-tag {
-  font-size: 22rpx;
-  color: $color-brand;
-  background: rgba(196, 0, 22, 0.1);
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-}
-
-.room-meta {
-  display: flex;
-  gap: 16rpx;
-  margin-top: 12rpx;
-}
-
-.meta-item {
-  font-size: 24rpx;
-  color: $glass-text-muted;
-}
-
-.room-desc {
-  display: block;
-  font-size: 24rpx;
-  color: $glass-text-muted;
-  margin-top: 8rpx;
+  color: #333;
+  margin-right: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.room-type {
+  font-size: 22rpx;
+  color: $color-brand;
+  background: rgba(196, 0, 22, 0.08);
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+  flex-shrink: 0;
+}
+
+.room-info-row {
+  overflow: hidden;
+}
+
+.room-info-text {
+  font-size: 26rpx;
+  color: #999;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
 // 箭头
 .room-arrow {
   flex-shrink: 0;
-  margin-left: 16rpx;
 }
 
 // TabBar占位

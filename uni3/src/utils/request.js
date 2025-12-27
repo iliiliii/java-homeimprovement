@@ -16,7 +16,7 @@ const getBaseUrl = () => {
     
     // #ifdef MP-WEIXIN
     // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
-    return 'http://192.168.5.102:8080'
+    return 'http://123.207.3.93:8080'
     // #endif
   }
   

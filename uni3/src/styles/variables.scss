@@ -106,7 +106,16 @@ $shadow-btn: 0 4px 12px rgba(196, 0, 22, 0.25);
 $shadow-btn-hover: 0 6px 16px rgba(196, 0, 22, 0.35);
 
 // ==================== 字体系统 ====================
-$font-main: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+// 中文字体栈：优先使用系统字体，确保跨平台一致性
+// iOS: PingFang SC (苹方)
+// Android: HarmonyOS Sans SC, Source Han Sans CN (思源黑体)
+// Windows: Microsoft YaHei (微软雅黑)
+// 回退: system-ui, sans-serif
+$font-main: "PingFang SC", "HarmonyOS Sans SC", "Source Han Sans CN", "Noto Sans SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+// 标题字体（与主字体保持一致，通过字重区分）
+$font-title: $font-main;
+
 $font-weight-light: 300;
 $font-weight-normal: 400;
 $font-weight-medium: 500;

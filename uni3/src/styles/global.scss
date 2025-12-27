@@ -11,6 +11,19 @@ page {
   font-size: 28rpx;
   line-height: 1.5;
   min-height: 100vh;
+  // 字体渲染优化
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+// 全局字体继承
+view,
+text,
+button,
+input,
+textarea {
+  font-family: inherit;
 }
 
 // 盒模型

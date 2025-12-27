@@ -23,7 +23,7 @@
     <view class="glass-card login-form">
       <!-- 微信一键登录 -->
       <view v-if="loginMode === 'wechat'" class="login-mode-content">
-        <view class="mode-header">
+        <view v-if="false" class="mode-header">
           <view class="mode-title">微信一键登录</view>
           <view class="mode-desc">快速安全，无需输入密码</view>
         </view>
@@ -578,7 +578,7 @@ const devSkipToHome = () => {
   left: 0;
   right: 0;
   height: 400rpx;
-  background: linear-gradient(135deg, $color-brand 0%, $color-brand-700 100%);
+  background: linear-gradient(135deg, $color-gray-600 0%, $color-gray-900 100%);
   border-radius: 0 0 60rpx 60rpx;
   z-index: 0;
   
@@ -590,7 +590,7 @@ const devSkipToHome = () => {
     transform: translateX(-50%);
     width: 80%;
     height: 80rpx;
-    background: linear-gradient(135deg, $color-brand 0%, $color-brand-700 100%);
+    background: linear-gradient(135deg, $color-gray-500 0%, $color-gray-700 100%);
     filter: blur(40rpx);
     opacity: 0.3;
   }
@@ -747,22 +747,22 @@ const devSkipToHome = () => {
     border-radius: $radius-full;
     
     &.primary-btn {
-      background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+      background: linear-gradient(135deg, $color-gray-700 0%, $color-gray-900 100%);
       border: none;
       color: $color-white;
-      box-shadow: 0 8rpx 24rpx rgba(196, 0, 22, 0.3);
+      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
       
       &:active {
         transform: translateY(2rpx);
-        box-shadow: 0 4rpx 12rpx rgba(196, 0, 22, 0.3);
+        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
       }
     }
     
     &.secondary-btn {
-      background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+      background: linear-gradient(135deg, $color-gray-700 0%, $color-gray-900 100%);
       border: none;
       color: $color-white;
-      box-shadow: 0 8rpx 24rpx rgba(196, 0, 22, 0.3);
+      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
       
       &:active {
         transform: translateY(2rpx);
@@ -777,7 +777,7 @@ const devSkipToHome = () => {
     color: $color-text-tertiary;
     
     text {
-      color: $color-brand;
+      color: $color-gray-800;
       
       &.divider {
         margin: 0 20rpx;
@@ -822,7 +822,7 @@ const devSkipToHome = () => {
 }
 
 .link {
-  color: $color-brand;
+  color: $color-gray-500;
   display: inline;
 }
 
