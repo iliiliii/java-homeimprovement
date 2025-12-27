@@ -70,7 +70,7 @@
                 <div style="color: #666; margin-bottom: 8px;">{{ item.description }}</div>
                 <div style="font-size: 13px; color: #999;">
                   <el-icon style="vertical-align: middle; margin-right: 4px;"><Calendar /></el-icon>
-                  {{ item.date }}
+                  {{ item.date ? item.date.substring(0, 10) : '' }}
                 </div>
               </div>
               <el-space>

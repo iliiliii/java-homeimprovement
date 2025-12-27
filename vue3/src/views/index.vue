@@ -97,7 +97,7 @@
                   <span>进行中的项目</span>
                   <el-tag type="primary" size="small" round style="margin-left: 8px;">{{ inProgressProjects.length }}</el-tag>
                 </div>
-                <el-button type="primary" link @click="goToProjects">
+                <el-button type="primary" link @click="goToProjects('IN_PROGRESS')">
                   进度跟踪 <el-icon><ArrowRight /></el-icon>
                 </el-button>
               </div>
@@ -149,7 +149,7 @@
               </div>
             </template>
             <div class="todo-list">
-              <div v-if="todoStats.pendingProjectCount > 0" class="todo-item warning" @click="goToProjects('pending')">
+              <div v-if="todoStats.pendingProjectCount > 0" class="todo-item warning" @click="goToProjects('IN_PROGRESS')">
                 <div class="todo-icon">
                   <el-icon><Folder /></el-icon>
                 </div>
@@ -499,7 +499,8 @@ function goToCustomerDetail(id) {
 }
 
 function goToProjects(status) {
-  if (status) {
+  // 检查 status 是否为有效的字符串参数（排除事件对象）
+  if (status && typeof status === 'string') {
     router.push({ path: '/projects', query: { status } })
   } else {
     router.push('/projects')

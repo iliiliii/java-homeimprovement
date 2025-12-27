@@ -450,8 +450,10 @@ function handleRouteQuery() {
   // 如果有状态参数，设置筛选条件
   if (status) {
     queryParams.value.status = status
-    getList()
   }
+  
+  // 加载数据
+  getList()
   
   // 如果有id参数，直接打开项目详情
   if (id) {
@@ -465,12 +467,8 @@ function handleRouteQuery() {
   }
 }
 
-// 初始化
-getList()
-// 延迟处理路由参数，确保组件已挂载
-nextTick(() => {
-  handleRouteQuery()
-})
+// 初始化 - 优先处理路由参数
+handleRouteQuery()
 
 // 监听路由变化
 watch(() => route.query, (newQuery) => {

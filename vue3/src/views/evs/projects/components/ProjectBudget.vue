@@ -30,7 +30,11 @@
         style="width: 100%"
         table-layout="auto"
       >
-        <el-table-column prop="category" label="预算类别" min-width="200" />
+        <el-table-column prop="category" label="预算类别" min-width="200">
+          <template #default="scope">
+            <span>{{ getCategoryLabel(scope.row.category) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="计划金额" min-width="150">
           <template #default="scope">
             <span style="color: #faad14; font-weight: bold;">
@@ -203,6 +207,13 @@ const budgetItemForm = ref({
 const totalBudgetAmount = computed(() => {
   return budgetItems.value.reduce((sum, item) => sum + (item.plannedAmount || 0), 0)
 })
+
+// 根据字典值获取类别标签
+function getCategoryLabel(categoryValue) {
+  if (!categoryValue) return '-'
+  const dict = decoration_project_budget.value?.find(item => item.value === categoryValue)
+  return dict?.label || categoryValue
+}
 
 // 从API加载预算数据
 function loadBudgetItems() {
