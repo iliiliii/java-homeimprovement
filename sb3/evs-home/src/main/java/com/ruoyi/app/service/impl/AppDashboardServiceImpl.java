@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -38,55 +39,89 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
     @Autowired
     private AppDashboardMapper dashboardMapper;
 
-    // 阶段名称映射
-    private static final Map<String, String> STAGE_TEXT_MAP = new HashMap<>();
-    static {
-        STAGE_TEXT_MAP.put("DESIGN", "设计阶段");
-        STAGE_TEXT_MAP.put("DISMANTLING", "拆除阶段");
-        STAGE_TEXT_MAP.put("WATER_ELECTRIC", "水电阶段");
-        STAGE_TEXT_MAP.put("TILES", "泥瓦阶段");
-        STAGE_TEXT_MAP.put("WOODWORK", "木工阶段");
-        STAGE_TEXT_MAP.put("PAINTING", "油漆阶段");
-        STAGE_TEXT_MAP.put("INSTALLATION", "安装阶段");
-        STAGE_TEXT_MAP.put("SOFT_FURNISHING", "软装阶段");
-        STAGE_TEXT_MAP.put("ACCEPTANCE", "验收阶段");
-    }
-
-    // 项目状态字典类型
+    // 字典类型常量
     private static final String DICT_TYPE_PROJECT_STATUS = "decoration_project_status";
+    private static final String DICT_TYPE_CONSTRUCTION_STAGE = "decoration_construction_stage";
+    private static final String DICT_TYPE_STAGE_STATUS = "decoration_construction_stage_status";
+    private static final String DICT_TYPE_POST_ROLES = "decoration_post_roles";
+    private static final String DICT_TYPE_ROOM_TYPE = "decoration_room_type";
+    private static final String DICT_TYPE_ORIENTATION = "decoration_orientation";
+
+    // 字典缓存（使用ConcurrentHashMap保证线程安全）
+    // key: dictType:dictValue, value: dictLabel
+    private final Map<String, String> dictCache = new ConcurrentHashMap<>();
     
-    // 进度状态映射（通用状态，不需要从字典表查询）
-    private static final Map<String, String> SCHEDULE_STATUS_MAP = new HashMap<>();
-    static {
-        SCHEDULE_STATUS_MAP.put("PENDING", "待开始");
-        SCHEDULE_STATUS_MAP.put("IN_PROGRESS", "进行中");
-        SCHEDULE_STATUS_MAP.put("COMPLETED", "已完成");
+    // 缓存过期时间（毫秒），默认5分钟
+    private static final long CACHE_EXPIRE_TIME = 5 * 60 * 1000;
+    private volatile long lastCacheRefreshTime = 0;
+
+    /**
+     * 从字典表获取标签（带缓存）
+     * @param dictType 字典类型
+     * @param dictValue 字典值
+     * @return 字典标签，如果未找到则返回原值
+     */
+    private String getDictLabel(String dictType, String dictValue) {
+        if (dictValue == null || dictValue.isEmpty()) {
+            return dictValue;
+        }
+        
+        // 检查缓存是否过期
+        long now = System.currentTimeMillis();
+        if (now - lastCacheRefreshTime > CACHE_EXPIRE_TIME) {
+            dictCache.clear();
+            lastCacheRefreshTime = now;
+        }
+        
+        String cacheKey = dictType + ":" + dictValue;
+        return dictCache.computeIfAbsent(cacheKey, k -> {
+            String label = dashboardMapper.selectDictLabel(dictType, dictValue);
+            return label != null ? label : dictValue;
+        });
     }
 
-    // 角色名称映射
-    private static final Map<String, String> ROLE_TEXT_MAP = new HashMap<>();
-    static {
-        ROLE_TEXT_MAP.put("DESIGNER", "设计师");
-        ROLE_TEXT_MAP.put("PM", "项目经理");
-        ROLE_TEXT_MAP.put("WORKER", "工长");
-        ROLE_TEXT_MAP.put("SUPERVISOR", "监理");
+    /**
+     * 获取阶段名称文本
+     */
+    private String getStageText(String stage) {
+        return getDictLabel(DICT_TYPE_CONSTRUCTION_STAGE, stage);
     }
 
-    // 房间类型映射
-    private static final Map<String, String> ROOM_TYPE_MAP = new HashMap<>();
-    static {
-        ROOM_TYPE_MAP.put("LIVING_ROOM", "客厅");
-        ROOM_TYPE_MAP.put("BEDROOM", "卧室");
-        ROOM_TYPE_MAP.put("KITCHEN", "厨房");
-        ROOM_TYPE_MAP.put("BATHROOM", "卫生间");
-        ROOM_TYPE_MAP.put("STUDY", "书房");
-        ROOM_TYPE_MAP.put("DINING_ROOM", "餐厅");
-        ROOM_TYPE_MAP.put("BALCONY", "阳台");
-        ROOM_TYPE_MAP.put("CHILDREN_ROOM", "儿童房");
-        ROOM_TYPE_MAP.put("ELDER_ROOM", "老人房");
-        ROOM_TYPE_MAP.put("CLOAKROOM", "衣帽间");
-        ROOM_TYPE_MAP.put("STORAGE", "储物间");
-        ROOM_TYPE_MAP.put("OTHER", "其他");
+    /**
+     * 获取进度状态文本
+     */
+    private String getScheduleStatusText(String status) {
+        return getDictLabel(DICT_TYPE_STAGE_STATUS, status);
+    }
+
+    /**
+     * 获取角色名称文本
+     */
+    private String getRoleText(String role) {
+        return getDictLabel(DICT_TYPE_POST_ROLES, role);
+    }
+
+    /**
+     * 获取房间类型文本
+     */
+    private String getRoomTypeText(String roomType) {
+        return getDictLabel(DICT_TYPE_ROOM_TYPE, roomType);
+    }
+
+    /**
+     * 获取朝向文本
+     */
+    private String getOrientationText(String orientation) {
+        return getDictLabel(DICT_TYPE_ORIENTATION, orientation);
+    }
+
+    /**
+     * 清除字典缓存（可在字典更新时调用）
+     */
+    public void clearDictCache() {
+        dictCache.clear();
+        lastCacheRefreshTime = 0;
+        log.info("字典缓存已清除");
     }
 
     @Override
@@ -115,10 +150,10 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             ProjectSchedules currentSchedule = dashboardMapper.selectCurrentSchedule(vo.getId());
             if (currentSchedule != null) {
                 vo.setCurrentStage(currentSchedule.getStage());
-                vo.setCurrentStageText(STAGE_TEXT_MAP.getOrDefault(currentSchedule.getStage(), currentSchedule.getStage()));
+                vo.setCurrentStageText(getStageText(currentSchedule.getStage()));
             } else {
                 vo.setCurrentStage("DESIGN");
-                vo.setCurrentStageText("设计阶段");
+                vo.setCurrentStageText(getStageText("设计阶段"));
             }
             
             // 计算进度（如果数据库没有）
@@ -178,7 +213,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             ProjectSchedules currentSchedule = dashboardMapper.selectCurrentSchedule(vo.getId());
             if (currentSchedule != null) {
                 vo.setCurrentStage(currentSchedule.getStage());
-                vo.setCurrentStageText(STAGE_TEXT_MAP.getOrDefault(currentSchedule.getStage(), currentSchedule.getStage()));
+                vo.setCurrentStageText(getStageText(currentSchedule.getStage()));
             }
             
             // 获取待处理问题数
@@ -186,7 +221,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             vo.setPendingIssueCount(issueCount);
             
             // 设置角色文本
-            vo.setMyRoleText(ROLE_TEXT_MAP.getOrDefault(vo.getMyRole(), vo.getMyRole()));
+            vo.setMyRoleText(getRoleText(vo.getMyRole()));
         }
         result.setProjects(projectVOs);
 
@@ -226,7 +261,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         ProjectSchedules currentSchedule = dashboardMapper.selectCurrentSchedule(projectId);
         if (currentSchedule != null) {
             result.setCurrentStage(currentSchedule.getStage());
-            result.setCurrentStageText(STAGE_TEXT_MAP.getOrDefault(currentSchedule.getStage(), currentSchedule.getStage()));
+            result.setCurrentStageText(getStageText(currentSchedule.getStage()));
         }
 
         // 计算总进度
@@ -254,14 +289,14 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             ScheduleVO vo = new ScheduleVO();
             vo.setId(s.getId());
             vo.setStage(s.getStage());
-            vo.setStageText(STAGE_TEXT_MAP.getOrDefault(s.getStage(), s.getStage()));
+            vo.setStageText(getStageText(s.getStage()));
             vo.setStageOrder(s.getStageOrder() != null ? s.getStageOrder().intValue() : 0);
             vo.setPlanStartDate(s.getPlanStartDate());
             vo.setPlanEndDate(s.getPlanEndDate());
             vo.setActualStartDate(s.getActualStartDate());
             vo.setActualEndDate(s.getActualEndDate());
             vo.setStatus(s.getStatus());
-            vo.setStatusText(SCHEDULE_STATUS_MAP.getOrDefault(s.getStatus(), s.getStatus()));
+            vo.setStatusText(getScheduleStatusText(s.getStatus()));
             vo.setCompletionRate(s.getCompletionRate());
             vo.setDescription(s.getDescription());
             return vo;
@@ -356,10 +391,10 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         ProjectSchedules currentSchedule = dashboardMapper.selectCurrentSchedule(project.getId());
         if (currentSchedule != null) {
             vo.setCurrentStage(currentSchedule.getStage());
-            vo.setCurrentStageText(STAGE_TEXT_MAP.getOrDefault(currentSchedule.getStage(), currentSchedule.getStage()));
+            vo.setCurrentStageText(getStageText(currentSchedule.getStage()));
         } else {
             vo.setCurrentStage("DESIGN");
-            vo.setCurrentStageText("设计阶段");
+            vo.setCurrentStageText(getStageText("DESIGN"));
         }
 
         // 计算进度
@@ -541,7 +576,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             
             String roomType = (String) room.get("roomType");
             vo.setRoomType(roomType);
-            vo.setRoomTypeText(ROOM_TYPE_MAP.getOrDefault(roomType, roomType));
+            vo.setRoomTypeText(getRoomTypeText(roomType));
             
             Object areaObj = room.get("area");
             if (areaObj != null) {
@@ -550,6 +585,11 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             
             vo.setDescription((String) room.get("description"));
             vo.setFloor((String) room.get("floor"));
+            
+            // 设置朝向
+            String orientation = (String) room.get("orientation");
+            vo.setOrientation(orientation);
+            vo.setOrientationText(getOrientationText(orientation));
 
             // 解析fileIds获取图片列表
             String fileIds = (String) room.get("fileIds");

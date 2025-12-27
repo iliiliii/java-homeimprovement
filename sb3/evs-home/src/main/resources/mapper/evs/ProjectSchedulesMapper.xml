@@ -149,21 +149,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteProjectSchedulesById" parameterType="ProjectSchedules">
-        delete ps from project_schedules ps
-        inner join project_members pm on ps.project_id = pm.project_id
-        where ps.id = #{id}
-          and pm.user_id = #{currentUserId}
-          and pm.is_active = 1
+        delete from project_schedules
+        where id = #{id}
+        <if test="isAdmin == null or isAdmin == false">
+          and project_id in (
+              select pm.project_id from project_members pm
+              where pm.user_id = #{currentUserId} and pm.is_active = 1
+          )
+        </if>
     </delete>
 
     <delete id="deleteProjectSchedulesByIds" parameterType="ProjectSchedules">
-        delete ps from project_schedules ps
-        inner join project_members pm on ps.project_id = pm.project_id
-        where ps.id in
+        delete from project_schedules
+        where id in
         <foreach item="id" collection="ids" open="(" separator="," close=")">
             #{id}
         </foreach>
-          and pm.user_id = #{currentUserId}
-          and pm.is_active = 1
+        <if test="isAdmin == null or isAdmin == false">
+          and project_id in (
+              select pm.project_id from project_members pm
+              where pm.user_id = #{currentUserId} and pm.is_active = 1
+          )
+        </if>
     </delete>
 </mapper>

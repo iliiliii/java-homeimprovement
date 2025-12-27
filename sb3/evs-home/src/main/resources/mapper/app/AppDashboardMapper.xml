@@ -211,6 +211,7 @@
             area,
             description,
             floor,
+            orientation,
             file_ids as fileIds,
             sort_order as sortOrder
         FROM project_rooms

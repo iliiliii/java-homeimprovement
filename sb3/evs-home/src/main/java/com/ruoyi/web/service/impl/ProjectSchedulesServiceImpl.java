@@ -202,11 +202,15 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
             throw new ServiceException("用户未登录");
         }
 
-        // 逐个验证每个ID的删除权限
-        for (String id : ids) {
-            ProjectSchedules existing = selectProjectSchedulesById(id);
-            if (existing == null) {
-                throw new ServiceException("项目进度不存在或无权限删除: " + id);
+        boolean isAdmin = SecurityUtils.isAdmin(currentUserId);
+
+        // 非管理员需要逐个验证每个ID的删除权限
+        if (!isAdmin) {
+            for (String id : ids) {
+                ProjectSchedules existing = selectProjectSchedulesById(id);
+                if (existing == null) {
+                    throw new ServiceException("项目进度不存在或无权限删除: " + id);
+                }
             }
         }
 
@@ -214,6 +218,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         ProjectSchedules query = new ProjectSchedules();
         query.setIds(ids);
         query.setCurrentUserId(String.valueOf(currentUserId));
+        query.setIsAdmin(isAdmin);
 
         return projectSchedulesMapper.deleteProjectSchedulesByIds(query);
     }
@@ -233,16 +238,21 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
             throw new ServiceException("用户未登录");
         }
 
-        // 验证要删除的项目进度是否存在且用户有权限
-        ProjectSchedules existing = selectProjectSchedulesById(id);
-        if (existing == null) {
-            throw new ServiceException("项目进度不存在或无权限删除");
+        boolean isAdmin = SecurityUtils.isAdmin(currentUserId);
+
+        // 非管理员需要验证要删除的项目进度是否存在且用户有权限
+        if (!isAdmin) {
+            ProjectSchedules existing = selectProjectSchedulesById(id);
+            if (existing == null) {
+                throw new ServiceException("项目进度不存在或无权限删除");
+            }
         }
 
         // 创建查询对象传递参数
         ProjectSchedules query = new ProjectSchedules();
         query.setId(id);
         query.setCurrentUserId(String.valueOf(currentUserId));
+        query.setIsAdmin(isAdmin);
 
         return projectSchedulesMapper.deleteProjectSchedulesById(query);
     }

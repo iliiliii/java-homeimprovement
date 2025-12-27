@@ -29,6 +29,12 @@ public class RoomVO {
     /** 楼层 */
     private String floor;
     
+    /** 朝向 */
+    private String orientation;
+    
+    /** 朝向文本 */
+    private String orientationText;
+    
     /** 设计图数量 */
     private int imageCount;
     
@@ -89,6 +95,22 @@ public class RoomVO {
 
     public void setFloor(String floor) {
         this.floor = floor;
+    }
+
+    public String getOrientation() {
+        return orientation;
+    }
+
+    public void setOrientation(String orientation) {
+        this.orientation = orientation;
+    }
+
+    public String getOrientationText() {
+        return orientationText;
+    }
+
+    public void setOrientationText(String orientationText) {
+        this.orientationText = orientationText;
     }
 
     public int getImageCount() {
