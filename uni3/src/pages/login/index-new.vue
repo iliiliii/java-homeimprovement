@@ -8,11 +8,13 @@
     
     <!-- Logo 区域 -->
     <view class="logo-section">
-      <image 
-        class="logo-image" 
-        src="@/styles/logo.png" 
-        mode="aspectFit"
-      />
+      <view class="logo-wrapper">
+        <image 
+          class="logo-image" 
+          src="@/styles/logo.png" 
+          mode="aspectFit"
+        />
+      </view>
        <!-- 
       <text class="app-title">{{ APP_CONFIG.name }}</text>
       <text class="app-subtitle">{{ APP_CONFIG.subtitle }}</text>
@@ -630,11 +632,60 @@ const devSkipToHome = () => {
   padding-bottom: 40rpx;
 }
 
+.logo-wrapper {
+  position: relative;
+  width: 180rpx;
+  height: 350rpx;
+  overflow: visible;
+  animation: float 3s ease-in-out infinite;
+  
+  // 底部阴影（模拟地面投影）
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -40rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140rpx;
+    height: 20rpx;
+    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%);
+    animation: shadow 3s ease-in-out infinite;
+  }
+}
+
 .logo-image {
   width: 180rpx;
   height: 350rpx;
-  margin-bottom: 24rpx;
-  filter: drop-shadow(0 8rpx 24rpx rgba(0, 0, 0, 0.15));
+  filter: 
+    drop-shadow(0 0 3rpx rgba(255, 255, 255, 1))
+    drop-shadow(0 0 8rpx rgba(255, 255, 255, 0.6))
+    drop-shadow(0 0 16rpx rgba(196, 0, 22, 0.6))
+    drop-shadow(0 0 32rpx rgba(196, 0, 22, 0.4))
+    drop-shadow(0 12rpx 24rpx rgba(196, 0, 22, 0.35))
+    drop-shadow(0 24rpx 48rpx rgba(0, 0, 0, 0.5))
+    drop-shadow(0 48rpx 80rpx rgba(0, 0, 0, 0.4));
+}
+
+// 悬浮动画
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16rpx);
+  }
+}
+
+// 阴影跟随动画
+@keyframes shadow {
+  0%, 100% {
+    width: 140rpx;
+    opacity: 1;
+  }
+  50% {
+    width: 120rpx;
+    opacity: 0.6;
+  }
 }
 
 .app-title {

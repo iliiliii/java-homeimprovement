@@ -246,6 +246,7 @@ $center-btn-offset: 24rpx; // 突出高度
     inset 0 2rpx 4rpx rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
   border: 4rpx solid #ffffff;
+  overflow: hidden;
   
   &:active {
     transform: scale(0.95);
