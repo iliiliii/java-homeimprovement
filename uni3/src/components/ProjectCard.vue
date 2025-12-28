@@ -94,7 +94,7 @@ const cardTypeClass = computed(() => {
   cursor: pointer;
   
   // 统一背景色 - 使用品牌红色渐变
-  background: linear-gradient(135deg, $color-gray-700 0%, $color-gray-900 100%);
+  background: linear-gradient(135deg, $color-yee-400 0%, $color-yee-700 100%);
   border: none;
   
   // 统一样式 - 所有状态使用同一颜色
