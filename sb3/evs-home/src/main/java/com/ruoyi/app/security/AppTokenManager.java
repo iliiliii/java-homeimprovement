@@ -136,11 +136,10 @@ public class AppTokenManager {
     /**
      * 从Token中获取用户类型
      */
-    public UserTypeEnum getUserTypeFromToken(String token) {
+    public String getUserTypeFromToken(String token) {
         Claims claims = parseToken(token);
         if (claims != null) {
-            String userType = claims.get("userType", String.class);
-            return UserTypeEnum.fromCode(userType);
+            return claims.get("userType", String.class);
         }
         return null;
     }

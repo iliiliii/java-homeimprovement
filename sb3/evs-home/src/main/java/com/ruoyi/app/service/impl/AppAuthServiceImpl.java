@@ -331,11 +331,16 @@ public class AppAuthServiceImpl implements IAppAuthService {
         }
         
         // 解析Token获取用户信息
-        UserTypeEnum userType = tokenManager.getUserTypeFromToken(refreshToken);
+        String userTypeCode = tokenManager.getUserTypeFromToken(refreshToken);
         String userId = tokenManager.getUserIdFromToken(refreshToken);
         
-        if (userType == null || userId == null) {
+        if (userTypeCode == null || userId == null) {
             throw new ServiceException("Token解析失败");
+        }
+        
+        UserTypeEnum userType = UserTypeEnum.fromCode(userTypeCode);
+        if (userType == null) {
+            throw new ServiceException("用户类型无效");
         }
         
         // 查询用户信息
