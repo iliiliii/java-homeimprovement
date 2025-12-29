@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.app.mapper.AppProjectScheduleMapper">
+
+    <!-- 项目进度VO结果映射 -->
+    <resultMap id="ProjectScheduleVOResult" type="com.ruoyi.app.dto.response.ProjectScheduleVO">
+        <id property="id" column="id"/>
+        <result property="projectId" column="project_id"/>
+        <result property="stage" column="stage"/>
+        <result property="stageName" column="stage_name"/>
+        <result property="stageOrder" column="stage_order"/>
+        <result property="planStartDate" column="plan_start_date"/>
+        <result property="planEndDate" column="plan_end_date"/>
+        <result property="actualStartDate" column="actual_start_date"/>
+        <result property="actualEndDate" column="actual_end_date"/>
+        <result property="status" column="status"/>
+        <result property="completionRate" column="completion_rate"/>
+        <result property="description" column="description"/>
+    </resultMap>
+
+    <!-- 项目进度验收记录VO结果映射 -->
+    <resultMap id="ProjectScheduleRecordVOResult" type="com.ruoyi.app.dto.response.ProjectScheduleRecordVO">
+        <id property="id" column="id"/>
+        <result property="scheduleId" column="schedule_id"/>
+        <result property="projectId" column="project_id"/>
+        <result property="stage" column="stage"/>
+        <result property="stageName" column="stage_name"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="type" column="type"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createByName" column="create_by_name"/>
+        <result property="createByRole" column="create_by_role"/>
+        <result property="inspectionStatus" column="inspection_status"/>
+        <!-- 图片和附件通过单独查询获取 -->
+    </resultMap>
+
+    <!-- 查询项目进度列表 -->
+    <select id="selectProjectScheduleList" parameterType="String" resultMap="ProjectScheduleVOResult">
+        SELECT 
+            ps.id,
+            ps.project_id,
+            ps.stage,
+            ps.stage as stage_name,
+            ps.stage_order,
+            ps.plan_start_date,
+            ps.plan_end_date,
+            ps.actual_start_date,
+            ps.actual_end_date,
+            ps.status,
+            ps.completion_rate,
+            ps.description
+        FROM project_schedules ps
+        WHERE ps.project_id = #{projectId}
+        ORDER BY ps.stage_order ASC
+    </select>
+
+    <!-- 查询进度的最新验收记录 -->
+    <select id="selectLatestRecordsByScheduleId" resultMap="ProjectScheduleRecordVOResult">
+        SELECT 
+            psr.id,
+            psr.schedule_id,
+            psr.project_id,
+            ps.stage,
+            ps.stage as stage_name,
+            psr.acceptance_title as title,
+            psr.acceptance_content as description,
+            psr.record_type as type,
+            psr.created_at as create_time,
+            psr.created_by as create_by,
+            psr.acceptor as create_by_name,
+            'staff' as create_by_role,
+            psr.acceptance_result as inspection_status
+        FROM project_schedule_records psr
+        LEFT JOIN project_schedules ps ON psr.schedule_id = ps.id
+        WHERE psr.schedule_id = #{scheduleId}
+        ORDER BY psr.created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计进度的验收记录数量 -->
+    <select id="countRecordsByScheduleId" parameterType="String" resultType="Integer">
+        SELECT COUNT(1)
+        FROM project_schedule_records psr
+        WHERE psr.schedule_id = #{scheduleId}
+    </select>
+
+    <!-- 查询项目验收记录列表（分页） -->
+    <select id="selectProjectScheduleRecordList" resultMap="ProjectScheduleRecordVOResult">
+        SELECT 
+            psr.id,
+            psr.schedule_id,
+            psr.project_id,
+            ps.stage,
+            ps.stage as stage_name,
+            psr.acceptance_title as title,
+            psr.acceptance_content as description,
+            psr.record_type as type,
+            psr.created_at as create_time,
+            psr.created_by as create_by,
+            psr.acceptor as create_by_name,
+            'staff' as create_by_role,
+            psr.acceptance_result as inspection_status
+        FROM project_schedule_records psr
+        LEFT JOIN project_schedules ps ON psr.schedule_id = ps.id
+        WHERE psr.project_id = #{projectId}
+        <if test="scheduleId != null and scheduleId != ''">
+            AND psr.schedule_id = #{scheduleId}
+        </if>
+        ORDER BY psr.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计项目验收记录总数 -->
+    <select id="countProjectScheduleRecords" resultType="Long">
+        SELECT COUNT(1)
+        FROM project_schedule_records psr
+        WHERE psr.project_id = #{projectId}
+        <if test="scheduleId != null and scheduleId != ''">
+            AND psr.schedule_id = #{scheduleId}
+        </if>
+    </select>
+
+    <!-- 根据ID查询验收记录详情 -->
+    <select id="selectProjectScheduleRecordById" parameterType="String" resultMap="ProjectScheduleRecordVOResult">
+        SELECT 
+            psr.id,
+            psr.schedule_id,
+            psr.project_id,
+            ps.stage,
+            ps.stage as stage_name,
+            psr.acceptance_title as title,
+            psr.acceptance_content as description,
+            psr.record_type as type,
+            psr.created_at as create_time,
+            psr.created_by as create_by,
+            psr.acceptor as create_by_name,
+            'staff' as create_by_role,
+            psr.acceptance_result as inspection_status
+        FROM project_schedule_records psr
+        LEFT JOIN project_schedules ps ON psr.schedule_id = ps.id
+        WHERE psr.id = #{recordId}
+    </select>
+
+    <!-- 查询记录的图片列表 -->
+    <select id="selectRecordImages" parameterType="String" resultType="String">
+        SELECT images
+        FROM project_schedule_records
+        WHERE id = #{recordId}
+    </select>
+
+    <!-- 查询记录的附件列表 -->
+    <select id="selectRecordAttachments" resultType="com.ruoyi.app.dto.response.ProjectScheduleRecordVO$AttachmentVO">
+        SELECT 
+            '' as fileName,
+            '' as fileUrl,
+            0 as fileSize,
+            '' as fileType
+        FROM dual
+        WHERE 1=0
+    </select>
+
+</mapper>
