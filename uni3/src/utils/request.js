@@ -16,7 +16,7 @@ const getBaseUrl = () => {
     
     // #ifdef MP-WEIXIN
     // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
-    return 'http://123.207.3.93:8080'
+    return 'http://172.31.102.128:8080'
     // #endif
   }
   
@@ -53,7 +53,12 @@ const requestInterceptor = (config) => {
   const currentProjectId = uni.getStorageSync('currentProjectId')
   if (currentProjectId) {
     config.header['X-Project-Id'] = currentProjectId
+    console.log('[Request] 添加项目ID到请求头:', currentProjectId)
+  } else {
+    console.warn('[Request] 当前项目ID为空')
   }
+  
+  console.log('[Request] 请求头:', config.header)
   
   return config
 }

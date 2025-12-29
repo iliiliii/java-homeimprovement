@@ -770,11 +770,11 @@ const devSkipToHome = () => {
     padding: 0 24rpx;
     height: 88rpx;
     line-height: 88rpx;
-    background: $color-brand-50;
-    border: 2rpx solid $color-brand-200;
+    background: $color-yee-50;
+    border: 2rpx solid $color-yee-200;
     border-radius: $radius-l;
     font-size: 24rpx;
-    color: $color-brand;
+    color: $color-yee-500;
     white-space: nowrap;
     font-weight: 500;
     
