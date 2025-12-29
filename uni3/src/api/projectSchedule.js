@@ -2,11 +2,11 @@
  * 项目进度相关API
  */
 import { get } from '@/utils/request'
-import { 
-  getMockProjectScheduleList, 
-  getMockProjectScheduleRecordList, 
-  getMockProjectScheduleRecordDetail 
-} from './mockProjectSchedule'
+// import { 
+//   getMockProjectScheduleList, 
+//   getMockProjectScheduleRecordList, 
+//   getMockProjectScheduleRecordDetail 
+// } from './mockProjectSchedule'
 
 // 安全的环境检查
 const getEnvironment = () => {
@@ -27,7 +27,7 @@ const USE_MOCK = false // 开发环境也使用真实API
 export const getProjectScheduleList = async () => {
   try {
     if (USE_MOCK) {
-      return await getMockProjectScheduleList()
+      // return await getMockProjectScheduleList()
     }
     
     // 调用真实API
@@ -38,7 +38,7 @@ export const getProjectScheduleList = async () => {
     
     // API调用失败时，使用模拟数据作为兜底
     try {
-      return await getMockProjectScheduleList()
+      // return await getMockProjectScheduleList()
     } catch (mockError) {
       console.error('模拟数据也加载失败:', mockError)
       throw new Error('数据加载失败')
@@ -76,13 +76,13 @@ export const getProjectScheduleRecordList = async (params = {}) => {
 export const getProjectScheduleRecordDetail = async (recordId) => {
   try {
     if (USE_MOCK) {
-      return await getMockProjectScheduleRecordDetail(recordId)
+      // return await getMockProjectScheduleRecordDetail(recordId)
     }
     
     const data = await get(`/app/projectScheduleRecords/${recordId}`)
     return data
   } catch (error) {
     console.error('获取验收记录详情失败，使用模拟数据:', error)
-    return await getMockProjectScheduleRecordDetail(recordId)
+    // return await getMockProjectScheduleRecordDetail(recordId)
   }
 }

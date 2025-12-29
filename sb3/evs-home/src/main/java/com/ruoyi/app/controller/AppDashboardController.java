@@ -159,4 +159,25 @@ public class AppDashboardController {
             return AjaxResult.error(500, "获取数据失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 获取项目合同金额列表
+     * 返回六个固定分类的合同金额，无数据的分类金额显示为0
+     */
+    @GetMapping("/project/{projectId}/contracts")
+    public AjaxResult getProjectContractAmounts(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable String projectId) {
+        try {
+            if (token == null || token.isEmpty()) {
+                return AjaxResult.error(401, "未提供认证Token");
+            }
+            return AjaxResult.success(dashboardService.getProjectContractAmounts(token, projectId));
+        } catch (ServiceException e) {
+            return AjaxResult.error(e.getCode() != null ? e.getCode() : 500, e.getMessage());
+        } catch (Exception e) {
+            log.error("获取项目合同金额异常", e);
+            return AjaxResult.error(500, "获取数据失败: " + e.getMessage());
+        }
+    }
 }

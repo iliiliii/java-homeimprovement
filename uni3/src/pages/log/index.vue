@@ -29,6 +29,7 @@
         :is-last="index === schedules.length - 1"
         :is-latest="index === 0"
         @record-click="handleRecordClick"
+        @preview-images="handlePreviewImages"
       />
     </view>
     
@@ -137,6 +138,13 @@ const handleRecordClick = async (record) => {
       icon: 'none'
     })
   }
+}
+
+// 处理图片预览
+const handlePreviewImages = ({ images, index }) => {
+  viewerImages.value = images
+  viewerIndex.value = index
+  viewerVisible.value = true
 }
 
 // 下拉刷新

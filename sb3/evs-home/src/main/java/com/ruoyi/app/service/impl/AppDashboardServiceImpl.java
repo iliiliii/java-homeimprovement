@@ -633,4 +633,61 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
 
         return urls;
     }
+
+    @Override
+    public List<ContractAmountVO> getProjectContractAmounts(String token, String projectId) {
+        validateTokenAndAccess(token, projectId);
+
+        // 获取字典数据（六个固定分类）
+        List<Map<String, Object>> dictDataList = dashboardMapper.selectContractAmountDictData();
+        
+        // 获取项目的合同金额数据
+        List<Map<String, Object>> contractAmounts = dashboardMapper.selectProjectContractAmounts(projectId);
+        
+        // 将合同金额数据转换为Map，方便查找
+        Map<String, Map<String, Object>> amountMap = new HashMap<>();
+        for (Map<String, Object> amount : contractAmounts) {
+            String category = (String) amount.get("category");
+            if (category != null) {
+                amountMap.put(category, amount);
+            }
+        }
+        
+        // 构建结果列表，确保六个分类都有数据
+        List<ContractAmountVO> result = new ArrayList<>();
+        for (Map<String, Object> dict : dictDataList) {
+            String dictValue = (String) dict.get("dictValue");
+            String dictLabel = (String) dict.get("dictLabel");
+            
+            ContractAmountVO vo = new ContractAmountVO();
+            vo.setCategory(dictValue);
+            vo.setLabel(dictLabel);
+            
+            // 查找对应的金额数据
+            Map<String, Object> amountData = amountMap.get(dictValue);
+            if (amountData != null) {
+                // 解析金额（contents字段存储金额）
+                Object amountObj = amountData.get("amount");
+                if (amountObj != null) {
+                    try {
+                        vo.setAmount(new BigDecimal(amountObj.toString()));
+                    } catch (NumberFormatException e) {
+                        vo.setAmount(BigDecimal.ZERO);
+                    }
+                } else {
+                    vo.setAmount(BigDecimal.ZERO);
+                }
+                // 设置URL
+                vo.setUrl((String) amountData.get("url"));
+            } else {
+                // 没有数据时，金额为0
+                vo.setAmount(BigDecimal.ZERO);
+                vo.setUrl(null);
+            }
+            
+            result.add(vo);
+        }
+        
+        return result;
+    }
 }

@@ -5,21 +5,20 @@
       <view class="record-title-section">
         <text class="record-title">{{ record.title }}</text>
         <view class="record-meta">
+            <!-- 
           <text class="record-type" :class="`type-${record.type.toLowerCase()}`">
             {{ record.typeText }}
           </text>
+          -->
           <text class="record-time">{{ formatTime(record.createTime) }}</text>
         </view>
       </view>
       
       <!-- 验收状态 -->
       <view v-if="record.inspectionStatus" class="inspection-status">
-        <text 
-          class="status-badge" 
-          :class="`status-${record.inspectionStatus.toLowerCase()}`"
-        >
+        <view class="status-tag" :class="getInspectionClass(record.inspectionStatus)">
           {{ record.inspectionStatusText }}
-        </text>
+        </view>
       </view>
     </view>
     
@@ -28,7 +27,7 @@
       <text>{{ record.description }}</text>
     </view>
     
-    <!-- 创建人信息 -->
+    <!-- 创建人信息
     <view class="record-creator">
       <text class="creator-name">{{ record.createByName }}</text>
       <text class="creator-role" :class="`role-${record.createByRole.toLowerCase()}`">
@@ -64,7 +63,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['click'])
+const emit = defineEmits(['click', 'preview-images'])
 
 // 显示的图片（最多3张）
 const displayImages = computed(() => {
@@ -76,13 +75,10 @@ const handleClick = () => {
   emit('click', props.record)
 }
 
-// 预览图片
+// 预览图片 - 通过事件传递给父组件使用 ImageViewer
 const previewImage = (images, index) => {
   const urls = images.map(img => getFullImageUrl(img))
-  uni.previewImage({
-    urls: urls,
-    current: index
-  })
+  emit('preview-images', { images: urls, index })
 }
 
 // 格式化时间
@@ -113,6 +109,17 @@ const getRoleText = (role) => {
     default:
       return role
   }
+}
+
+// 获取验收状态类名
+const getInspectionClass = (status) => {
+  if (!status) return ''
+  const s = status.toLowerCase()
+  // 合格/通过 使用黄色，不合格/失败 使用灰色
+  if (s === 'pass' || s === 'passed' || s === '1' || s === 'qualified') {
+    return 'tag-pass'
+  }
+  return 'tag-fail'
 }
 </script>
 
@@ -189,24 +196,22 @@ const getRoleText = (role) => {
   flex-shrink: 0;
 }
 
-.status-badge {
+.status-tag {
   font-size: 22rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 12rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  font-weight: 500;
   
-  &.status-pass {
-    background: rgba(40, 167, 69, 0.1);
-    color: #28a745;
+  // 合格 - 黄色
+  &.tag-pass {
+    background: $color-warning;
+    color: #fff;
   }
   
-  &.status-fail {
-    background: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
-  }
-  
-  &.status-pending {
-    background: rgba(255, 193, 7, 0.1);
-    color: $color-warning;
+  // 不合格 - 灰色
+  &.tag-fail {
+    background: $color-gray-400;
+    color: #fff;
   }
 }
 

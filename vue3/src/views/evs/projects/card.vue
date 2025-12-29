@@ -161,6 +161,7 @@
                 <el-icon><Edit /></el-icon>
                 <span>编辑</span>
               </el-button>
+              <!--
               <el-button
                 type="warning"
                 link
@@ -170,6 +171,7 @@
                 <el-icon><Wallet /></el-icon>
                 <span>预算</span>
               </el-button>
+              -->
               <el-button
                 type="success"
                 link
@@ -178,6 +180,15 @@
               >
                 <el-icon><Clock /></el-icon>
                 <span>进度</span>
+              </el-button>
+              <el-button
+                type="warning"
+                link
+                size="small"
+                @click="handleAttachmentManagement(project)"
+              >
+                <el-icon><FolderOpened /></el-icon>
+                <span>合同</span>
               </el-button>
             </div>
           </template>
@@ -204,6 +215,7 @@
       @update="handleUpdate"
       @budget="handleBudgetManagement"
       @progress="handleProgressManagement"
+      @ProjectAttachment="handleAttachmentManagement"
     />
 
     <!-- 编辑项目组件 -->
@@ -238,6 +250,19 @@
       </div>
     </el-dialog>
 
+    <!-- 合同管理对话框 -->
+    <el-dialog v-model="attachmentOpen" width="1000px" append-to-body :show-close="true" :close-on-click-modal="false" class="project-attachment-dialog">
+      <template #header>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <el-icon style="color: #1890ff; font-size: 16px;"><FolderOpened /></el-icon>
+          <span>{{ currentAttachmentProject.name }} - 合同管理</span>
+        </div>
+      </template>
+      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 20px;">
+        <ProjectAttachment v-if="currentAttachmentProject" :project="currentAttachmentProject" />
+      </div>
+    </el-dialog>
+
     <!-- 客户信息弹窗 -->
     <CustomerInfoDialog ref="customerInfoDialogRef" />
   </div>
@@ -250,6 +275,7 @@ import useUserStore from '@/store/modules/user'
 const userStore = useUserStore()
 import ProjectProgress from './components/ProjectProgress.vue'
 import ProjectBudget from './components/ProjectBudget.vue'
+import ProjectAttachment from './components/ProjectAttachment.vue'
 import ProjectDetail from './components/ProjectDetail.vue'
 import ProjectEdit from './components/ProjectEdit.vue'
 import CustomerInfoDialog from './components/CustomerInfoDialog.vue'
@@ -282,6 +308,10 @@ const currentBudgetProject = ref({})
 // 进度管理弹窗
 const progressOpen = ref(false)
 const currentProgressProject = ref({})
+
+// 合同管理弹窗
+const attachmentOpen = ref(false)
+const currentAttachmentProject = ref({})
 
 // 列显隐信息
 const columns = ref({
@@ -424,6 +454,12 @@ function handleSaveBudget(updateData) {
 function handleProgressManagement(project) {
   currentProgressProject.value = project
   progressOpen.value = true
+}
+
+/** 合同管理 */
+function handleAttachmentManagement(project) {
+  currentAttachmentProject.value = project
+  attachmentOpen.value = true
 }
 
 /** 处理进度保存事件 */
@@ -650,6 +686,28 @@ watch(() => route.query, (newQuery) => {
 
 .project-progress-dialog .timeline-container {
   width: 100% !important;
+}
+
+// 附件对话框样式优化
+.project-attachment-dialog .el-dialog__body {
+  padding: 20px 16px !important;
+}
+
+.project-attachment-dialog .el-dialog__body .el-space.el-space--vertical > .el-space__item {
+  width: 100% !important;
+  flex-basis: 100% !important;
+  max-width: 100% !important;
+}
+
+.project-attachment-dialog .el-table {
+  width: 100% !important;
+}
+
+.project-attachment-dialog .el-space__item {
+  width: 100% !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
 /* 通用对话框样式强化 */

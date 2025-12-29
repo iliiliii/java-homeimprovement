@@ -42,3 +42,12 @@ export function delProjectSchedules(id) {
     method: 'delete'
   })
 }
+
+// 更新项目进度排序
+export function updateProjectSchedulesOrder(id, stageOrder) {
+  return request({
+    url: '/evs/projectSchedules',
+    method: 'put',
+    data: { id, stageOrder }
+  })
+}

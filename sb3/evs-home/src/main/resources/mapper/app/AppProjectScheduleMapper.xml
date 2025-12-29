@@ -55,7 +55,7 @@
             ps.description
         FROM project_schedules ps
         WHERE ps.project_id = #{projectId}
-        ORDER BY ps.stage_order ASC
+        ORDER BY ps.stage_order DESC
     </select>
 
     <!-- 查询进度的最新验收记录 -->

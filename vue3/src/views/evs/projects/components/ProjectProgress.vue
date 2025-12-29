@@ -43,7 +43,7 @@
       <el-empty v-if="loading" description="加载中..." />
       <el-timeline v-else-if="timelineItems.length > 0">
         <el-timeline-item
-          v-for="item in timelineItems"
+          v-for="(item, index) in timelineItems"
           :key="item.id"
           :color="item.status === 'completed' ? '#52c41a' : item.status === 'inProgress' ? '#1677ff' : '#d9d9d9'"
           :icon="getTimelineIcon(item.status)"
@@ -74,6 +74,25 @@
                 </div>
               </div>
               <el-space>
+                <!-- 排序按钮 -->
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  :icon="Top"
+                  :disabled="index === 0"
+                  @click="handleMoveUp(index)"
+                  title="上移"
+                />
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  :icon="Bottom"
+                  :disabled="index === timelineItems.length - 1"
+                  @click="handleMoveDown(index)"
+                  title="下移"
+                />
                 <el-select
                   :model-value="item.status"
                   size="small"
@@ -221,8 +240,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useDict } from '@/utils/dict'
-import { listProjectSchedules, addProjectSchedules, updateProjectSchedules, delProjectSchedules } from '@/api/evs/projectSchedules'
-import { Plus, Calendar, Edit, Delete } from '@element-plus/icons-vue'
+import { listProjectSchedules, addProjectSchedules, updateProjectSchedules, delProjectSchedules, updateProjectSchedulesOrder } from '@/api/evs/projectSchedules'
+import { Plus, Calendar, Edit, Delete, Top, Bottom } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
 const { decoration_construction_stage } = useDict('decoration_construction_stage')
@@ -315,9 +334,9 @@ function convertFromBackendData(backendItems) {
     description: item.description || '',
     date: item.planStartDate || item.actualStartDate || '未设置',
     status: mapStatusFromBackend(item.status),
-    stageOrder: item.stageOrder,
+    stageOrder: item.stageOrder || 0,
     completionRate: item.completionRate || 0
-  })).sort((a, b) => (a.stageOrder || 0) - (b.stageOrder || 0))
+  })).sort((a, b) => (b.stageOrder || 0) - (a.stageOrder || 0)) // 降序：stageOrder 越大越靠前
 }
 
 // 数据转换：将组件数据转换为后端所需格式
@@ -538,6 +557,68 @@ function handleDeleteTimelineItem(itemId) {
     console.error('删除施工阶段失败:', error)
     proxy.$modal.msgError("删除施工阶段失败")
   })
+}
+
+/** 上移时间轴条目 */
+async function handleMoveUp(index) {
+  if (index <= 0) return
+  
+  const currentItem = timelineItems.value[index]
+  const prevItem = timelineItems.value[index - 1]
+  
+  // 简单交换：当前项获得上一项的位置排序值+1，上一项获得当前项的位置排序值
+  const totalItems = timelineItems.value.length
+  const newCurrentOrder = (totalItems - index + 1) * 100  // 上移后位置更靠前，值更大
+  const newPrevOrder = (totalItems - index) * 100         // 下移后位置更靠后，值更小
+  
+  console.log('上移操作:', {
+    currentItem: { id: currentItem.id, title: currentItem.title, oldOrder: currentItem.stageOrder },
+    prevItem: { id: prevItem.id, title: prevItem.title, oldOrder: prevItem.stageOrder },
+    newCurrentOrder,
+    newPrevOrder
+  })
+  
+  try {
+    // 依次更新，避免并发问题
+    await updateProjectSchedulesOrder(currentItem.id, newCurrentOrder)
+    await updateProjectSchedulesOrder(prevItem.id, newPrevOrder)
+    proxy.$modal.msgSuccess("排序已更新")
+    loadProjectSchedules() // 重新加载数据
+  } catch (error) {
+    console.error('更新排序失败:', error)
+    proxy.$modal.msgError("更新排序失败")
+  }
+}
+
+/** 下移时间轴条目 */
+async function handleMoveDown(index) {
+  if (index >= timelineItems.value.length - 1) return
+  
+  const currentItem = timelineItems.value[index]
+  const nextItem = timelineItems.value[index + 1]
+  
+  // 简单交换：当前项获得下一项的位置排序值，下一项获得当前项的位置排序值+1
+  const totalItems = timelineItems.value.length
+  const newCurrentOrder = (totalItems - index - 1) * 100  // 下移后位置更靠后，值更小
+  const newNextOrder = (totalItems - index) * 100         // 上移后位置更靠前，值更大
+  
+  console.log('下移操作:', {
+    currentItem: { id: currentItem.id, title: currentItem.title, oldOrder: currentItem.stageOrder },
+    nextItem: { id: nextItem.id, title: nextItem.title, oldOrder: nextItem.stageOrder },
+    newCurrentOrder,
+    newNextOrder
+  })
+  
+  try {
+    // 依次更新，避免并发问题
+    await updateProjectSchedulesOrder(currentItem.id, newCurrentOrder)
+    await updateProjectSchedulesOrder(nextItem.id, newNextOrder)
+    proxy.$modal.msgSuccess("排序已更新")
+    loadProjectSchedules() // 重新加载数据
+  } catch (error) {
+    console.error('更新排序失败:', error)
+    proxy.$modal.msgError("更新排序失败")
+  }
 }
 
 /** 保存时间轴条目 */

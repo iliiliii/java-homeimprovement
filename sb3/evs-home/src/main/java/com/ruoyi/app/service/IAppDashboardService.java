@@ -43,4 +43,12 @@ public interface IAppDashboardService {
      * 获取项目房间列表（设计稿）
      */
     List<RoomVO> getProjectRooms(String token, String projectId);
+
+    /**
+     * 获取项目合同金额列表
+     * @param token 认证Token
+     * @param projectId 项目ID
+     * @return 合同金额列表（包含六个固定分类，无数据的显示金额为0）
+     */
+    List<ContractAmountVO> getProjectContractAmounts(String token, String projectId);
 }

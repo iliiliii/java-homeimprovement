@@ -95,4 +95,17 @@ public interface AppDashboardMapper {
      * 查询项目的房间列表
      */
     List<Map<String, Object>> selectProjectRooms(@Param("projectId") String projectId);
+
+    /**
+     * 查询项目的合同金额列表
+     * @param projectId 项目ID
+     * @return 合同金额列表（category为decoration_project_attachment_htje字典值）
+     */
+    List<Map<String, Object>> selectProjectContractAmounts(@Param("projectId") String projectId);
+
+    /**
+     * 查询合同金额字典数据
+     * @return 字典数据列表
+     */
+    List<Map<String, Object>> selectContractAmountDictData();
 }

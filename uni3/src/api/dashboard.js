@@ -56,3 +56,12 @@ export const getProjectDesigns = (projectId) => {
 export const getProjectRooms = (projectId) => {
   return get(`/app/dashboard/project/${projectId}/rooms`)
 }
+
+/**
+ * 获取项目合同金额列表
+ * @param {String} projectId - 项目ID
+ * @returns {Promise} 返回六个固定分类的合同金额
+ */
+export const getProjectContractAmounts = (projectId) => {
+  return get(`/app/dashboard/project/${projectId}/contracts`)
+}

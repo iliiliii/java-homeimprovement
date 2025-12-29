@@ -39,13 +39,24 @@
               </view>
             </view>
           </view>
+          
+          <!-- 总金额汇总卡片 -->
+          <view class="total-amount-card">
+            <text class="total-label">合同总金额</text>
+            <view class="total-value">
+              <text class="total-number">{{ formatTotalAmount(totalAmount).number }}</text>
+              <text class="total-unit">{{ formatTotalAmount(totalAmount).unit }}</text>
+            </view>
+          </view>
         </view>
         
         <!-- 底部按钮区域 -->
         <view class="bottom-buttons">
+        <!--
           <view class="action-btn" @click="handleContact">
             <text>联系客服</text>
           </view>
+           -->
           <view class="action-btn" @click="handleAbout">
             <text>关于我们</text>
           </view>
@@ -77,9 +88,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
-import { getCustomerDashboard } from '@/api/dashboard.js'
+import { getCustomerDashboard, getProjectContractAmounts } from '@/api/dashboard.js'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ProjectCardSwiper from '@/components/ProjectCardSwiper.vue'
@@ -96,13 +108,56 @@ const currentProject = computed(() => projects.value[currentProjectIndex.value] 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
 
-// 费用统计（测试数据）
-const expenseList = ref([
-  { label: '设计合同', value: 15000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' }, // url 预留，后续从接口获取
-  { label: '工程合同', value: 85000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' },
-  { label: '门窗合同', value: 32000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' },
-  { label: '柜体合同', value: 48000, url: 'https://docs.qq.com/sheet/DYmFxS0VYRFNWTVNP?tab=BB08J2' }
-])
+// 费用统计数据（直接使用API返回的数据）
+const expenseList = ref([])
+
+// 计算总金额
+const totalAmount = computed(() => {
+  return expenseList.value.reduce((sum, item) => sum + (item.value || 0), 0)
+})
+
+// 解析URL字段（可能是JSON数组字符串）
+const parseUrl = (url) => {
+  if (!url || url === 'null') return null
+  try {
+    // 尝试解析JSON数组，取第一个URL
+    if (url.startsWith('[')) {
+      const arr = JSON.parse(url)
+      return arr.length > 0 ? arr[0] : null
+    }
+    return url
+  } catch {
+    return url
+  }
+}
+
+// 加载合同金额数据
+const loadContractAmounts = async (projectId) => {
+  if (!projectId) return
+  
+  try {
+    const data = await getProjectContractAmounts(projectId)
+    // 直接使用API返回的数据，API已保证返回六项
+    if (data && Array.isArray(data)) {
+      expenseList.value = data.map(item => ({
+        category: item.category,
+        label: item.label,
+        value: parseFloat(item.amount) || 0,
+        url: parseUrl(item.url)
+      }))
+    }
+  } catch (error) {
+    console.error('获取合同金额失败:', error)
+    expenseList.value = []
+  }
+}
+
+// 监听当前项目变化，重新加载合同金额
+watch(currentProject, (newProject) => {
+  if (newProject?.id) {
+    loadContractAmounts(newProject.id)
+  }
+}, { immediate: true })
 
 // 费用卡片点击事件（预留跳转到http页面）
 const handleExpenseClick = (item) => {
@@ -175,7 +230,18 @@ const formatAmount = (amount) => {
     const formatted = wan.toFixed(2).replace(/\.?0+$/, '')
     return { number: formatted, unit: '万' }
   } else {
-    return { number: `¥${amount.toLocaleString()}`, unit: '' }
+    return { number: `${amount.toLocaleString()}`, unit: '' }
+  }
+}
+
+// 格式化总金额（保留两位小数，带千分位）
+const formatTotalAmount = (amount) => {
+  if (amount >= 10000) {
+    const wan = amount / 10000
+    const w = wan.toString()
+    return { number: w.toString().slice(0,w.indexOf('.')+2), unit: '万' }
+  } else {
+    return { number: amount.toFixed(2), unit: '元' }
   }
 }
 
@@ -229,6 +295,12 @@ const handleLogout = () => {
   })
 }
 
+// 刷新所有数据
+const refreshData = async () => {
+  await loadProjectData()
+  // 项目数据加载后，watch会自动触发loadContractAmounts
+}
+
 onMounted(() => {
   // statusBarHeight removed
   
@@ -241,6 +313,12 @@ onMounted(() => {
   
   // 加载项目数据
   loadProjectData()
+})
+
+// 下拉刷新
+onPullDownRefresh(async () => {
+  await refreshData()
+  uni.stopPullDownRefresh()
 })
 </script>
 
@@ -322,7 +400,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32rpx 24rpx;
+  padding: 24rpx;
   text-align: center;
   min-height: 180rpx;
   box-sizing: border-box;
@@ -408,6 +486,46 @@ onMounted(() => {
     font-weight: 500;
     color: $color-brand;
     margin-left: 4rpx;
+    opacity: 0.8;
+  }
+}
+
+// 总金额汇总卡片
+.total-amount-card {
+  margin-top: 24rpx;
+  padding: 32rpx 40rpx;
+  background: linear-gradient(145deg, $color-white 0%, $color-gray-50 100%);
+  border: 2rpx solid $color-border-light;
+  border-radius: $radius-xl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.total-label {
+  font-size: 28rpx;
+  color: $color-text-tertiary;
+  font-weight: 500;
+}
+
+.total-value {
+  display: flex;
+  align-items: baseline;
+  
+  .total-number {
+    font-size: 48rpx;
+    font-weight: 700;
+    background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .total-unit {
+    font-size: 28rpx;
+    font-weight: 500;
+    color: $color-brand;
+    margin-left: 6rpx;
     opacity: 0.8;
   }
 }

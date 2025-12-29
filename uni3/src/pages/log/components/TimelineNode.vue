@@ -18,29 +18,26 @@
     
     <!-- 节点内容 -->
     <view class="node-content">
-      <!-- 节点头部 -->
-      <view class="node-header" @click="toggleExpanded">
-        <view class="node-title-section">
-          <text class="node-title">{{ schedule.stageName }}</text>
-          <view class="node-status">
-            <text class="status-text" :class="`status-${schedule.status.toLowerCase()}`">
-              {{ schedule.statusText }}
-            </text>
-            <text v-if="schedule.recordCount > 0" class="record-count">
-              {{ schedule.recordCount }}条记录
-            </text>
-          </view>
-        </view>
-        <view class="expand-icon" :class="{ expanded: isExpanded }">
-          <text>❯</text>
+      <!-- 节点头部 - 左侧标题，右侧状态 -->
+      <view class="node-header">
+        <text class="node-title">{{ schedule.stageName }}</text>
+        <view class="node-right">
+          <text class="status-text" :class="`status-${schedule.status.toLowerCase()}`">
+            {{ schedule.statusText }}
+          </text>
+          <!-- 
+          <text v-if="schedule.recordCount > 0" class="record-count">
+            {{ schedule.recordCount }}条记录
+          </text>
+           -->
         </view>
       </view>
       
-      <!-- 节点详情 -->
+      <!-- 节点详情
       <view v-if="schedule.description" class="node-desc">
         <text>{{ schedule.description }}</text>
       </view>
-      
+       -->
       <!-- 时间信息 
       <view class="node-time">
         <text v-if="schedule.planStartDate" class="time-item">
@@ -53,7 +50,7 @@
       </view>
       -->
       <!-- 验收记录列表 -->
-      <view v-if="isExpanded && records.length > 0" class="records-section">
+      <view v-if="records.length > 0" class="records-section">
       <!-- 
         <view class="records-title">
           <text>验收记录</text>
@@ -65,6 +62,7 @@
             :key="record.id"
             :record="record"
             @click="handleRecordClick"
+            @preview-images="handlePreviewImages"
           />
         </view>
         
@@ -78,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ScheduleRecord from './ScheduleRecord.vue'
 import { getProjectScheduleRecordList } from '@/api/projectSchedule'
 
@@ -97,22 +95,17 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['recordClick'])
+const emit = defineEmits(['recordClick', 'previewImages'])
 
-const isExpanded = ref(false)
 const records = ref([])
 const loading = ref(false)
 
 // 使用最新记录或空数组
 const initialRecords = computed(() => props.schedule.latestRecords || [])
 
-// 切换展开状态
+// 切换展开状态（保留方法但不再使用）
 const toggleExpanded = async () => {
-  isExpanded.value = !isExpanded.value
-  
-  if (isExpanded.value && records.value.length === 0) {
-    await loadRecords()
-  }
+  // 默认展开，不需要切换
 }
 
 // 加载验收记录
@@ -129,10 +122,6 @@ const loadRecords = async () => {
     records.value = result.rows || []
   } catch (error) {
     console.error('加载验收记录失败:', error)
-    uni.showToast({
-      title: '加载记录失败',
-      icon: 'none'
-    })
   } finally {
     loading.value = false
   }
@@ -161,6 +150,11 @@ const handleRecordClick = (record) => {
   emit('recordClick', record)
 }
 
+// 处理图片预览
+const handlePreviewImages = (data) => {
+  emit('previewImages', data)
+}
+
 // 格式化日期
 const formatDate = (date) => {
   if (!date) return ''
@@ -181,13 +175,20 @@ const formatDate = (date) => {
 
 // 初始化时使用最新记录
 records.value = initialRecords.value
+
+// 组件挂载时自动加载记录
+onMounted(() => {
+  if (records.value.length === 0 && props.schedule.recordCount > 0) {
+    loadRecords()
+  }
+})
 </script>
 
 <style lang="scss" scoped>
 .timeline-node {
   display: flex;
   gap: 24rpx;
-  margin-bottom: 8rpx;
+  position: relative;
 }
 
 .timeline-line {
@@ -196,6 +197,7 @@ records.value = initialRecords.value
   align-items: center;
   width: 32rpx;
   flex-shrink: 0;
+  position: relative;
 }
 
 .timeline-dot {
@@ -204,17 +206,24 @@ records.value = initialRecords.value
   border-radius: 50%;
   flex-shrink: 0;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+  margin-top: 28rpx; // 与卡片标题对齐
+  background: $color-gray-400; // 默认颜色（待开始）
   
-  &.status-pending {
+  &.status-pending,
+  &.status-0 {
     background: $color-gray-400;
   }
   
-  &.status-in_progress {
+  &.status-in_progress,
+  &.status-1 {
     background: $color-brand;
-    box-shadow: 0 0 0 8rpx rgba(196, 0, 22, 0.2);
+    box-shadow: 0 0 0 8rpx rgba(173, 155, 75, 0.2);
   }
   
-  &.status-completed {
+  &.status-completed,
+  &.status-2 {
     background: $color-warning;
     box-shadow: 0 0 0 8rpx rgba(255, 193, 7, 0.2);
   }
@@ -226,19 +235,27 @@ records.value = initialRecords.value
 
 .timeline-connector {
   width: 4rpx;
-  flex: 1;
-  margin: 8rpx 0;
+  position: absolute;
+  top: 52rpx; // 从圆点下方开始
+  bottom: -24rpx; // 延伸到下一个节点
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
   transition: background-color 0.3s ease;
+  background: $color-gray-300; // 默认颜色
   
-  &.status-pending {
+  &.status-pending,
+  &.status-0 {
     background: $color-gray-300;
   }
   
-  &.status-in_progress {
+  &.status-in_progress,
+  &.status-1 {
     background: $color-brand;
   }
   
-  &.status-completed {
+  &.status-completed,
+  &.status-2 {
     background: $color-warning;
   }
 }
@@ -256,43 +273,41 @@ records.value = initialRecords.value
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16rpx;
 }
 
-.node-title-section {
-  flex: 1;
+.node-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .node-title {
   font-weight: 600;
   font-size: 32rpx;
   color: $glass-text-main;
-  display: block;
-  margin-bottom: 8rpx;
-}
-
-.node-status {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
 }
 
 .status-text {
   font-size: 24rpx;
   padding: 4rpx 12rpx;
   border-radius: 12rpx;
+  background: rgba(156, 163, 175, 0.1); // 默认背景
+  color: $color-gray-600; // 默认颜色
   
-  &.status-pending {
+  &.status-pending,
+  &.status-0 {
     background: rgba(156, 163, 175, 0.1);
     color: $color-gray-600;
   }
   
-  &.status-in_progress {
-    background: rgba(196, 0, 22, 0.1);
+  &.status-in_progress,
+  &.status-1 {
+    background: rgba(173, 155, 75, 0.1);
     color: $color-brand;
   }
   
-  &.status-completed {
+  &.status-completed,
+  &.status-2 {
     background: rgba(255, 193, 7, 0.1);
     color: $color-warning;
   }
@@ -301,21 +316,6 @@ records.value = initialRecords.value
 .record-count {
   font-size: 22rpx;
   color: $glass-text-muted;
-}
-
-.expand-icon {
-  width: 48rpx;
-  height: 48rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
-  color: $glass-text-muted;
-  transition: transform 0.3s ease;
-  
-  &.expanded {
-    transform: rotate(90deg);
-  }
 }
 
 .node-desc {

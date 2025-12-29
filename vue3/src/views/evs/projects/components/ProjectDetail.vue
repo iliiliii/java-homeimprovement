@@ -32,9 +32,15 @@
                 <el-icon style="margin-right: 8px;"><User /></el-icon>
                 分配团队
               </el-button>
+              <!-- 
               <el-button size="default" @click="handleBudgetManagement(currentProject)" style="padding: 10px 20px;">
                 <el-icon style="margin-right: 8px;"><Wallet /></el-icon>
                 管理预算
+              </el-button>
+              -->
+              <el-button size="default" @click="handleProjectAttachmentManagement(currentProject)" style="padding: 10px 20px;">
+                <el-icon style="margin-right: 8px;"><Wallet /></el-icon>
+                管理合同
               </el-button>
               <el-button size="default" @click="handleProgressManagement(currentProject)" style="padding: 10px 20px;">
                 <el-icon style="margin-right: 8px;"><Clock /></el-icon>
@@ -407,6 +413,11 @@ async function handleView(project) {
 /** 预算管理 */
 function handleBudgetManagement(project) {
   emit('budget', project)
+}
+
+/** 合同管理 */
+function handleProjectAttachmentManagement(project) {
+  emit('ProjectAttachment', project)
 }
 
 /** 进度管理 */
