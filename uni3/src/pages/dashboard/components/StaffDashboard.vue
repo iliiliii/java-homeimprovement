@@ -3,46 +3,14 @@
     <!-- 固定头部区域 -->
     <PageHeader 
       title="工作台" 
-      subtitle="管理您负责的项目" 
+      :subtitle="currentProjectName" 
       :show-back="false"
       bg-color="linear-gradient(135deg, #C40016 0%, #E33E4A 100%)"
       text-color="#ffffff"
     />
     
-    <!-- 待办统计 (固定在Header下方) -->
-    <view class="todo-stats-fixed" :style="{ top: (statusBarHeight + 56) + 'px' }">
-      <view class="todo-stats">
-        <view class="stat-item" @click="$emit('navigate', '/pages/inspection/list')">
-          <text class="stat-value">{{ todoStats.pendingInspections }}</text>
-          <text class="stat-label">待巡检</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item" @click="$emit('navigate', '/pages/issue/list')">
-          <text class="stat-value warning">{{ todoStats.pendingIssues }}</text>
-          <text class="stat-label">待整改</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <text class="stat-value">{{ todoStats.todayTasks }}</text>
-          <text class="stat-label">今日待办</text>
-        </view>
-      </view>
-    </view>
-    
     <!-- 头部占位 - 确保内容不被固定头部覆盖 -->
     <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
-    
-    <!-- 快捷操作 -->
-    <view class="quick-actions">
-      <view class="action-btn primary" @click="$emit('navigate', '/pages/inspection/create')">
-        <SvgIcon name="plus" size="36rpx" color="#fff" />
-        <text>新建巡检</text>
-      </view>
-      <view class="action-btn" @click="$emit('navigate', '/pages/issue/create')">
-        <SvgIcon name="warning" size="36rpx" color="#C40016" />
-        <text>问题上报</text>
-      </view>
-    </view>
     
     <!-- 项目列表 -->
     <view class="project-section">
@@ -55,9 +23,10 @@
       <view class="project-list">
         <view 
           class="project-card"
+          :class="{ selected: selectedProjectId === project.id }"
           v-for="project in projects"
           :key="project.id"
-          @click="$emit('view-project', project)"
+          @click="handleProjectClick(project)"
         >
           <view class="card-main">
             <view class="card-header">
@@ -109,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, getCurrentInstance } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
 import PageHeader from '@/components/PageHeader.vue'
@@ -119,41 +88,39 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  todoStats: {
-    type: Object,
-    default: () => ({ pendingInspections: 0, pendingIssues: 0, todayTasks: 0 })
-  },
   loading: {
     type: Boolean,
     default: false
+  },
+  selectedProjectId: {
+    type: String,
+    default: ''
   }
 })
 
-const emit = defineEmits(['navigate', 'view-project'])
+const emit = defineEmits(['view-project', 'select-project'])
 
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
 
+// 当前选中项目的名称
+const currentProjectName = computed(() => {
+  if (!props.selectedProjectId) {
+    return '请选择项目'
+  }
+  const project = props.projects.find(p => p.id === props.selectedProjectId)
+  return project?.name || '未知项目'
+})
+
 // 更新header高度
 const updateHeaderHeight = () => {
-  // Header (44) + StatusBar + Stats (approx 120rpx/60px) + Padding
-  // 简单计算：Stats height 140rpx approx
-  headerHeight.value = statusBarHeight.value + 44 + uni.upx2px(140) + 32
+  // Header (56px) + StatusBar + Padding
+  headerHeight.value = statusBarHeight.value + 56 + 32
 }
 
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
-  
-  // 根据状态栏高度预估一个初始值，避免闪烁
-  // 头部内容约 180rpx + 待办统计约 120rpx + padding约 80rpx = 380rpx ≈ 190px + 状态栏
-  const screenWidth = uni.getSystemInfoSync().windowWidth
-  const estimatedHeight = (380 / 750) * screenWidth + statusBarHeight.value + 32
-  headerHeight.value = estimatedHeight
-  
-  // 多次尝试获取精确高度
-  setTimeout(updateHeaderHeight, 150)
-  setTimeout(updateHeaderHeight, 400)
-  setTimeout(updateHeaderHeight, 800)
+  updateHeaderHeight()
 })
 
 // 获取状态样式类
@@ -169,6 +136,17 @@ const getStatusClass = (status) => {
   return map[upperStatus] || 'default'
 }
 
+// 处理项目点击
+const handleProjectClick = (project) => {
+  // 如果点击的是已选中的项目，跳转到详情页
+  if (props.selectedProjectId === project.id) {
+    emit('view-project', project)
+  } else {
+    // 否则选中该项目
+    emit('select-project', project.id)
+  }
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -182,96 +160,6 @@ const getStatusClass = (status) => {
 .header-placeholder {
   width: 100%;
   flex-shrink: 0;
-}
-
-// 待办统计固定容器
-.todo-stats-fixed {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 99;
-  background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
-  padding-bottom: 32rpx;
-  border-radius: 0 0 40rpx 40rpx;
-  margin-top: -1rpx; // 消除缝隙
-}
-
-// 移除原 .fixed-header 样式, 保留 .todo-stats
-// .header-content 移除
-
-
-
-// 待办统计
-.todo-stats {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 0 48rpx;
-  padding: 24rpx;
-  border-radius: 20rpx;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 44rpx;
-  font-weight: 700;
-  color: white;
-  
-  &.warning {
-    color: #FFFFFF;
-  }
-}
-
-.stat-label {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.8);
-  margin-top: 4rpx;
-}
-
-.stat-divider {
-  width: 1rpx;
-  height: 60rpx;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-// 快捷操作
-.quick-actions {
-  display: flex;
-  gap: 24rpx;
-  padding: 32rpx 48rpx;
-}
-
-.action-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12rpx;
-  padding: 24rpx;
-  background: white;
-  border-radius: 20rpx;
-  box-shadow: $shadow-card;
-  
-  text {
-    font-size: 28rpx;
-    font-weight: 500;
-    color: $glass-text-main;
-  }
-  
-  &.primary {
-    background: $glass-accent;
-    
-    text {
-      color: white;
-    }
-  }
 }
 
 // 项目区域
@@ -310,6 +198,13 @@ const getStatusClass = (status) => {
   padding: 28rpx;
   box-shadow: $shadow-card;
   position: relative;
+  transition: all 0.3s ease;
+  
+  &.selected {
+    border: 2rpx solid $color-brand;
+    box-shadow: 0 4rpx 20rpx rgba(196, 0, 22, 0.2);
+    background: linear-gradient(135deg, rgba(196, 0, 22, 0.02) 0%, rgba(255, 255, 255, 1) 100%);
+  }
 }
 
 .card-header {

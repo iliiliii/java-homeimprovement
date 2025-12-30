@@ -19,10 +19,10 @@
     <StaffDashboard 
       v-else-if="userType === 'staff'"
       :projects="staffProjects"
-      :todo-stats="todoStats"
       :loading="loading"
-      @navigate="navigateTo"
+      :selected-project-id="selectedStaffProjectId"
       @view-project="handleViewProject"
+      @select-project="handleSelectStaffProject"
     />
     
     <!-- 未登录或未知用户类型 -->
@@ -54,8 +54,8 @@ const loading = ref(true)
 const userType = ref('')
 const projects = ref([])
 const staffProjects = ref([])
-const todoStats = ref({ pendingInspections: 0, pendingIssues: 0, todayTasks: 0 })
 const currentProjectIndex = ref(0)
+const selectedStaffProjectId = ref('')
 
 // 计算属性
 const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
@@ -100,7 +100,17 @@ const loadDashboardData = async () => {
       const data = await getStaffDashboard()
       console.log('[Dashboard] 员工数据:', data)
       staffProjects.value = data?.projects || []
-      todoStats.value = data?.todoStats || { pendingInspections: 0, pendingIssues: 0, todayTasks: 0 }
+      // 将员工项目列表保存到store，以便其他页面访问
+      userStore.setProjects(staffProjects.value)
+      // 恢复或设置默认选中的项目
+      const savedProjectId = uni.getStorageSync('currentProjectId')
+      if (savedProjectId && staffProjects.value.find(p => p.id === savedProjectId)) {
+        selectedStaffProjectId.value = savedProjectId
+        userStore.switchProject(savedProjectId)
+      } else if (staffProjects.value.length > 0) {
+        selectedStaffProjectId.value = staffProjects.value[0].id
+        userStore.switchProject(staffProjects.value[0].id)
+      }
     } else {
       console.log('[Dashboard] 未知用户类型:', userType.value)
     }
@@ -141,6 +151,12 @@ const handleViewProject = (project) => {
   uni.navigateTo({
     url: `/pages/project/detail?projectId=${project.id}`
   })
+}
+
+// 选择项目（员工）
+const handleSelectStaffProject = (projectId) => {
+  selectedStaffProjectId.value = projectId
+  userStore.switchProject(projectId)
 }
 
 // 下拉刷新
