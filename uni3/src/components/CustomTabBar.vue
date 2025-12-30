@@ -65,6 +65,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useUserStore } from '@/store/user.js'
 import SvgIcon from '@/components/SvgIcon.vue'
 
 const props = defineProps({
@@ -76,6 +77,7 @@ const props = defineProps({
 
 const emit = defineEmits(['change'])
 
+const userStore = useUserStore()
 const currentIndex = computed(() => props.current)
 
 const leftTabs = [
@@ -91,6 +93,27 @@ const rightTabs = [
 const switchTab = (item, index) => {
   if (currentIndex.value === index) return
   emit('change', index)
+  
+  // 如果是员工账户，且点击的是"设计"或"日志"，需要检查项目ID
+  if (userStore.isStaff && (index === 1 || index === 2)) {
+    const projectId = userStore.currentProjectId
+    if (!projectId) {
+      // 如果没有选中项目，提示用户先选择项目
+      uni.showToast({
+        title: '请先在首页选择项目',
+        icon: 'none',
+        duration: 2000
+      })
+      return
+    }
+    // 项目ID已在store中，直接使用 switchTab（项目ID会通过请求头传递）
+    // 但为了确保页面能获取到项目ID，我们使用 reLaunch 传递参数
+    const url = `${item.pagePath}?projectId=${projectId}`
+    uni.reLaunch({ url })
+    return
+  }
+  
+  // 客户账户或不需要传递参数的页面，使用 switchTab
   uni.switchTab({ url: item.pagePath })
 }
 
