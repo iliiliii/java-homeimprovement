@@ -51,7 +51,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { onPullDownRefresh } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onLoad } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
 import TimelineNode from './components/TimelineNode.vue'
@@ -61,7 +61,20 @@ import { useUserStore } from '@/store/user.js'
 import { getProjectScheduleList, getProjectScheduleRecordDetail } from '@/api/projectSchedule'
 
 const userStore = useUserStore()
-const currentProject = computed(() => userStore.currentProject)
+
+// 当前项目ID（优先使用URL参数，否则使用store中的）
+const urlProjectId = ref('')
+const currentProjectId = computed(() => urlProjectId.value || userStore.currentProjectId)
+const currentProject = computed(() => {
+  if (!currentProjectId.value) return null
+  // 从store的项目列表中查找
+  const project = userStore.projects.find(p => p.id === currentProjectId.value)
+  if (project) {
+    return project
+  }
+  // 如果找不到，返回基本信息
+  return { id: currentProjectId.value, name: '当前项目' }
+})
 
 const statusBarHeight = ref(0)
 const headerHeight = ref(0)
@@ -75,19 +88,45 @@ const viewerImages = ref([])
 // 施工进度列表
 const schedules = ref([])
 
+// 页面加载时获取URL参数
+onLoad((options) => {
+  if (options.projectId) {
+    urlProjectId.value = options.projectId
+    // 如果是员工账户，更新store中的项目ID
+    if (userStore.isStaff) {
+      userStore.switchProject(options.projectId)
+    }
+  }
+})
+
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
   headerHeight.value = statusBarHeight.value + 66
-  loadSchedules()
+  // 延迟加载，确保项目ID已设置
+  setTimeout(() => {
+    loadSchedules()
+  }, 100)
 })
 
 // 加载施工进度列表
 const loadSchedules = async () => {
   if (loading.value) return
   
+  // 如果没有项目ID，提示用户先选择项目
+  if (!currentProjectId.value) {
+    if (userStore.isStaff) {
+      uni.showToast({
+        title: '请先选择项目',
+        icon: 'none'
+      })
+    }
+    schedules.value = []
+    return
+  }
+  
   try {
     loading.value = true
-    console.log('开始调用真实API获取施工进度数据...')
+    console.log('开始调用真实API获取施工进度数据，项目ID:', currentProjectId.value)
     const data = await getProjectScheduleList()
     console.log('API返回数据:', data)
     

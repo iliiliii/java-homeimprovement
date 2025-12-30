@@ -23,8 +23,8 @@
       <view class="content-wrapper">
         
 
-        <!-- 费用统计四宫格 -->
-        <view class="expense-section">
+        <!-- 费用统计四宫格（仅客户可见） -->
+        <view class="expense-section" v-if="isCustomer">
           <view class="expense-grid">
             <view 
               v-for="(item, index) in expenseList" 
@@ -108,6 +108,9 @@ const currentProject = computed(() => projects.value[currentProjectIndex.value] 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
 
+// 用户类型判断
+const isCustomer = computed(() => userStore.isCustomer)
+
 // 费用统计数据（直接使用API返回的数据）
 const expenseList = ref([])
 
@@ -131,9 +134,13 @@ const parseUrl = (url) => {
   }
 }
 
-// 加载合同金额数据
+// 加载合同金额数据（仅客户角色）
 const loadContractAmounts = async (projectId) => {
-  if (!projectId) return
+  // 员工角色不调用此API
+  if (!isCustomer.value || !projectId) {
+    expenseList.value = []
+    return
+  }
   
   try {
     const data = await getProjectContractAmounts(projectId)

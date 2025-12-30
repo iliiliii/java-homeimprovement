@@ -158,7 +158,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import { onShow, onBackPress, onPullDownRefresh } from '@dcloudio/uni-app'
+import { onShow, onBackPress, onPullDownRefresh, onLoad } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
@@ -185,9 +185,19 @@ const viewerIndex = ref(0)
 const viewerImages = ref([])
 const currentViewRoom = ref(null)
 
-// 当前项目
-const currentProject = computed(() => userStore.currentProject)
-const currentProjectId = computed(() => userStore.currentProjectId)
+// 当前项目ID（优先使用URL参数，否则使用store中的）
+const urlProjectId = ref('')
+const currentProjectId = computed(() => urlProjectId.value || userStore.currentProjectId)
+const currentProject = computed(() => {
+  if (!currentProjectId.value) return null
+  // 从store的项目列表中查找
+  const project = userStore.projects.find(p => p.id === currentProjectId.value)
+  if (project) {
+    return project
+  }
+  // 如果找不到，返回基本信息
+  return { id: currentProjectId.value, name: '当前项目' }
+})
 
 // 房间名称选项（去重）
 const roomNameOptions = computed(() => {
@@ -298,6 +308,17 @@ const updateHeaderHeight = () => {
   let filterHeight = rooms.value.length > 0 ? uni.upx2px(124) : 0
   headerHeight.value = statusBarHeight.value + 30 + filterHeight
 }
+
+// 页面加载时获取URL参数
+onLoad((options) => {
+  if (options.projectId) {
+    urlProjectId.value = options.projectId
+    // 如果是员工账户，更新store中的项目ID
+    if (userStore.isStaff) {
+      userStore.switchProject(options.projectId)
+    }
+  }
+})
 
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
