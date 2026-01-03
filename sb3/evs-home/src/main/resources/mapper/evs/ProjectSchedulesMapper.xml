@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="ProjectSchedules" id="ProjectSchedulesResult">
         <result property="id"    column="id"    />
         <result property="projectId"    column="project_id"    />
+        <result property="stageType"    column="stage_type"    />
         <result property="stage"    column="stage"    />
         <result property="stageOrder"    column="stage_order"    />
         <result property="planStartDate"    column="plan_start_date"    />
@@ -24,7 +25,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectProjectSchedulesVo">
         select
-            ps.id, ps.project_id, ps.stage, ps.stage_order,
+            ps.id, ps.project_id, ps.stage_type, ps.stage, ps.stage_order,
             ps.plan_start_date, ps.plan_end_date,
             ps.actual_start_date, ps.actual_end_date,
             ps.status, ps.completion_rate, ps.description,
@@ -56,6 +57,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             <!-- 查询条件过滤 -->
             <if test="projectId != null  and projectId != ''"> and ps.project_id = #{projectId}</if>
+            <if test="stageType != null  and stageType != ''"> and ps.stage_type = #{stageType}</if>
             <if test="stage != null  and stage != ''"> and ps.stage = #{stage}</if>
             <if test="stageOrder != null "> and ps.stage_order = #{stageOrder}</if>
             <if test="status != null  and status != ''"> and ps.status = #{status}</if>
@@ -94,6 +96,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
             <if test="projectId != null and projectId != ''">project_id,</if>
+            <if test="stageType != null and stageType != ''">stage_type,</if>
             <if test="stage != null and stage != ''">stage,</if>
             <if test="stageOrder != null">stage_order,</if>
             <if test="planStartDate != null">plan_start_date,</if>
@@ -111,6 +114,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
             <if test="projectId != null and projectId != ''">#{projectId},</if>
+            <if test="stageType != null and stageType != ''">#{stageType},</if>
             <if test="stage != null and stage != ''">#{stage},</if>
             <if test="stageOrder != null">#{stageOrder},</if>
             <if test="planStartDate != null">#{planStartDate},</if>
@@ -131,6 +135,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update project_schedules
         <trim prefix="SET" suffixOverrides=",">
             <if test="projectId != null and projectId != ''">project_id = #{projectId},</if>
+            <if test="stageType != null and stageType != ''">stage_type = #{stageType},</if>
             <if test="stage != null and stage != ''">stage = #{stage},</if>
             <if test="stageOrder != null">stage_order = #{stageOrder},</if>
             <if test="planStartDate != null">plan_start_date = #{planStartDate},</if>

@@ -58,4 +58,12 @@ public interface ProjectMembersMapper
      * @return 结果
      */
     public int deleteProjectMembersByIds(String[] ids);
+
+    /**
+     * 根据项目ID删除所有成员
+     * 
+     * @param projectId 项目ID
+     * @return 结果
+     */
+    public int deleteProjectMembersByProjectId(String projectId);
 }

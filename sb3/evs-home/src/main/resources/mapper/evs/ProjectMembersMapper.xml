@@ -17,24 +17,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <!-- 用户关联字段 -->
         <result property="userName"    column="user_name"    />
         <result property="nickName"    column="nick_name"    />
-        <result property="postName"    column="post_name"    />
-        <result property="postCode"    column="post_code"    />
-        <result property="roleKey"    column="role_key"    />
     </resultMap>
 
     <sql id="selectProjectMembersVo">
         select
             pm.id, pm.project_id, pm.user_id, pm.role, pm.is_active,
             pm.created_at, pm.updated_at, pm.created_by, pm.updated_by,
-            u.user_name, u.nick_name,
-            p.post_name, p.post_code,
-            r.role_key
+            u.user_name, u.nick_name
         from project_members pm
         left join sys_user u on pm.user_id = u.user_id
-        left join sys_user_post up on u.user_id = up.user_id
-        left join sys_post p on up.post_id = p.post_id
-        left join sys_user_role ur on u.user_id = ur.user_id
-        left join sys_role r on ur.role_id = r.role_id
     </sql>
 
     <select id="selectProjectMembersList" parameterType="ProjectMembers" resultMap="ProjectMembersResult">
@@ -102,5 +93,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>
+    </delete>
+
+    <delete id="deleteProjectMembersByProjectId" parameterType="String">
+        delete from project_members where project_id = #{projectId}
     </delete>
 </mapper>

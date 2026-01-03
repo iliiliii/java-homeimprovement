@@ -89,4 +89,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
+
+    <!-- 查询所有项目的合同总额 -->
+    <select id="selectTotalContractAmount" resultType="Double">
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN contents REGEXP '^[0-9]+\\.?[0-9]*$' THEN CAST(contents AS DECIMAL(18,2))
+                WHEN contents REGEXP '^[0-9]' THEN CAST(REGEXP_REPLACE(contents, '[^0-9.]', '') AS DECIMAL(18,2))
+                ELSE 0
+            END
+        ), 0) as total
+        FROM project_attachment
+        WHERE contents IS NOT NULL 
+        AND contents != ''
+    </select>
 </mapper>

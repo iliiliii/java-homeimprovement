@@ -305,4 +305,15 @@
         ORDER BY dict_sort ASC
     </select>
 
+    <!-- 根据字典类型查询字典数据列表 -->
+    <select id="selectDictDataByType" resultType="java.util.Map">
+        SELECT 
+            dict_value as dictValue,
+            dict_label as dictLabel,
+            dict_sort as dictSort
+        FROM sys_dict_data
+        WHERE dict_type = #{dictType} AND status = '0'
+        ORDER BY dict_sort ASC
+    </select>
+
 </mapper>

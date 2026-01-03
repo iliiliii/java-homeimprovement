@@ -147,4 +147,11 @@ public interface AppDashboardMapper {
      * @return 字典数据列表
      */
     List<Map<String, Object>> selectContractAmountDictData();
+
+    /**
+     * 根据字典类型查询字典数据列表
+     * @param dictType 字典类型
+     * @return 字典数据列表（包含 dictValue, dictLabel, dictSort）
+     */
+    List<Map<String, Object>> selectDictDataByType(@Param("dictType") String dictType);
 }

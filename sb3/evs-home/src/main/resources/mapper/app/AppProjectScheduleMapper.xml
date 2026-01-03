@@ -8,6 +8,7 @@
     <resultMap id="ProjectScheduleVOResult" type="com.ruoyi.app.dto.response.ProjectScheduleVO">
         <id property="id" column="id"/>
         <result property="projectId" column="project_id"/>
+        <result property="stageType" column="stage_type"/>
         <result property="stage" column="stage"/>
         <result property="stageName" column="stage_name"/>
         <result property="stageOrder" column="stage_order"/>
@@ -43,6 +44,7 @@
         SELECT 
             ps.id,
             ps.project_id,
+            COALESCE(ps.stage_type, 'CONSTRUCTION') as stage_type,
             ps.stage,
             ps.stage as stage_name,
             ps.stage_order,
@@ -161,6 +163,64 @@
             '' as fileType
         FROM dual
         WHERE 1=0
+    </select>
+
+    <!-- 插入验收记录 -->
+    <insert id="insertAcceptanceRecord">
+        INSERT INTO project_schedule_records (
+            id,
+            project_id,
+            schedule_id,
+            record_type,
+            images,
+            acceptance_title,
+            acceptance_content,
+            acceptance_result,
+            acceptance_time,
+            acceptor,
+            created_by,
+            created_at
+        ) VALUES (
+            #{id},
+            #{projectId},
+            #{scheduleId},
+            #{recordType},
+            #{images},
+            #{acceptanceTitle},
+            #{acceptanceContent},
+            #{acceptanceResult},
+            #{acceptanceTime},
+            #{acceptor},
+            #{createBy},
+            NOW()
+        )
+    </insert>
+
+    <!-- 更新验收记录 -->
+    <update id="updateAcceptanceRecord">
+        UPDATE project_schedule_records
+        SET 
+            images = #{images},
+            acceptance_title = #{acceptanceTitle},
+            acceptance_content = #{acceptanceContent},
+            acceptance_result = #{acceptanceResult},
+            <if test="acceptanceTime != null">
+            acceptance_time = #{acceptanceTime},
+            </if>
+            acceptor = #{acceptor},
+            updated_by = #{updateBy},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除验收记录 -->
+    <delete id="deleteAcceptanceRecord">
+        DELETE FROM project_schedule_records WHERE id = #{id}
+    </delete>
+
+    <!-- 查询记录创建人 -->
+    <select id="selectRecordCreateBy" parameterType="String" resultType="String">
+        SELECT created_by FROM project_schedule_records WHERE id = #{recordId}
     </select>
 
 </mapper>

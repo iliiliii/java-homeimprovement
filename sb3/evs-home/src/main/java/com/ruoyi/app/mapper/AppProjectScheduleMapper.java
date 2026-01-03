@@ -77,4 +77,68 @@ public interface AppProjectScheduleMapper {
      * @return 附件列表
      */
     List<ProjectScheduleRecordVO.AttachmentVO> selectRecordAttachments(@Param("recordId") String recordId);
+
+    /**
+     * 插入验收记录
+     * @param id 记录ID
+     * @param projectId 项目ID
+     * @param scheduleId 进度ID
+     * @param recordType 记录类型
+     * @param images 图片JSON
+     * @param acceptanceTitle 验收标题
+     * @param acceptanceContent 验收内容
+     * @param acceptanceResult 验收结果
+     * @param acceptanceTime 验收时间
+     * @param acceptor 验收人
+     * @param createBy 创建人
+     * @return 影响行数
+     */
+    int insertAcceptanceRecord(
+            @Param("id") String id,
+            @Param("projectId") String projectId,
+            @Param("scheduleId") String scheduleId,
+            @Param("recordType") String recordType,
+            @Param("images") String images,
+            @Param("acceptanceTitle") String acceptanceTitle,
+            @Param("acceptanceContent") String acceptanceContent,
+            @Param("acceptanceResult") String acceptanceResult,
+            @Param("acceptanceTime") java.util.Date acceptanceTime,
+            @Param("acceptor") String acceptor,
+            @Param("createBy") String createBy);
+
+    /**
+     * 更新验收记录
+     * @param id 记录ID
+     * @param images 图片JSON
+     * @param acceptanceTitle 验收标题
+     * @param acceptanceContent 验收内容
+     * @param acceptanceResult 验收结果
+     * @param acceptanceTime 验收时间
+     * @param acceptor 验收人
+     * @param updateBy 更新人
+     * @return 影响行数
+     */
+    int updateAcceptanceRecord(
+            @Param("id") String id,
+            @Param("images") String images,
+            @Param("acceptanceTitle") String acceptanceTitle,
+            @Param("acceptanceContent") String acceptanceContent,
+            @Param("acceptanceResult") String acceptanceResult,
+            @Param("acceptanceTime") java.util.Date acceptanceTime,
+            @Param("acceptor") String acceptor,
+            @Param("updateBy") String updateBy);
+
+    /**
+     * 删除验收记录
+     * @param id 记录ID
+     * @return 影响行数
+     */
+    int deleteAcceptanceRecord(@Param("id") String id);
+
+    /**
+     * 查询记录创建人
+     * @param recordId 记录ID
+     * @return 创建人ID
+     */
+    String selectRecordCreateBy(@Param("recordId") String recordId);
 }

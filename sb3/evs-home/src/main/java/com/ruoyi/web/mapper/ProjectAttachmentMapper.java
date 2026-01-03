@@ -58,4 +58,11 @@ public interface ProjectAttachmentMapper
      * @return 结果
      */
     public int deleteProjectAttachmentByIds(String[] ids);
+
+    /**
+     * 查询所有项目的合同总额
+     * 
+     * @return 合同总额
+     */
+    public Double selectTotalContractAmount();
 }
