@@ -20,6 +20,13 @@ public interface IAppDashboardService {
     StaffDashboardVO getStaffDashboard(String token);
 
     /**
+     * 获取员工首页数据（带分页）
+     * @param token 认证Token
+     * @param pageNum 页码
+     */
+    StaffDashboardVO getStaffDashboard(String token, Integer pageNum);
+
+    /**
      * 获取项目详情
      */
     ProjectDetailVO getProjectDetail(String token, String projectId);

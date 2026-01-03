@@ -1,5 +1,6 @@
 package com.ruoyi.app.service.impl;
 
+import com.ruoyi.app.config.StaffDashboardConfig;
 import com.ruoyi.app.dto.response.*;
 import com.ruoyi.app.mapper.AppProjectMapper;
 import com.ruoyi.app.mapper.AppDashboardMapper;
@@ -38,6 +39,9 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
 
     @Autowired
     private AppDashboardMapper dashboardMapper;
+
+    @Autowired
+    private StaffDashboardConfig staffDashboardConfig;
 
     // 字典类型常量
     private static final String DICT_TYPE_PROJECT_STATUS = "decoration_project_status";
@@ -189,6 +193,12 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
 
     @Override
     public StaffDashboardVO getStaffDashboard(String token) {
+        // 默认调用分页版本，页码为1
+        return getStaffDashboard(token, 1);
+    }
+
+    @Override
+    public StaffDashboardVO getStaffDashboard(String token, Integer pageNum) {
         // 验证Token并获取用户信息
         Map<String, Object> claims = tokenManager.validateToken(extractToken(token));
         String userType = (String) claims.get("userType");
@@ -199,10 +209,33 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
         }
 
         StaffDashboardVO result = new StaffDashboardVO();
-        // 不再返回用户信息，前端使用登录时缓存的数据
 
-        // 获取员工关联的项目列表
-        List<StaffProjectVO> projectVOs = dashboardMapper.selectStaffProjectsWithDict(userId);
+        // 获取配置参数
+        int pageSize = staffDashboardConfig.getPageSize();
+        List<String> allowedStatuses = staffDashboardConfig.getAllowedStatuses();
+        boolean enablePaging = staffDashboardConfig.isEnablePaging();
+
+        // 页码校验
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+
+        // 计算偏移量
+        int offset = (pageNum - 1) * pageSize;
+
+        // 查询总数
+        int total = dashboardMapper.countStaffProjects(userId, allowedStatuses);
+
+        // 查询项目列表（带分页，排序使用字典 decoration_status_project_order）
+        List<StaffProjectVO> projectVOs;
+        if (enablePaging) {
+            projectVOs = dashboardMapper.selectStaffProjectsPaged(
+                    userId, allowedStatuses, offset, pageSize);
+        } else {
+            // 不分页时查询全部（但仍然按状态排序）
+            projectVOs = dashboardMapper.selectStaffProjectsPaged(
+                    userId, allowedStatuses, 0, Integer.MAX_VALUE);
+        }
         
         // 补充项目详细信息
         for (StaffProjectVO vo : projectVOs) {
@@ -224,6 +257,16 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
             vo.setMyRoleText(getRoleText(vo.getMyRole()));
         }
         result.setProjects(projectVOs);
+
+        // 设置分页信息
+        StaffDashboardVO.PageInfo pageInfo = new StaffDashboardVO.PageInfo();
+        pageInfo.setPageNum(pageNum);
+        pageInfo.setPageSize(pageSize);
+        pageInfo.setTotal(total);
+        int totalPages = (int) Math.ceil((double) total / pageSize);
+        pageInfo.setTotalPages(totalPages);
+        pageInfo.setHasMore(pageNum < totalPages);
+        result.setPageInfo(pageInfo);
 
         // 统计待办事项
         StaffDashboardVO.TodoStats todoStats = new StaffDashboardVO.TodoStats();
