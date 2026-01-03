@@ -21,6 +21,8 @@
       :projects="staffProjects"
       :loading="loading"
       :selected-project-id="selectedStaffProjectId"
+      :loading-more="loadingMore"
+      :has-more="hasMore"
       @view-project="handleViewProject"
       @select-project="handleSelectStaffProject"
     />
@@ -41,7 +43,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onPullDownRefresh } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
 import { getCustomerDashboard, getStaffDashboard } from '@/api/dashboard.js'
 import CustomTabBar from '@/components/CustomTabBar.vue'
@@ -56,6 +58,11 @@ const projects = ref([])
 const staffProjects = ref([])
 const currentProjectIndex = ref(0)
 const selectedStaffProjectId = ref('')
+
+// 分页相关状态
+const pageNum = ref(1)
+const hasMore = ref(true)
+const loadingMore = ref(false)
 
 // 计算属性
 const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
@@ -79,8 +86,13 @@ onMounted(async () => {
 })
 
 // 加载首页数据
-const loadDashboardData = async () => {
-  loading.value = true
+const loadDashboardData = async (isRefresh = true) => {
+  if (isRefresh) {
+    loading.value = true
+    pageNum.value = 1
+    hasMore.value = true
+  }
+  
   try {
     if (userType.value === 'customer') {
       console.log('[Dashboard] 加载客户首页数据...')
@@ -97,9 +109,23 @@ const loadDashboardData = async () => {
       }
     } else if (userType.value === 'staff') {
       console.log('[Dashboard] 加载员工首页数据...')
-      const data = await getStaffDashboard()
+      const data = await getStaffDashboard(pageNum.value)
       console.log('[Dashboard] 员工数据:', data)
-      staffProjects.value = data?.projects || []
+      
+      if (isRefresh) {
+        staffProjects.value = data?.projects || []
+      } else {
+        // 追加数据
+        staffProjects.value = [...staffProjects.value, ...(data?.projects || [])]
+      }
+      
+      // 更新分页状态
+      if (data?.pageInfo) {
+        hasMore.value = data.pageInfo.hasMore
+      } else {
+        hasMore.value = false
+      }
+      
       // 将员工项目列表保存到store，以便其他页面访问
       userStore.setProjects(staffProjects.value)
       // 恢复或设置默认选中的项目
@@ -107,7 +133,7 @@ const loadDashboardData = async () => {
       if (savedProjectId && staffProjects.value.find(p => p.id === savedProjectId)) {
         selectedStaffProjectId.value = savedProjectId
         userStore.switchProject(savedProjectId)
-      } else if (staffProjects.value.length > 0) {
+      } else if (staffProjects.value.length > 0 && !selectedStaffProjectId.value) {
         selectedStaffProjectId.value = staffProjects.value[0].id
         userStore.switchProject(staffProjects.value[0].id)
       }
@@ -119,7 +145,19 @@ const loadDashboardData = async () => {
     uni.showToast({ title: error.message || '加载失败', icon: 'none' })
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
+}
+
+// 加载更多数据
+const loadMoreData = async () => {
+  if (!hasMore.value || loadingMore.value || userType.value !== 'staff') {
+    return
+  }
+  
+  loadingMore.value = true
+  pageNum.value++
+  await loadDashboardData(false)
 }
 
 // 跳转登录
@@ -161,8 +199,13 @@ const handleSelectStaffProject = (projectId) => {
 
 // 下拉刷新
 onPullDownRefresh(async () => {
-  await loadDashboardData()
+  await loadDashboardData(true)
   uni.stopPullDownRefresh()
+})
+
+// 上拉加载更多
+onReachBottom(() => {
+  loadMoreData()
 })
 </script>
 
