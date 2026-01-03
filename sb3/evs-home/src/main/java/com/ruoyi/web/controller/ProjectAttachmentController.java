@@ -101,4 +101,14 @@ public class ProjectAttachmentController extends BaseController
     {
         return toAjax(projectAttachmentService.deleteProjectAttachmentByIds(ids));
     }
+
+    /**
+     * 获取所有项目的合同总额
+     */
+    @PreAuthorize("@ss.hasPermi('evs:projectAttachment:list')")
+    @GetMapping("/totalAmount")
+    public AjaxResult getTotalContractAmount()
+    {
+        return success(projectAttachmentService.selectTotalContractAmount());
+    }
 }

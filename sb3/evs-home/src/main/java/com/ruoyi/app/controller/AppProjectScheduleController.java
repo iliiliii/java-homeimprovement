@@ -1,18 +1,23 @@
 package com.ruoyi.app.controller;
 
+import com.ruoyi.app.dto.request.AcceptanceRecordRequest;
 import com.ruoyi.app.service.IAppProjectScheduleService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.exception.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 /**
  * 小程序项目进度接口
  */
 @RestController
 @RequestMapping("/app")
+@Validated
 public class AppProjectScheduleController {
 
     private static final Logger log = LoggerFactory.getLogger(AppProjectScheduleController.class);
@@ -99,6 +104,103 @@ public class AppProjectScheduleController {
         } catch (Exception e) {
             log.error("获取验收记录详情异常", e);
             return AjaxResult.error(500, "获取数据失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 新增验收记录（仅员工可用）
+     */
+    @PostMapping("/projectScheduleRecords")
+    public AjaxResult addAcceptanceRecord(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestHeader(value = "X-Project-Id", required = false) String projectId,
+            @Valid @RequestBody AcceptanceRecordRequest request) {
+        try {
+            log.info("接收到新增验收记录请求 - projectId: {}, scheduleId: {}", projectId, request.getScheduleId());
+            
+            if (token == null || token.isEmpty()) {
+                log.warn("未提供认证Token");
+                return AjaxResult.error(401, "未提供认证Token");
+            }
+            if (projectId == null || projectId.isEmpty()) {
+                log.warn("未提供项目ID");
+                return AjaxResult.error(400, "未提供项目ID");
+            }
+            if (request.getScheduleId() == null || request.getScheduleId().isEmpty()) {
+                log.warn("未提供进度ID");
+                return AjaxResult.error(400, "未提供进度ID");
+            }
+            
+            String recordId = projectScheduleService.addAcceptanceRecord(token, projectId, request);
+            log.info("验收记录新增成功，ID: {}", recordId);
+            return AjaxResult.success("验收记录新增成功", recordId);
+        } catch (ServiceException e) {
+            log.warn("新增验收记录失败: {}", e.getMessage());
+            return AjaxResult.error(e.getCode() != null ? e.getCode() : 500, e.getMessage());
+        } catch (Exception e) {
+            log.error("新增验收记录异常", e);
+            return AjaxResult.error(500, "新增失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 编辑验收记录（仅员工可用，且只能编辑自己创建的记录）
+     */
+    @PutMapping("/projectScheduleRecords/{recordId}")
+    public AjaxResult updateAcceptanceRecord(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestHeader(value = "X-Project-Id", required = false) String projectId,
+            @PathVariable String recordId,
+            @Valid @RequestBody AcceptanceRecordRequest request) {
+        try {
+            log.info("接收到编辑验收记录请求 - recordId: {}, projectId: {}", recordId, projectId);
+            
+            if (token == null || token.isEmpty()) {
+                return AjaxResult.error(401, "未提供认证Token");
+            }
+            if (projectId == null || projectId.isEmpty()) {
+                return AjaxResult.error(400, "未提供项目ID");
+            }
+            
+            projectScheduleService.updateAcceptanceRecord(token, projectId, recordId, request);
+            log.info("验收记录编辑成功，ID: {}", recordId);
+            return AjaxResult.success("验收记录编辑成功");
+        } catch (ServiceException e) {
+            log.warn("编辑验收记录失败: {}", e.getMessage());
+            return AjaxResult.error(e.getCode() != null ? e.getCode() : 500, e.getMessage());
+        } catch (Exception e) {
+            log.error("编辑验收记录异常", e);
+            return AjaxResult.error(500, "编辑失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 删除验收记录（仅员工可用，且只能删除自己创建的记录）
+     */
+    @DeleteMapping("/projectScheduleRecords/{recordId}")
+    public AjaxResult deleteAcceptanceRecord(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestHeader(value = "X-Project-Id", required = false) String projectId,
+            @PathVariable String recordId) {
+        try {
+            log.info("接收到删除验收记录请求 - recordId: {}, projectId: {}", recordId, projectId);
+            
+            if (token == null || token.isEmpty()) {
+                return AjaxResult.error(401, "未提供认证Token");
+            }
+            if (projectId == null || projectId.isEmpty()) {
+                return AjaxResult.error(400, "未提供项目ID");
+            }
+            
+            projectScheduleService.deleteAcceptanceRecord(token, projectId, recordId);
+            log.info("验收记录删除成功，ID: {}", recordId);
+            return AjaxResult.success("验收记录删除成功");
+        } catch (ServiceException e) {
+            log.warn("删除验收记录失败: {}", e.getMessage());
+            return AjaxResult.error(e.getCode() != null ? e.getCode() : 500, e.getMessage());
+        } catch (Exception e) {
+            log.error("删除验收记录异常", e);
+            return AjaxResult.error(500, "删除失败: " + e.getMessage());
         }
     }
 }

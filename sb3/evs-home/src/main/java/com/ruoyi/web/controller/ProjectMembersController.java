@@ -17,6 +17,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.web.domain.ProjectMembers;
+import com.ruoyi.web.dto.ProjectMembersBatchRequest;
 import com.ruoyi.web.service.IProjectMembersService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -100,5 +101,19 @@ public class ProjectMembersController extends BaseController
     public AjaxResult remove(@PathVariable String[] ids)
     {
         return toAjax(projectMembersService.deleteProjectMembersByIds(ids));
+    }
+
+    /**
+     * 批量保存项目成员（一次性保存，替换原有成员）
+     */
+    @PreAuthorize("@ss.hasPermi('evs:projectMembers:edit')")
+    @Log(title = "项目成员", businessType = BusinessType.UPDATE)
+    @PostMapping("/batchSave")
+    public AjaxResult batchSave(@RequestBody ProjectMembersBatchRequest request)
+    {
+        if (request.getProjectId() == null || request.getProjectId().isEmpty()) {
+            return error("项目ID不能为空");
+        }
+        return toAjax(projectMembersService.batchSaveProjectMembers(request.getProjectId(), request.getMembers()));
     }
 }
