@@ -12,9 +12,10 @@ export const getCustomerDashboard = () => {
 
 /**
  * 获取员工首页数据
+ * @param {Number} pageNum - 页码（可选，默认1）
  */
-export const getStaffDashboard = () => {
-  return get('/app/dashboard/staff')
+export const getStaffDashboard = (pageNum = 1) => {
+  return get('/app/dashboard/staff', { pageNum })
 }
 
 /**
