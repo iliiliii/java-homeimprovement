@@ -166,6 +166,14 @@
         LIMIT 1
     </select>
 
+    <!-- 根据字典标签查询字典值（用于配置型字典） -->
+    <select id="selectDictValueByLabel" resultType="String">
+        SELECT dict_value 
+        FROM sys_dict_data
+        WHERE dict_type = #{dictType} AND dict_label = #{dictLabel} AND status = '0'
+        LIMIT 1
+    </select>
+
     <!-- 查询客户项目列表（不联表查字典，在Java代码中处理状态文本） -->
     <select id="selectCustomerProjects" resultType="com.ruoyi.app.dto.response.CustomerProjectVO">
         SELECT 
@@ -200,6 +208,62 @@
         LEFT JOIN customers c ON p.customer_id = c.id
         WHERE pm.user_id = #{userId} AND pm.is_active = 1
         ORDER BY p.updated_at DESC
+    </select>
+
+    <!-- 查询员工项目列表（带分页和状态筛选） -->
+    <!-- 排序使用字典 decoration_status_project_order 的 dict_sort 字段 -->
+    <select id="selectStaffProjectsPaged" resultType="com.ruoyi.app.dto.response.StaffProjectVO">
+        SELECT 
+            p.id,
+            p.name,
+            c.name as customerName,
+            p.address,
+            p.area,
+            p.status,
+            p.status as statusText,
+            p.progress as progressPercent,
+            pm.role as myRole,
+            p.updated_at as lastUpdateTime
+        FROM project_members pm
+        INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
+        LEFT JOIN customers c ON p.customer_id = c.id
+        WHERE pm.user_id = #{userId} AND pm.is_active = 1
+        <if test="allowedStatuses != null and allowedStatuses.size() > 0">
+            AND p.status COLLATE utf8mb4_unicode_ci IN
+            <foreach collection="allowedStatuses" item="status" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+        ORDER BY 
+            (SELECT COALESCE(dict_sort, 999) FROM sys_dict_data 
+             WHERE dict_type = 'decoration_status_project_order' AND dict_value = p.status COLLATE utf8mb4_unicode_ci LIMIT 1) ASC,
+            p.updated_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 统计员工项目总数（带状态筛选） -->
+    <select id="countStaffProjects" resultType="int">
+        SELECT COUNT(*)
+        FROM project_members pm
+        INNER JOIN projects p ON pm.project_id = p.id AND p.deleted_at IS NULL
+        WHERE pm.user_id = #{userId} AND pm.is_active = 1
+        <if test="allowedStatuses != null and allowedStatuses.size() > 0">
+            AND p.status COLLATE utf8mb4_unicode_ci IN
+            <foreach collection="allowedStatuses" item="status" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询允许显示的项目状态列表 -->
+    <!-- 从字典 decoration_status_project_order 读取，status='0' 的状态才显示 -->
+    <select id="selectAllowedProjectStatuses" resultType="java.util.Map">
+        SELECT 
+            dict_value as dictValue,
+            dict_sort as dictSort
+        FROM sys_dict_data
+        WHERE dict_type = 'decoration_status_project_order' AND status = '0'
+        ORDER BY dict_sort ASC
     </select>
 
     <!-- 查询项目的房间列表 -->
