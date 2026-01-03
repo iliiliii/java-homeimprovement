@@ -1,7 +1,7 @@
 /**
  * 项目进度相关API
  */
-import { get } from '@/utils/request'
+import { get, post, put, del } from '@/utils/request'
 // import { 
 //   getMockProjectScheduleList, 
 //   getMockProjectScheduleRecordList, 
@@ -85,4 +85,32 @@ export const getProjectScheduleRecordDetail = async (recordId) => {
     console.error('获取验收记录详情失败，使用模拟数据:', error)
     // return await getMockProjectScheduleRecordDetail(recordId)
   }
+}
+
+/**
+ * 新增验收记录
+ * @param {Object} data - 验收记录数据
+ * @returns {Promise} 新增结果
+ */
+export const addAcceptanceRecord = async (data) => {
+  return await post('/app/projectScheduleRecords', data)
+}
+
+/**
+ * 编辑验收记录
+ * @param {String} recordId - 记录ID
+ * @param {Object} data - 验收记录数据
+ * @returns {Promise} 编辑结果
+ */
+export const updateAcceptanceRecord = async (recordId, data) => {
+  return await put(`/app/projectScheduleRecords/${recordId}`, data)
+}
+
+/**
+ * 删除验收记录
+ * @param {String} recordId - 记录ID
+ * @returns {Promise} 删除结果
+ */
+export const deleteAcceptanceRecord = async (recordId) => {
+  return await del(`/app/projectScheduleRecords/${recordId}`)
 }

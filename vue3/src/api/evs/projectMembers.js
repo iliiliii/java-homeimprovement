@@ -42,3 +42,12 @@ export function delProjectMembers(id) {
     method: 'delete'
   })
 }
+
+// 批量保存项目成员（一次性保存，替换原有成员）
+export function batchSaveProjectMembers(data) {
+  return request({
+    url: '/evs/projectMembers/batchSave',
+    method: 'post',
+    data: data
+  })
+}

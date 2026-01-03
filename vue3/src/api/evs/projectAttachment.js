@@ -42,3 +42,11 @@ export function delProjectAttachment(id) {
     method: 'delete'
   })
 }
+
+// 获取所有项目的合同总额
+export function getTotalContractAmount() {
+  return request({
+    url: '/evs/projectAttachment/totalAmount',
+    method: 'get'
+  })
+}

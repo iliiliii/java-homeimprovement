@@ -76,7 +76,29 @@ const responseInterceptor = async (response, originalConfig) => {
     if (data.code === 200 || data.code === 0) {
       return data.data
     }
-    // 业务错误
+    
+    // Token过期（后端返回500但消息包含JWT expired）
+    if (data.code === 500 && data.msg && data.msg.includes('JWT expired')) {
+      console.log('[Request] Token过期，尝试刷新')
+      // 如果是登录接口，直接返回错误
+      if (originalConfig.url.includes('/auth/')) {
+        return Promise.reject(new Error('认证失败'))
+      }
+      // 尝试刷新Token
+      return handleTokenRefresh(originalConfig)
+    }
+    
+    // 认证失败
+    if (data.code === 401) {
+      // 如果是登录接口，直接返回错误
+      if (originalConfig.url.includes('/auth/')) {
+        return Promise.reject(new Error('认证失败'))
+      }
+      // 尝试刷新Token
+      return handleTokenRefresh(originalConfig)
+    }
+    
+    // 其他业务错误
     return Promise.reject(new Error(data.msg || '请求失败'))
   }
   

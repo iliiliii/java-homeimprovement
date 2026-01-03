@@ -42,3 +42,12 @@ export function delProjectRooms(id) {
     method: 'delete'
   })
 }
+
+// 更新项目房间排序
+export function updateProjectRoomsOrder(id, sortOrder) {
+  return request({
+    url: '/evs/projectRooms',
+    method: 'put',
+    data: { id, sortOrder }
+  })
+}
