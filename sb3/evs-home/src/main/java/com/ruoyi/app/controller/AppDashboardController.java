@@ -43,14 +43,24 @@ public class AppDashboardController {
     /**
      * 获取员工首页数据
      * 包含：负责的项目列表、待办事项、质检任务等
+     * 
+     * 分页和筛选参数由后端配置控制（StaffDashboardConfig）：
+     * - pageSize: 每页数据量，默认100
+     * - allowedStatuses: 允许显示的状态列表
+     * - statusOrder: 状态排序顺序
+     * 
+     * @param token 认证Token
+     * @param pageNum 页码（可选，默认1）
      */
     @GetMapping("/staff")
-    public AjaxResult getStaffDashboard(@RequestHeader(value = "Authorization", required = false) String token) {
+    public AjaxResult getStaffDashboard(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum) {
         try {
             if (token == null || token.isEmpty()) {
                 return AjaxResult.error(401, "未提供认证Token");
             }
-            return AjaxResult.success(dashboardService.getStaffDashboard(token));
+            return AjaxResult.success(dashboardService.getStaffDashboard(token, pageNum));
         } catch (ServiceException e) {
             log.warn("获取员工首页数据失败: {}", e.getMessage());
             return AjaxResult.error(e.getCode() != null ? e.getCode() : 500, e.getMessage());
