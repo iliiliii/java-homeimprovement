@@ -14,6 +14,9 @@ public class StaffDashboardVO {
     /** 待办事项统计 */
     private TodoStats todoStats;
 
+    /** 分页信息 */
+    private PageInfo pageInfo;
+
     public List<StaffProjectVO> getProjects() {
         return projects;
     }
@@ -28,6 +31,14 @@ public class StaffDashboardVO {
 
     public void setTodoStats(TodoStats todoStats) {
         this.todoStats = todoStats;
+    }
+
+    public PageInfo getPageInfo() {
+        return pageInfo;
+    }
+
+    public void setPageInfo(PageInfo pageInfo) {
+        this.pageInfo = pageInfo;
     }
 
     /**
@@ -65,6 +76,66 @@ public class StaffDashboardVO {
 
         public void setTodayTasks(int todayTasks) {
             this.todayTasks = todayTasks;
+        }
+    }
+
+    /**
+     * 分页信息
+     */
+    public static class PageInfo {
+        /** 当前页码 */
+        private int pageNum;
+
+        /** 每页数量 */
+        private int pageSize;
+
+        /** 总记录数 */
+        private int total;
+
+        /** 总页数 */
+        private int totalPages;
+
+        /** 是否有下一页 */
+        private boolean hasMore;
+
+        public int getPageNum() {
+            return pageNum;
+        }
+
+        public void setPageNum(int pageNum) {
+            this.pageNum = pageNum;
+        }
+
+        public int getPageSize() {
+            return pageSize;
+        }
+
+        public void setPageSize(int pageSize) {
+            this.pageSize = pageSize;
+        }
+
+        public int getTotal() {
+            return total;
+        }
+
+        public void setTotal(int total) {
+            this.total = total;
+        }
+
+        public int getTotalPages() {
+            return totalPages;
+        }
+
+        public void setTotalPages(int totalPages) {
+            this.totalPages = totalPages;
+        }
+
+        public boolean isHasMore() {
+            return hasMore;
+        }
+
+        public void setHasMore(boolean hasMore) {
+            this.hasMore = hasMore;
         }
     }
 }
