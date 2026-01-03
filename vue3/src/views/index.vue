@@ -39,7 +39,7 @@
             </div>
             <div class="stat-content">
               <div class="stat-label">合同总额</div>
-              <div class="stat-value budget">¥{{ formatMoney(stats.totalBudget) }}<span class="stat-unit">万</span></div>
+              <div class="stat-value budget">¥{{ formatContractAmount(stats.totalBudget) }}<span class="stat-unit">万</span></div>
             </div>
           </div>
         </el-col>
@@ -295,6 +295,7 @@ import useUserStore from '@/store/modules/user'
 import { listProjectsWithScheduleInfo, listProjectsWithCustomer } from '@/api/evs/projects'
 import { listCustomers } from '@/api/evs/customers'
 import { listQualityInspections } from '@/api/evs/qualityInspections'
+import { getTotalContractAmount } from '@/api/evs/projectAttachment'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()
@@ -346,6 +347,12 @@ function formatMoney(amount) {
   return (amount / 10000).toFixed(1)
 }
 
+/** 格式化合同总额（已经是实际金额，转换为万元显示） */
+function formatContractAmount(amount) {
+  if (!amount) return '0.00'
+  return (amount / 10000).toFixed(1)
+}
+
 /** 格式化日期 */
 function formatDate(date) {
   if (!date) return '-'
@@ -373,8 +380,16 @@ async function loadStats() {
     stats.value.projectCount = projectRes.total || 0
     stats.value.inProgressCount = projects.filter(p => p.status === 'in_progress').length
     stats.value.completedCount = projects.filter(p => p.status === 'completed').length
-    stats.value.totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0)
     stats.value.totalCost = projects.reduce((sum, p) => sum + (p.actualCost || 0), 0)
+    
+    // 获取合同总额（从合同附件表汇总）
+    try {
+      const totalAmountRes = await getTotalContractAmount()
+      stats.value.totalBudget = totalAmountRes.data || 0
+    } catch (e) {
+      console.warn('获取合同总额失败，使用项目预算汇总:', e)
+      stats.value.totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0)
+    }
     
     // 计算活跃客户（有进行中项目的客户）
     const activeCustomerIds = new Set(projects.filter(p => p.status === 'in_progress').map(p => p.customerId))

@@ -65,27 +65,6 @@
               </div>
             </div>
           </div>
-
-          <!-- 执行信息区块 -->
-          <div class="info-section">
-            <div class="section-title">执行信息</div>
-            <div class="field-grid">
-              <div class="field-item">
-                <span class="field-label">负责人</span>
-                <span class="field-value">{{ currentScheduleItem.responsible || '未指定' }}</span>
-              </div>
-              <div class="field-item">
-                <span class="field-label">进度</span>
-                <div class="progress-wrapper">
-                  <el-progress
-                    :percentage="currentScheduleItem.progress || 0"
-                    :color="getProgressColor(currentScheduleItem.progress)"
-                    size="small"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -139,7 +118,7 @@
                 </div>
                 <div class="acceptance-meta">
                   <span class="acceptance-creator" v-if="record.acceptor">{{ record.acceptor }}</span>
-                  <span class="acceptance-time">{{ proxy.parseTime(record.acceptanceTime, '{m}-{d} {h}:{i}') }}</span>
+                  <span class="acceptance-time">{{ proxy.parseTime(record.acceptanceTime, '{y}-{m}-{d}') }}</span>
                   <!-- 管理员操作按钮 -->
                   <div v-if="isAdmin" class="timeline-actions">
                     <el-button

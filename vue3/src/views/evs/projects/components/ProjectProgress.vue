@@ -38,14 +38,14 @@
       </el-space>
     </div>
 
-    <!-- 施工时间轴 -->
+    <!-- 时间轴 -->
     <div style="max-height: 400px; overflow-y: auto; padding: 0 16px;">
       <el-empty v-if="loading" description="加载中..." />
       <el-timeline v-else-if="timelineItems.length > 0">
         <el-timeline-item
           v-for="(item, index) in timelineItems"
           :key="item.id"
-          :color="item.status === 'completed' ? '#52c41a' : item.status === 'inProgress' ? '#1677ff' : '#d9d9d9'"
+          :color="getTimelineColor(item)"
           :icon="getTimelineIcon(item.status)"
         >
           <div
@@ -59,9 +59,16 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div style="flex: 1;">
                 <div style="margin-bottom: 8px;">
+                  <!-- 阶段类型标签 -->
+                  <el-tag 
+                    :type="item.stageType === 'DESIGN' ? 'warning' : 'primary'" 
+                    size="small" 
+                    style="margin-right: 8px;"
+                  >
+                    {{ item.stageType === 'DESIGN' ? '设计' : '施工' }}
+                  </el-tag>
                   <span style="font-size: 15px; font-weight: bold; margin-right: 8px;">
-                    {{ decoration_construction_stage.find(dict => dict.value === item.title)?.label || item.title }}
-                    <!-- <dict-tag :options="decoration_construction_stage" :value="item.title" /> -->
+                    {{ getStageLabel(item) }}
                   </span>
                   <el-tag :color="getTimelineStatusConfig(item.status).color" size="small">
                     {{ getTimelineStatusConfig(item.status).label }}
@@ -112,7 +119,7 @@
                 />
                 <el-popconfirm
                   title="确认删除"
-                  description="确定要删除这个施工阶段吗？"
+                  :description="'确定要删除这个' + (item.stageType === 'DESIGN' ? '设计' : '施工') + '阶段吗？'"
                   @confirm="handleDeleteTimelineItem(item.id)"
                   confirm-button-text="确定"
                   cancel-button-text="取消"
@@ -132,13 +139,13 @@
         </el-timeline-item>
       </el-timeline>
       <div v-else style="text-align: center; padding: 20px 0; color: #999; font-size: 13px;">
-        <el-text  title="暂无施工阶段" :column="1" class="mx-1" type="info" size="small" >
-        暂无施工阶段，请点击下方按钮添加
-      </el-text>
+        <el-text title="暂无阶段" :column="1" class="mx-1" type="info" size="small">
+          暂无阶段，请点击下方按钮添加
+        </el-text>
       </div>
     </div>
 
-    <!-- 添加/编辑施工阶段表单 -->
+    <!-- 添加/编辑阶段表单 -->
     <div
       v-if="isAddingTimeline || editingTimelineItem"
       style="
@@ -150,15 +157,15 @@
       <el-form :model="timelineForm" label-position="top">
         <el-space direction="vertical" :size="16" style="width: 100%;">
           <div style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1677ff;">
-            {{ editingTimelineItem ? '编辑施工阶段' : '添加施工阶段' }}
+            {{ getFormTitle() }}
           </div>
 
           <el-row :gutter="16">
             <el-col :span="8">
-              <el-form-item label="施工阶段" required style="margin-bottom: 0;">
+              <el-form-item :label="timelineForm.stageType === 'DESIGN' ? '设计阶段' : '施工阶段'" required style="margin-bottom: 0;">
                 <el-select
                   v-model="timelineForm.title"
-                  placeholder="选择施工阶段"
+                  :placeholder="'选择' + (timelineForm.stageType === 'DESIGN' ? '设计' : '施工') + '阶段'"
                   size="large"
                   style="width: 100%"
                 >
@@ -172,7 +179,7 @@
                     v-if="availableStages.length === 0"
                     disabled
                     value=""
-                    label="暂无可选施工阶段"
+                    :label="'暂无可选' + (timelineForm.stageType === 'DESIGN' ? '设计' : '施工') + '阶段'"
                   />
                 </el-select>
               </el-form-item>
@@ -223,16 +230,25 @@
       </el-form>
     </div>
 
-    <!-- 添加施工阶段按钮 -->
-    <el-button
-      v-if="!isAddingTimeline && !editingTimelineItem"
-      type="dashed"
-      style="width: 100%"
-      @click="handleStartAddTimeline"
-    >
-      <el-icon><Plus /></el-icon>
-      添加施工阶段
-    </el-button>
+    <!-- 添加阶段按钮 -->
+    <el-space v-if="!isAddingTimeline && !editingTimelineItem" style="width: 100%;">
+      <el-button
+        type="dashed"
+        style="flex: 1;"
+        @click="handleStartAddTimeline('DESIGN')"
+      >
+        <el-icon><Plus /></el-icon>
+        添加设计阶段
+      </el-button>
+      <el-button
+        type="dashed"
+        style="flex: 1;"
+        @click="handleStartAddTimeline('CONSTRUCTION')"
+      >
+        <el-icon><Plus /></el-icon>
+        添加施工阶段
+      </el-button>
+    </el-space>
     </el-space>
   </div>
 </template>
@@ -244,7 +260,7 @@ import { listProjectSchedules, addProjectSchedules, updateProjectSchedules, delP
 import { Plus, Calendar, Edit, Delete, Top, Bottom } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
-const { decoration_construction_stage } = useDict('decoration_construction_stage')
+const { decoration_construction_stage, decoration_design_stage } = useDict('decoration_construction_stage', 'decoration_design_stage')
 
 // Props
 const props = defineProps({
@@ -267,7 +283,8 @@ const timelineForm = ref({
   title: '',
   description: '',
   date: '',
-  status: 'pending'
+  status: 'pending',
+  stageType: 'CONSTRUCTION' // 默认施工阶段
 })
 
 // 计算统计数据
@@ -279,14 +296,28 @@ const inProgressCount = computed(() => {
   return timelineItems.value.filter(t => t.status === 'inProgress').length
 })
 
-// 计算可选的施工阶段（过滤掉已选择的，但编辑时保留当前项）
+// 根据当前表单的阶段类型获取对应的字典数据
+const currentStageDict = computed(() => {
+  return timelineForm.value.stageType === 'DESIGN' 
+    ? decoration_design_stage.value 
+    : decoration_construction_stage.value
+})
+
+// 计算可选的阶段（过滤掉已选择的，但编辑时保留当前项）
 const availableStages = computed(() => {
-  const selectedStages = timelineItems.value.map(item => item.title)
-  let available = decoration_construction_stage.value.filter(dict => !selectedStages.includes(dict.value))
+  const currentType = timelineForm.value.stageType
+  const dictData = currentType === 'DESIGN' ? decoration_design_stage.value : decoration_construction_stage.value
+  
+  // 获取同类型已选择的阶段
+  const selectedStages = timelineItems.value
+    .filter(item => item.stageType === currentType)
+    .map(item => item.title)
+  
+  let available = dictData.filter(dict => !selectedStages.includes(dict.value))
 
   // 编辑模式：如果当前编辑的阶段已被过滤掉，则添加回来
-  if (editingTimelineItem.value) {
-    const currentStage = decoration_construction_stage.value.find(dict => dict.value === editingTimelineItem.value.title)
+  if (editingTimelineItem.value && editingTimelineItem.value.stageType === currentType) {
+    const currentStage = dictData.find(dict => dict.value === editingTimelineItem.value.title)
     if (currentStage && !available.some(dict => dict.value === currentStage.value)) {
       available.push(currentStage)
     }
@@ -319,6 +350,29 @@ function getTimelineIcon(status) {
   }
 }
 
+// 获取时间轴颜色（根据阶段类型和状态）
+function getTimelineColor(item) {
+  if (item.status === 'completed') return '#52c41a'
+  if (item.status === 'inProgress') {
+    return item.stageType === 'DESIGN' ? '#fa8c16' : '#1677ff'
+  }
+  return '#d9d9d9'
+}
+
+// 获取阶段标签
+function getStageLabel(item) {
+  const dictData = item.stageType === 'DESIGN' 
+    ? decoration_design_stage.value 
+    : decoration_construction_stage.value
+  return dictData.find(dict => dict.value === item.title)?.label || item.title
+}
+
+// 获取表单标题
+function getFormTitle() {
+  const typeLabel = timelineForm.value.stageType === 'DESIGN' ? '设计' : '施工'
+  return editingTimelineItem.value ? `编辑${typeLabel}阶段` : `添加${typeLabel}阶段`
+}
+
 // 计算时间轴完成百分比
 function calculateTimelinePercentage(completed, total) {
   if (total === 0) return 0
@@ -334,6 +388,7 @@ function convertFromBackendData(backendItems) {
     description: item.description || '',
     date: item.planStartDate || item.actualStartDate || '未设置',
     status: mapStatusFromBackend(item.status),
+    stageType: item.stageType || 'CONSTRUCTION', // 默认施工阶段
     stageOrder: item.stageOrder || 0,
     completionRate: item.completionRate || 0
   })).sort((a, b) => (b.stageOrder || 0) - (a.stageOrder || 0)) // 降序：stageOrder 越大越靠前
@@ -341,14 +396,16 @@ function convertFromBackendData(backendItems) {
 
 // 数据转换：将组件数据转换为后端所需格式
 function convertToBackendData(componentItem) {
-  // 从字典数据中获取排序
-  const stageDict = decoration_construction_stage.value.find(
-    dict => dict.value === componentItem.title
-  )
+  // 根据阶段类型获取对应的字典数据
+  const dictData = componentItem.stageType === 'DESIGN' 
+    ? decoration_design_stage.value 
+    : decoration_construction_stage.value
+  const stageDict = dictData.find(dict => dict.value === componentItem.title)
 
   return {
     id: componentItem.id,
     projectId: props.project.id,
+    stageType: componentItem.stageType,
     stage: componentItem.title,
     stageOrder: stageDict?.dictSort || 999,
     planStartDate: componentItem.date,
@@ -406,12 +463,13 @@ function loadProjectSchedules() {
 }
 
 /** 重置时间轴表单 */
-function resetTimelineForm() {
+function resetTimelineForm(stageType = 'CONSTRUCTION') {
   timelineForm.value = {
     title: '',
     description: '',
     date: '',
-    status: 'pending'
+    status: 'pending',
+    stageType: stageType
   }
   isAddingTimeline.value = false
   editingTimelineItem.value = null
@@ -423,15 +481,16 @@ function handleEditTimelineItem(item) {
     title: item.title,
     description: item.description,
     date: item.date,
-    status: item.status
+    status: item.status,
+    stageType: item.stageType || 'CONSTRUCTION'
   }
   editingTimelineItem.value = item
   isAddingTimeline.value = false
 }
 
 /** 开始添加时间轴条目 */
-function handleStartAddTimeline() {
-  resetTimelineForm()
+function handleStartAddTimeline(stageType = 'CONSTRUCTION') {
+  resetTimelineForm(stageType)
   isAddingTimeline.value = true
 }
 
@@ -442,9 +501,11 @@ function handleCancelTimelineEdit() {
 
 /** 保存时间轴条目（新增或编辑） */
 function handleSaveTimelineItem() {
+  const typeLabel = timelineForm.value.stageType === 'DESIGN' ? '设计' : '施工'
+  
   // 验证表单
   if (!timelineForm.value.title) {
-    proxy.$modal.msgError("请选择施工阶段")
+    proxy.$modal.msgError(`请选择${typeLabel}阶段`)
     return
   }
   if (!timelineForm.value.description) {
@@ -456,15 +517,19 @@ function handleSaveTimelineItem() {
     return
   }
 
-  // 检查是否选择了重复的施工阶段（新增和编辑都需要检查）
+  // 检查是否选择了重复的阶段（同类型内检查）
   const isEdit = !!editingTimelineItem.value
   const isDuplicate = timelineItems.value.some(item =>
     item.title === timelineForm.value.title &&
+    item.stageType === timelineForm.value.stageType &&
     item.id !== (isEdit ? editingTimelineItem.value.id : '')
   )
   if (isDuplicate) {
-    const stageLabel = decoration_construction_stage.value.find(dict => dict.value === timelineForm.value.title)?.label || timelineForm.value.title
-    proxy.$modal.msgError(`施工阶段"${stageLabel}"已存在，请选择其他阶段`)
+    const dictData = timelineForm.value.stageType === 'DESIGN' 
+      ? decoration_design_stage.value 
+      : decoration_construction_stage.value
+    const stageLabel = dictData.find(dict => dict.value === timelineForm.value.title)?.label || timelineForm.value.title
+    proxy.$modal.msgError(`${typeLabel}阶段"${stageLabel}"已存在，请选择其他阶段`)
     return
   }
 
@@ -478,40 +543,28 @@ function handleSaveTimelineItem() {
 
   apiCall(backendData).then(response => {
     if (response.code === 200) {
-      proxy.$modal.msgSuccess(`施工阶段已${action}`)
+      proxy.$modal.msgSuccess(`${typeLabel}阶段已${action}`)
       resetTimelineForm()
       loadProjectSchedules() // 重新加载数据
-      // 新增成功后检查是否还有可选的施工阶段
-      if (!isEdit) {
-        setTimeout(() => {
-          const remainingStages = decoration_construction_stage.value.filter(dict =>
-            !timelineItems.value.some(item => item.title === dict.value)
-          )
-          if (remainingStages.length === 0) {
-            proxy.$modal.msgSuccess("所有施工阶段已添加完成")
-          }
-        }, 500)
-      }
     } else {
       // 处理重复性错误
       if (response.msg && (response.msg.includes('Duplicate') || response.msg.includes('UNIQUE'))) {
-        proxy.$modal.msgError("该施工阶段已存在，请选择其他阶段")
+        proxy.$modal.msgError(`该${typeLabel}阶段已存在，请选择其他阶段`)
       } else {
         proxy.$modal.msgError(response.msg || `${action}失败`)
       }
     }
   }).catch(error => {
-    console.error(`${action}施工阶段失败:`, error)
-    // 处理网络错误和服务器错误
+    console.error(`${action}${typeLabel}阶段失败:`, error)
     if (error.response && error.response.data) {
       const errorMsg = error.response.data.msg || error.response.data.message
       if (errorMsg && (errorMsg.includes('Duplicate') || errorMsg.includes('UNIQUE'))) {
-        proxy.$modal.msgError("该施工阶段已存在，请选择其他阶段")
+        proxy.$modal.msgError(`该${typeLabel}阶段已存在，请选择其他阶段`)
       } else {
-        proxy.$modal.msgError(`${action}施工阶段失败：${errorMsg}`)
+        proxy.$modal.msgError(`${action}${typeLabel}阶段失败：${errorMsg}`)
       }
     } else {
-      proxy.$modal.msgError(`${action}施工阶段失败，请稍后重试`)
+      proxy.$modal.msgError(`${action}${typeLabel}阶段失败，请稍后重试`)
     }
   })
 }
@@ -522,12 +575,26 @@ function handleUpdateTimelineStatus(itemId, status) {
   if (!item) return
 
   const oldStatus = item.status // 保存原状态用于回滚
-  const backendData = convertToBackendData({ ...item, status })
+  
+  // 只更新状态相关字段，保留原有的 stageOrder
+  const backendData = {
+    id: item.id,
+    projectId: props.project.id,
+    stageType: item.stageType,
+    stage: item.title,
+    stageOrder: item.stageOrder, // 保留原有排序，不重新计算
+    planStartDate: item.date,
+    actualStartDate: status === 'inProgress' ? item.date : null,
+    actualEndDate: status === 'completed' ? item.date : null,
+    status: mapStatusToBackend(status),
+    completionRate: status === 'completed' ? 100 : status === 'inProgress' ? 50 : 0,
+    description: item.description
+  }
 
   updateProjectSchedules(backendData).then(response => {
     if (response.code === 200) {
       proxy.$modal.msgSuccess("状态已更新")
-      // 成功后更新本地数据
+      // 成功后更新本地数据，不重新加载以保持排序
       const index = timelineItems.value.findIndex(item => item.id === itemId)
       if (index !== -1) {
         timelineItems.value[index].status = status
@@ -548,14 +615,17 @@ function handleUpdateTimelineStatus(itemId, status) {
 
 /** 删除时间轴条目 */
 function handleDeleteTimelineItem(itemId) {
-  proxy.$modal.confirm('是否确认删除该施工阶段？').then(() => {
+  const item = timelineItems.value.find(item => item.id === itemId)
+  const typeLabel = item?.stageType === 'DESIGN' ? '设计' : '施工'
+  
+  proxy.$modal.confirm(`是否确认删除该${typeLabel}阶段？`).then(() => {
     return delProjectSchedules(itemId)
   }).then(() => {
-    proxy.$modal.msgSuccess("施工阶段已删除")
+    proxy.$modal.msgSuccess(`${typeLabel}阶段已删除`)
     loadProjectSchedules() // 重新加载数据
   }).catch(error => {
-    console.error('删除施工阶段失败:', error)
-    proxy.$modal.msgError("删除施工阶段失败")
+    console.error(`删除${typeLabel}阶段失败:`, error)
+    proxy.$modal.msgError(`删除${typeLabel}阶段失败`)
   })
 }
 
@@ -566,24 +636,15 @@ async function handleMoveUp(index) {
   const currentItem = timelineItems.value[index]
   const prevItem = timelineItems.value[index - 1]
   
-  // 简单交换：当前项获得上一项的位置排序值+1，上一项获得当前项的位置排序值
   const totalItems = timelineItems.value.length
-  const newCurrentOrder = (totalItems - index + 1) * 100  // 上移后位置更靠前，值更大
-  const newPrevOrder = (totalItems - index) * 100         // 下移后位置更靠后，值更小
-  
-  console.log('上移操作:', {
-    currentItem: { id: currentItem.id, title: currentItem.title, oldOrder: currentItem.stageOrder },
-    prevItem: { id: prevItem.id, title: prevItem.title, oldOrder: prevItem.stageOrder },
-    newCurrentOrder,
-    newPrevOrder
-  })
+  const newCurrentOrder = (totalItems - index + 1) * 100
+  const newPrevOrder = (totalItems - index) * 100
   
   try {
-    // 依次更新，避免并发问题
     await updateProjectSchedulesOrder(currentItem.id, newCurrentOrder)
     await updateProjectSchedulesOrder(prevItem.id, newPrevOrder)
     proxy.$modal.msgSuccess("排序已更新")
-    loadProjectSchedules() // 重新加载数据
+    loadProjectSchedules()
   } catch (error) {
     console.error('更新排序失败:', error)
     proxy.$modal.msgError("更新排序失败")
@@ -597,24 +658,15 @@ async function handleMoveDown(index) {
   const currentItem = timelineItems.value[index]
   const nextItem = timelineItems.value[index + 1]
   
-  // 简单交换：当前项获得下一项的位置排序值，下一项获得当前项的位置排序值+1
   const totalItems = timelineItems.value.length
-  const newCurrentOrder = (totalItems - index - 1) * 100  // 下移后位置更靠后，值更小
-  const newNextOrder = (totalItems - index) * 100         // 上移后位置更靠前，值更大
-  
-  console.log('下移操作:', {
-    currentItem: { id: currentItem.id, title: currentItem.title, oldOrder: currentItem.stageOrder },
-    nextItem: { id: nextItem.id, title: nextItem.title, oldOrder: nextItem.stageOrder },
-    newCurrentOrder,
-    newNextOrder
-  })
+  const newCurrentOrder = (totalItems - index - 1) * 100
+  const newNextOrder = (totalItems - index) * 100
   
   try {
-    // 依次更新，避免并发问题
     await updateProjectSchedulesOrder(currentItem.id, newCurrentOrder)
     await updateProjectSchedulesOrder(nextItem.id, newNextOrder)
     proxy.$modal.msgSuccess("排序已更新")
-    loadProjectSchedules() // 重新加载数据
+    loadProjectSchedules()
   } catch (error) {
     console.error('更新排序失败:', error)
     proxy.$modal.msgError("更新排序失败")
@@ -624,14 +676,12 @@ async function handleMoveDown(index) {
 /** 保存时间轴条目 */
 function handleSaveTimelineItems() {
   if (timelineItems.value.length === 0) {
-    proxy.$modal.msgWarning("请至少添加一个施工阶段")
+    proxy.$modal.msgWarning("请至少添加一个阶段")
     return
   }
 
-  // 计算项目总进度（基于完成的阶段）
   const totalProgress = calculateTimelinePercentage(completedCount.value, timelineItems.value.length)
 
-  // 构建更新数据
   const updateData = {
     id: props.project.id,
     name: props.project.name,
@@ -639,7 +689,6 @@ function handleSaveTimelineItems() {
     timeline: timelineItems.value
   }
 
-  // 触发保存事件，通知父组件
   emit('save', updateData)
 }
 

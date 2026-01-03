@@ -152,11 +152,12 @@
         </el-form-item>
         <el-form-item label="质检类型" prop="inspectionType" required>
           <el-select v-model="issueForm.inspectionType" placeholder="请选择质检类型" style="width: 100%;">
-            <el-option label="水电工程" value="水电工程" />
-            <el-option label="泥瓦工程" value="泥瓦工程" />
-            <el-option label="木工工程" value="木工工程" />
-            <el-option label="油漆工程" value="油漆工程" />
-            <el-option label="其他" value="其他" />
+            <el-option
+              v-for="dict in decoration_construction_stage"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="问题分类" prop="category" required>
@@ -280,7 +281,7 @@ import QualityIssuesPanel from './components/QualityIssuesPanel.vue'
 import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
-const { decoration_project_status, decoration_issue_severity } = proxy.useDict('decoration_project_status', 'decoration_issue_severity')
+const { decoration_project_status, decoration_issue_severity, decoration_construction_stage } = proxy.useDict('decoration_project_status', 'decoration_issue_severity', 'decoration_construction_stage')
 
 // 用户存储
 const userStore = useUserStore()
@@ -617,7 +618,7 @@ function handleReportIssue() {
     title: '',
     description: '',
     inspectionType: '',
-    category: 'GENERAL',
+    category: '',
     location: '',
     dueDate: defaultDueDateStr,
     images: [],

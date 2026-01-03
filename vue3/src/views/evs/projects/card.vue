@@ -242,7 +242,7 @@
       <template #header>
         <div style="display: flex; align-items: center; gap: 8px;">
           <el-icon style="color: #1677ff; font-size: 16px;"><Clock /></el-icon>
-          <span>{{ currentProgressProject.name }} - 施工进度管理</span>
+          <span>{{ currentProgressProject.name }} - 进度管理</span>
         </div>
       </template>
       <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 20px;">

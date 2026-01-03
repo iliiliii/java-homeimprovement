@@ -116,6 +116,24 @@
                       type="primary"
                       link
                       size="small"
+                      :icon="Top"
+                      :disabled="getRoomIndex(room.id) === 0"
+                      @click="handleMoveUp(getRoomIndex(room.id))"
+                      title="上移"
+                    />
+                    <el-button
+                      type="primary"
+                      link
+                      size="small"
+                      :icon="Bottom"
+                      :disabled="getRoomIndex(room.id) === filteredRooms.length - 1"
+                      @click="handleMoveDown(getRoomIndex(room.id))"
+                      title="下移"
+                    />
+                    <el-button
+                      type="primary"
+                      link
+                      size="small"
                       @click="handleEditRoom(room)"
                       :icon="Edit"
                     >
@@ -297,8 +315,8 @@
 </template>
 
 <script setup>
-import { Picture, Plus, Delete, Edit, Folder, InfoFilled, House, Refresh, Search } from '@element-plus/icons-vue'
-import { listProjectRooms, addProjectRooms, updateProjectRooms, delProjectRooms } from '@/api/evs/projectRooms'
+import { Picture, Plus, Delete, Edit, Folder, InfoFilled, House, Refresh, Search, Top, Bottom } from '@element-plus/icons-vue'
+import { listProjectRooms, addProjectRooms, updateProjectRooms, delProjectRooms, updateProjectRoomsOrder } from '@/api/evs/projectRooms'
 import useUserStore from '@/store/modules/user'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
 import { onUnmounted, nextTick } from 'vue'
@@ -477,6 +495,58 @@ function getRoomTypeText(roomType) {
 
   const typeItem = decoration_room_type.value.find(item => item.value === roomType)
   return typeItem ? typeItem.label : roomType
+}
+
+// 获取房间在过滤列表中的索引
+function getRoomIndex(roomId) {
+  return filteredRooms.value.findIndex(r => r.id === roomId)
+}
+
+/** 上移房间 */
+async function handleMoveUp(index) {
+  if (index <= 0) return
+  
+  const currentRoom = filteredRooms.value[index]
+  const prevRoom = filteredRooms.value[index - 1]
+  
+  // 交换排序值
+  const totalRooms = filteredRooms.value.length
+  const newCurrentOrder = (index - 1) * 100  // 上移后位置更靠前，值更小
+  const newPrevOrder = index * 100           // 下移后位置更靠后，值更大
+  
+  try {
+    // 依次更新，避免并发问题
+    await updateProjectRoomsOrder(currentRoom.id, newCurrentOrder)
+    await updateProjectRoomsOrder(prevRoom.id, newPrevOrder)
+    proxy.$modal.msgSuccess("排序已更新")
+    loadRooms() // 重新加载数据
+  } catch (error) {
+    console.error('更新排序失败:', error)
+    proxy.$modal.msgError("更新排序失败")
+  }
+}
+
+/** 下移房间 */
+async function handleMoveDown(index) {
+  if (index >= filteredRooms.value.length - 1) return
+  
+  const currentRoom = filteredRooms.value[index]
+  const nextRoom = filteredRooms.value[index + 1]
+  
+  // 交换排序值
+  const newCurrentOrder = (index + 1) * 100  // 下移后位置更靠后，值更大
+  const newNextOrder = index * 100           // 上移后位置更靠前，值更小
+  
+  try {
+    // 依次更新，避免并发问题
+    await updateProjectRoomsOrder(currentRoom.id, newCurrentOrder)
+    await updateProjectRoomsOrder(nextRoom.id, newNextOrder)
+    proxy.$modal.msgSuccess("排序已更新")
+    loadRooms() // 重新加载数据
+  } catch (error) {
+    console.error('更新排序失败:', error)
+    proxy.$modal.msgError("更新排序失败")
+  }
 }
 
 // 设置房间上传组件引用
@@ -1081,7 +1151,7 @@ async function loadRooms() {
       if (currentRequestController?.signal.aborted) {
         throw new Error('请求已取消')
       }
-      return listProjectRooms({ projectId })
+      return listProjectRooms({ projectId, pageSize: 100 })
     })
 
     // 检查请求是否被取消
@@ -1427,16 +1497,6 @@ watch(() => props.modelValue, (val) => {
       display: flex;
       align-items: center;
       gap: 4px;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-
-      &:hover {
-        opacity: 1;
-      }
-    }
-
-    &:hover .title-right {
-      opacity: 1;
     }
   }
 

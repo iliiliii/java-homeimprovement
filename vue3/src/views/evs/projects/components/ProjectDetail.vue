@@ -100,7 +100,7 @@
           </el-descriptions>
         </el-card>
 
-        <!-- 项目进度 -->
+        <!-- 项目进度
         <el-card size="small" shadow="never" v-if="currentProject.progress !== undefined" style="width: 100%; padding: 8px;" v-loading="loadingProgress" element-loading-text="正在加载进度数据...">
           <template #header>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -109,7 +109,6 @@
             </div>
           </template>
 
-          <!-- 进度统计卡片 -->
           <el-row :gutter="16" style="margin-bottom: 16px;">
             <el-col :span="6">
               <el-card size="small" shadow="never" style="text-align: center; background: #f0f5ff; height: 100%;">
@@ -151,7 +150,6 @@
             </el-col>
           </el-row>
 
-          <!-- 施工进度时间轴 -->
           <div v-if="currentProject.timeline && currentProject.timeline.length > 0">
             <div style="margin-bottom: 12px;">
               <span style="font-weight: 600; font-size: 14px; color: #666;">施工进度时间轴</span>
@@ -182,6 +180,7 @@
             暂无施工进度详情，请点击"管理进度"添加施工阶段
           </div>
         </el-card>
+         -->
       </el-space>
     </div>
 

@@ -11,54 +11,6 @@
       </el-button>
     </div>
 
-    <!-- 角色统计卡片
-    <el-row :gutter="20" class="role-stats">
-      <el-col :span="6">
-        <div class="stat-card stat-card-blue">
-          <div class="stat-icon">
-            <el-icon :size="32"><User /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">设计师</div>
-            <div class="stat-value">{{ roleStats.designer }}</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card stat-card-green">
-          <div class="stat-icon">
-            <el-icon :size="32"><User /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">项目经理</div>
-            <div class="stat-value">{{ roleStats.manager }}</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card stat-card-orange">
-          <div class="stat-icon">
-            <el-icon :size="32"><User /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">工长</div>
-            <div class="stat-value">{{ roleStats.foreman }}</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card stat-card-purple">
-          <div class="stat-icon">
-            <el-icon :size="32"><User /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">监理</div>
-            <div class="stat-value">{{ roleStats.supervisor }}</div>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
- -->
     <!-- 筛选表单区域 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" class="search-form">
       <el-form-item label="用户名称" prop="userName">
@@ -81,7 +33,7 @@
             <el-avatar v-if="row.avatar" :size="40" :src="getAvatarUrl(row.avatar)">
               {{ getAvatarText(row.nickName || row.userName) }}
             </el-avatar>
-            <el-avatar v-else :size="40" :style="{ backgroundColor: getRoleColor(row) }">
+            <el-avatar v-else :size="40" :style="{ backgroundColor: '#909399' }">
               {{ getAvatarText(row.nickName || row.userName) }}
             </el-avatar>
           </template>
@@ -91,18 +43,35 @@
             {{ row.userName }}（{{ row.nickName }}）
           </template>
         </el-table-column>
-        <el-table-column label="部门" align="center" min-width="100">
+        <el-table-column label="手机号码" align="center" min-width="120">
           <template #default="{ row }">
-            {{ row.dept?.deptName || '-' }}
+            <el-icon style="margin-right: 5px"><Phone /></el-icon>
+            {{ row.phonenumber || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="参与项目" align="center">
+        <el-table-column label="岗位" align="center" min-width="120">
+          <template #default="{ row }">
+            <template v-if="userPostNamesMap[row.userId]">
+              <el-tag 
+                v-for="(postName, idx) in userPostNamesMap[row.userId]" 
+                :key="idx"
+                :type="getPostTagType(idx)"
+                size="small"
+                style="margin: 2px;"
+              >
+                {{ postName }}
+              </el-tag>
+            </template>
+            <span v-else style="color: #909399;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="参与项目" align="center" min-width="100">
           <template #default="{ row }">
             <el-icon style="margin-right: 5px"><Folder /></el-icon>
             {{ getProjectCount(row.userId) }}个项目
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" class-name="small-padding fixed-width"  min-width="100">
+        <el-table-column label="操作" align="center" class-name="small-padding fixed-width" min-width="180">
           <template #default="scope">
             <el-tooltip content="修改" placement="top">
               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">
@@ -229,7 +198,9 @@
 
 <script setup name="UserCard">
 import { listUser, delUser, getUser, updateUser, addUser, deptTreeSelect, resetUserPwd } from "@/api/system/user"
+import { listPost } from "@/api/system/post"
 import { listProjectMembers } from "@/api/evs/projectMembers"
+import { getAllUserPost } from "@/api/evs/userPost"
 import { User, Phone, Folder, Key } from "@element-plus/icons-vue"
 import AvatarUpload from '@/components/AvatarUpload/index.vue'
 
@@ -247,67 +218,12 @@ const enabledDeptOptions = ref(undefined)
 const initPassword = ref(undefined)
 const postOptions = ref([])
 const roleOptions = ref([])
-const projectCountMap = ref({}) // 存储每个用户参与的项目数量
+const projectCountMap = ref({})      // 存储每个用户参与的项目数量
+const userPostNamesMap = ref({})     // 存储每个用户的岗位名称列表
+const allPostsMap = ref({})          // 岗位ID -> 岗位信息 的映射
 
-// 角色统计
-const roleStats = computed(() => {
-  const stats = {
-    designer: 0,
-    manager: 0,
-    foreman: 0,
-    supervisor: 0
-  }
-
-  userList.value.forEach(user => {
-    const roleInfo = getUserPost(user)
-    if (roleInfo === 'designer') {
-      stats.designer++
-    } else if (roleInfo === 'manager') {
-      stats.manager++
-    } else if (roleInfo === 'foreman') {
-      stats.foreman++
-    } else if (roleInfo === 'supervisor') {
-      stats.supervisor++
-    }
-  })
-
-  return stats
-})
-
-/** 获取用户的主要岗位 */
-function getUserPost(user) {
-  // 优先从 posts 数组中获取
-  if (user.posts && user.posts.length > 0) {
-    for (const post of user.posts) {
-      const postKey = (post.postKey || '').toLowerCase()
-      const postName = (post.postName || '').toLowerCase()
-
-      if (postKey.includes('designer') || postName.includes('设计师')) {
-        return 'designer'
-      } else if (postKey.includes('manager') || postKey.includes('pm') || postName.includes('经理') || postName.includes('项目经理')) {
-        return 'manager'
-      } else if (postKey.includes('foreman') || postKey.includes('worker') || postName.includes('工长')) {
-        return 'foreman'
-      } else if (postKey.includes('supervisor') || postName.includes('监理')) {
-        return 'supervisor'
-      }
-    }
-  }
-
-  // 如果没有 posts，尝试从 roleKey 字段获取
-  const roleKey = (user.roleKey || '').toLowerCase()
-  if (roleKey.includes('designer') || roleKey.includes('设计师')) {
-    return 'designer'
-  } else if (roleKey.includes('manager') || roleKey.includes('pm') || roleKey.includes('经理')) {
-    return 'manager'
-  } else if (roleKey.includes('foreman') || roleKey.includes('worker') || roleKey.includes('工长')) {
-    return 'foreman'
-  } else if (roleKey.includes('supervisor') || roleKey.includes('监理')) {
-    return 'supervisor'
-  }
-
-  return null
-}
+// 标签类型循环
+const tagTypes = ['primary', 'success', 'warning', 'danger', 'info']
 
 const data = reactive({
   form: {},
@@ -369,6 +285,8 @@ function getList() {
 
     // 获取每个用户参与的项目数量
     getUserProjectCounts()
+    // 获取每个用户的岗位名称
+    getUserPostNames()
   })
 }
 
@@ -384,18 +302,68 @@ function resetQuery() {
   handleQuery()
 }
 
+/** 加载岗位列表 */
+async function loadAllPosts() {
+  try {
+    const response = await listPost({ status: '0' })
+    const posts = response.rows || []
+    const postsMap = {}
+    posts.forEach(post => {
+      postsMap[post.postId] = post
+    })
+    allPostsMap.value = postsMap
+  } catch (error) {
+    console.error('加载岗位列表失败:', error)
+  }
+}
+
+/** 获取用户的岗位名称 */
+async function getUserPostNames() {
+  try {
+    const response = await getAllUserPost()
+    const userPostList = response.data || []
+    
+    // 构建用户ID -> 岗位名称列表 的映射
+    const namesMap = {}
+    userPostList.forEach(item => {
+      const userId = item.userId
+      const postId = item.postId
+      const post = allPostsMap.value[postId]
+      
+      if (post) {
+        if (!namesMap[userId]) {
+          namesMap[userId] = []
+        }
+        if (!namesMap[userId].includes(post.postName)) {
+          namesMap[userId].push(post.postName)
+        }
+      }
+    })
+    
+    userPostNamesMap.value = namesMap
+  } catch (error) {
+    console.error('获取用户岗位失败:', error)
+  }
+}
+
 /** 获取用户参与的项目数量 */
 async function getUserProjectCounts() {
   const userIds = userList.value.map(user => user.userId)
   if (userIds.length === 0) return
   
   try {
-    // 查询所有项目成员，统计每个用户参与的项目数
-    const response = await listProjectMembers({ pageNum: 1, pageSize: 10000 })
+    // 查询所有项目成员，统计每个用户参与的项目数（按项目ID去重）
+    const response = await listProjectMembers({ pageNum: 1, pageSize: 10000, isActive: 1 })
     if (response.rows) {
       const countMap = {}
       userIds.forEach(userId => {
-        countMap[userId] = response.rows.filter(member => member.userId === userId).length
+        // 获取该用户参与的所有项目ID，然后去重统计
+        const userProjects = response.rows.filter(member => 
+          String(member.userId) === String(userId)
+        )
+        // 按项目ID去重
+        const uniqueProjectIds = [...new Set(userProjects.map(m => m.projectId))]
+        countMap[userId] = uniqueProjectIds.length
       })
       projectCountMap.value = countMap
     }
@@ -413,40 +381,9 @@ function getProjectCount(userId) {
   return projectCountMap.value[userId] || 0
 }
 
-/** 获取岗位名称 */
-function getPostName(user) {
-  const roleInfo = getUserPost(user)
-  const roleMap = {
-    designer: '设计师',
-    manager: '项目经理',
-    foreman: '工长',
-    supervisor: '监理'
-  }
-  return roleMap[roleInfo] || '未分配'
-}
-
 /** 获取岗位标签类型 */
-function getPostTagType(user) {
-  const roleInfo = getUserPost(user)
-  const typeMap = {
-    designer: 'primary', // 蓝色
-    manager: 'success', // 绿色
-    foreman: 'warning', // 橙色
-    supervisor: 'danger' // 紫色/红色
-  }
-  return typeMap[roleInfo] || ''
-}
-
-/** 获取岗位颜色 */
-function getRoleColor(user) {
-  const roleInfo = getUserPost(user)
-  const colorMap = {
-    designer: '#409EFF', // 蓝色
-    manager: '#67C23A', // 绿色
-    foreman: '#E6A23C', // 橙色
-    supervisor: '#9C27B0' // 紫色
-  }
-  return colorMap[roleInfo] || '#909399'
+function getPostTagType(index) {
+  return tagTypes[index % tagTypes.length]
 }
 
 /** 获取头像完整URL */
@@ -598,8 +535,11 @@ function submitForm() {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   getDeptTree()
+  // 先加载岗位列表
+  await loadAllPosts()
+  // 再加载用户列表
   getList()
   proxy.getConfigKey("sys.user.initPassword").then(response => {
     initPassword.value = response.msg
@@ -636,89 +576,6 @@ onMounted(() => {
   }
 }
 
-.role-stats {
-  margin-bottom: 12px;
-
-  .stat-card {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s;
-    
-    &:hover {
-      transform: translateY(-2px);
-    }
-    
-    .stat-icon {
-      width: 60px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      margin-right: 16px;
-    }
-    
-    .stat-content {
-      flex: 1;
-      
-      .stat-label {
-        font-size: 14px;
-        color: #909399;
-        margin-bottom: 8px;
-      }
-      
-      .stat-value {
-        font-size: 28px;
-        font-weight: 600;
-      }
-    }
-    
-    &.stat-card-blue {
-      .stat-icon {
-        background-color: #ecf5ff;
-        color: #409EFF;
-      }
-      .stat-value {
-        color: #409EFF;
-      }
-    }
-    
-    &.stat-card-green {
-      .stat-icon {
-        background-color: #f0f9ff;
-        color: #67C23A;
-      }
-      .stat-value {
-        color: #67C23A;
-      }
-    }
-    
-    &.stat-card-orange {
-      .stat-icon {
-        background-color: #fdf6ec;
-        color: #E6A23C;
-      }
-      .stat-value {
-        color: #E6A23C;
-      }
-    }
-    
-    &.stat-card-purple {
-      .stat-icon {
-        background-color: #f4f1f8;
-        color: #9C27B0;
-      }
-      .stat-value {
-        color: #9C27B0;
-      }
-    }
-  }
-}
-
 .search-form {
   display: flex;
   justify-content: start;
@@ -742,8 +599,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex: 1;  // 自动占据剩余空间
-  min-height: 200px;  // 最小高度保障
+  flex: 1;
+  min-height: 200px;
 
   :deep(.el-card__body) {
     padding: 20px;
@@ -778,4 +635,3 @@ onMounted(() => {
   }
 }
 </style>
-

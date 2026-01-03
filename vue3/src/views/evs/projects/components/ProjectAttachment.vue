@@ -2,9 +2,15 @@
   <div class="project-attachment-container">
     <el-space direction="vertical" :size="20" :fill="true" style="width: 100%;">
       <!-- 合同统计显示 -->
-      <div style="background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 8px; padding: 16px; text-align: center;">
-        <div style="font-size: 14px; color: #999; margin-bottom: 8px;">合同总数</div>
-        <div style="font-size: 32px; color: #1890ff; font-weight: bold;">{{ attachmentItems.length }}</div>
+      <div style="display: flex; gap: 16px;">
+        <div style="flex: 1; background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 8px; padding: 16px; text-align: center;">
+          <div style="font-size: 14px; color: #999; margin-bottom: 8px;">合同总数</div>
+          <div style="font-size: 32px; color: #1890ff; font-weight: bold;">{{ attachmentItems.length }}</div>
+        </div>
+        <div style="flex: 1; background: #fff7e6; border: 1px solid #ffd591; border-radius: 8px; padding: 16px; text-align: center;">
+          <div style="font-size: 14px; color: #999; margin-bottom: 8px;">金额汇总</div>
+          <div style="font-size: 28px; color: #fa8c16; font-weight: bold;">¥{{ formatTotalAmount(totalContractAmount) }}</div>
+        </div>
       </div>
 
       <!-- 合同列表表格 -->
@@ -179,6 +185,17 @@ const allCategoriesUsed = computed(() => {
   )
 })
 
+// 计算合同金额汇总
+const totalContractAmount = computed(() => {
+  return attachmentItems.value.reduce((sum, item) => {
+    if (!item.contents) return sum
+    // 提取数字部分
+    const numStr = String(item.contents).replace(/[^\d.-]/g, '')
+    const num = parseFloat(numStr)
+    return sum + (isNaN(num) ? 0 : num)
+  }, 0)
+})
+
 // 格式化金额（千分位）
 function formatAmount(value) {
   if (!value) return '-'
@@ -188,6 +205,12 @@ function formatAmount(value) {
   if (isNaN(num)) return value
   // 格式化为千分位
   return num.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}
+
+// 格式化汇总金额
+function formatTotalAmount(value) {
+  if (!value || value === 0) return '0'
+  return value.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 
 // 获取分类标签
@@ -349,6 +372,7 @@ async function handleDeleteItem(itemId) {
 // 暴露方法给父组件
 defineExpose({
   attachmentItems,
+  totalContractAmount,
   loadAttachmentItems,
   resetForm,
   handleStartAdd

@@ -71,9 +71,9 @@
       -->
       </div>
 
-      <!-- 滚动区域：施工进度时间轴 -->
+      <!-- 滚动区域：进度时间轴 -->
       <div class="timeline-section timeline-scrollable">
-        <div class="timeline-title">施工进度时间轴</div>
+        <div class="timeline-title">项目进度时间轴</div>
         <div v-loading="loading" class="timeline-content">
           <el-timeline v-if="scheduleItems.length > 0">
             <el-timeline-item
@@ -85,9 +85,18 @@
             >
               <div class="timeline-item-content">
                 <div class="timeline-item-header">
-                  <span class="timeline-item-title">
-                    {{ getScheduleStageName(item.stage) }}
-                  </span>
+                  <div class="timeline-item-title-section">
+                    <el-tag 
+                      :type="item.stageType === 'DESIGN' ? 'warning' : 'primary'" 
+                      size="small"
+                      class="stage-type-tag"
+                    >
+                      {{ item.stageType === 'DESIGN' ? '设计' : '施工' }}
+                    </el-tag>
+                    <span class="timeline-item-title">
+                      {{ getScheduleStageName(item.stage, item.stageType) }}
+                    </span>
+                  </div>
                   <el-tag :type="getTimelineTagType(item.status)" size="small">
                     {{ getTimelineStatusLabel(item.status) }}
                   </el-tag>
@@ -141,7 +150,7 @@
               </div>
             </el-timeline-item>
           </el-timeline>
-          <el-empty v-else description="暂无施工进度" :image-size="100" />
+          <el-empty v-else description="暂无项目进度" :image-size="100" />
         </div>
       </div>
     </el-card>
@@ -170,7 +179,7 @@ import { getCurrentInstance } from "vue"
 import AcceptanceRecordsDrawer from "./AcceptanceRecordsDrawer.vue"
 
 const { proxy } = getCurrentInstance()
-const { decoration_project_status, decoration_construction_stage } = proxy.useDict('decoration_project_status', 'decoration_construction_stage')
+const { decoration_project_status, decoration_construction_stage, decoration_design_stage } = proxy.useDict('decoration_project_status', 'decoration_construction_stage', 'decoration_design_stage')
 
 const props = defineProps({
   project: {
@@ -267,8 +276,10 @@ function getTimelineStatusLabel(status) {
   return labelMap[status] || '待开始'
 }
 
-function getScheduleStageName(stage) {
-  const stageDict = decoration_construction_stage.value.find(dict => dict.value === stage)
+function getScheduleStageName(stage, stageType) {
+  // 根据阶段类型选择对应的字典
+  const dictData = stageType === 'DESIGN' ? decoration_design_stage.value : decoration_construction_stage.value
+  const stageDict = dictData.find(dict => dict.value === stage)
   return stageDict?.label || stage
 }
 
@@ -846,10 +857,20 @@ defineExpose({
         align-items: center;
         margin-bottom: 8px;
 
-        .timeline-item-title {
-          font-size: 15px;
-          font-weight: 600;
-          color: #303133;
+        .timeline-item-title-section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .stage-type-tag {
+            flex-shrink: 0;
+          }
+
+          .timeline-item-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #303133;
+          }
         }
       }
 
