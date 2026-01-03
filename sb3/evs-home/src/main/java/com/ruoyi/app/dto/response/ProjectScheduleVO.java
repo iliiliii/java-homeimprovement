@@ -15,6 +15,9 @@ public class ProjectScheduleVO {
     /** 项目ID */
     private String projectId;
 
+    /** 阶段类型：DESIGN-设计阶段, CONSTRUCTION-施工阶段 */
+    private String stageType;
+
     /** 施工阶段代码 */
     private String stage;
 
@@ -69,6 +72,14 @@ public class ProjectScheduleVO {
 
     public void setProjectId(String projectId) {
         this.projectId = projectId;
+    }
+
+    public String getStageType() {
+        return stageType;
+    }
+
+    public void setStageType(String stageType) {
+        this.stageType = stageType;
     }
 
     public String getStage() {

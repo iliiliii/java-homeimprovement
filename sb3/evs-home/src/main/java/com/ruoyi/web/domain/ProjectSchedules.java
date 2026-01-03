@@ -25,6 +25,10 @@ public class ProjectSchedules extends BaseEntity
     @Excel(name = "项目ID")
     private String projectId;
 
+    /** 阶段类型（DESIGN:设计阶段、CONSTRUCTION:施工阶段） */
+    @Excel(name = "阶段类型", readConverterExp = "DESIGN=设计阶段,CONSTRUCTION=施工阶段")
+    private String stageType;
+
     /** 施工阶段（DISMANTLING:拆除、WATER_ELECTRIC:水电、TILES:泥瓦、WOODWORK:木工、PAINTING:油漆、INSTALLATION:安装、SOFT_FURNISHING:软装、ACCEPTANCE:验收） */
     @Excel(name = "施工阶段", readConverterExp = "D=ISMANTLING:拆除、WATER_ELECTRIC:水电、TILES:泥瓦、WOODWORK:木工、PAINTING:油漆、INSTALLATION:安装、SOFT_FURNISHING:软装、ACCEPTANCE:验收")
     private String stage;
@@ -105,6 +109,16 @@ public class ProjectSchedules extends BaseEntity
     public String getStage() 
     {
         return stage;
+    }
+
+    public void setStageType(String stageType) 
+    {
+        this.stageType = stageType;
+    }
+
+    public String getStageType() 
+    {
+        return stageType;
     }
 
     public void setStageOrder(Long stageOrder) 
@@ -262,6 +276,7 @@ public class ProjectSchedules extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("id", getId())
             .append("projectId", getProjectId())
+            .append("stageType", getStageType())
             .append("stage", getStage())
             .append("stageOrder", getStageOrder())
             .append("planStartDate", getPlanStartDate())
