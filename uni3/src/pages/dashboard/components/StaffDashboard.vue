@@ -118,10 +118,11 @@
             -->
           </view>
           
-          <!-- 问题提示 -->
+          <!-- 问题提示
           <view class="issue-badge" v-if="project.pendingIssueCount > 0">
             <text>{{ project.pendingIssueCount }}个待处理</text>
           </view>
+           -->
         </view>
       </view>
       

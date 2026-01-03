@@ -1,5 +1,5 @@
 <template>
-  <view class="schedule-record" @click="handleClick">
+  <view class="schedule-record">
     <!-- 记录头部 -->
     <view class="record-header">
       <view class="record-title-section">
@@ -45,8 +45,18 @@
         mode="aspectFill"
         @click.stop="previewImage(record.images, index)"
       />
-      <view v-if="record.images.length > 3" class="image-more">
+      <view @click.stop="previewImage(record.images, index)" v-if="record.images.length > 3" class="image-more">
         +{{ record.images.length - 3 }}
+      </view>
+    </view>
+    
+    <!-- 员工操作按钮 -->
+    <view v-if="isStaff && isOwnRecord" class="record-actions" @click.stop>
+      <view class="action-btn edit-btn" @click="handleEdit">
+        <text>编辑</text>
+      </view>
+      <view class="action-btn delete-btn" @click="handleDelete">
+        <text>删除</text>
       </view>
     </view>
   </view>
@@ -55,6 +65,7 @@
 <script setup>
 import { computed } from 'vue'
 import { getFullImageUrl } from '@/utils/request'
+import { useUserStore } from '@/store/user.js'
 
 const props = defineProps({
   record: {
@@ -63,7 +74,19 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['click', 'preview-images'])
+const emit = defineEmits(['click', 'preview-images', 'edit', 'delete'])
+
+const userStore = useUserStore()
+
+// 是否员工用户
+const isStaff = computed(() => userStore.isStaff)
+
+// 是否是自己创建的记录（通过createBy字段判断）
+const isOwnRecord = computed(() => {
+  // 如果没有createBy字段，默认允许操作（兼容旧数据）
+  if (!props.record.createBy) return true
+  return props.record.createBy === userStore.userId
+})
 
 // 显示的图片（最多3张）
 const displayImages = computed(() => {
@@ -73,6 +96,16 @@ const displayImages = computed(() => {
 // 处理点击事件
 const handleClick = () => {
   emit('click', props.record)
+}
+
+// 处理编辑
+const handleEdit = () => {
+  emit('edit', props.record)
+}
+
+// 处理删除
+const handleDelete = () => {
+  emit('delete', props.record)
 }
 
 // 预览图片 - 通过事件传递给父组件使用 ImageViewer
@@ -277,5 +310,35 @@ const getInspectionClass = (status) => {
   justify-content: center;
   font-size: 24rpx;
   color: $glass-text-muted;
+}
+
+// 员工操作按钮
+.record-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx solid $color-gray-100;
+}
+
+.action-btn {
+  padding: 8rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  
+  &.edit-btn {
+    background: rgba(173, 155, 75, 0.1);
+    text { color: $color-brand; }
+  }
+  
+  &.delete-btn {
+    background: rgba(220, 53, 69, 0.1);
+    text { color: #dc3545; }
+  }
+  
+  &:active {
+    opacity: 0.7;
+  }
 }
 </style>

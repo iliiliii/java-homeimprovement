@@ -2,7 +2,7 @@
   <view class="log-page">
     <!-- 统一头部 -->
     <PageHeader 
-      title="施工日志" 
+      title="项目日志" 
       :subtitle="currentProject?.name"
       :show-back="false" 
     />
@@ -17,10 +17,10 @@
     
     <!-- 空状态 -->
     <view v-else-if="schedules.length === 0" class="empty-container">
-      <text class="empty-text">暂无施工进度</text>
+      <text class="empty-text">暂无项目进度</text>
     </view>
     
-    <!-- 施工进度时间线 -->
+    <!-- 进度时间线 -->
     <view v-else class="timeline">
       <TimelineNode
         v-for="(schedule, index) in schedules"
@@ -30,6 +30,10 @@
         :is-latest="index === 0"
         @record-click="handleRecordClick"
         @preview-images="handlePreviewImages"
+        @acceptance="handleAcceptance"
+        @issue-report="handleIssueReport"
+        @edit-record="(record) => handleEditRecord(record, schedule)"
+        @delete-record="handleDeleteRecord"
       />
     </view>
     
@@ -46,6 +50,20 @@
       :start-index="viewerIndex"
       :show-thumbnail="true"
     />
+    
+    <!-- 验收上报对话框（仅员工可见） -->
+    <AcceptanceDialog
+      v-model:visible="acceptanceDialogVisible"
+      :schedule="currentSchedule"
+      :edit-record="editRecord"
+      @success="handleAcceptanceSuccess"
+    />
+    
+    <!-- 问题上报对话框（仅员工可见） -->
+    <IssueReportDialog
+      v-model:visible="issueDialogVisible"
+      @success="handleIssueSuccess"
+    />
   </view>
 </template>
 
@@ -55,10 +73,12 @@ import { onPullDownRefresh, onLoad } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
 import TimelineNode from './components/TimelineNode.vue'
+import AcceptanceDialog from './components/AcceptanceDialog.vue'
+import IssueReportDialog from './components/IssueReportDialog.vue'
 import { getStatusBarHeight } from '@/utils/system.js'
 import PageHeader from '@/components/PageHeader.vue'
 import { useUserStore } from '@/store/user.js'
-import { getProjectScheduleList, getProjectScheduleRecordDetail } from '@/api/projectSchedule'
+import { getProjectScheduleList, getProjectScheduleRecordDetail, deleteAcceptanceRecord } from '@/api/projectSchedule'
 
 const userStore = useUserStore()
 
@@ -84,6 +104,14 @@ const loading = ref(false)
 const viewerVisible = ref(false)
 const viewerIndex = ref(0)
 const viewerImages = ref([])
+
+// 验收对话框状态
+const acceptanceDialogVisible = ref(false)
+const currentSchedule = ref(null)
+const editRecord = ref(null) // 编辑模式下的记录
+
+// 问题上报对话框状态
+const issueDialogVisible = ref(false)
 
 // 施工进度列表
 const schedules = ref([])
@@ -184,6 +212,66 @@ const handlePreviewImages = ({ images, index }) => {
   viewerImages.value = images
   viewerIndex.value = index
   viewerVisible.value = true
+}
+
+// 处理验收上报
+const handleAcceptance = (schedule) => {
+  currentSchedule.value = schedule
+  editRecord.value = null // 新增模式
+  acceptanceDialogVisible.value = true
+}
+
+// 处理问题上报
+const handleIssueReport = (schedule) => {
+  currentSchedule.value = schedule
+  issueDialogVisible.value = true
+}
+
+// 处理编辑验收记录
+const handleEditRecord = (record, schedule) => {
+  currentSchedule.value = schedule
+  editRecord.value = record
+  acceptanceDialogVisible.value = true
+}
+
+// 处理删除验收记录
+const handleDeleteRecord = (record) => {
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这条验收记录吗？',
+    confirmColor: '#ff4d4f',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          uni.showLoading({ title: '删除中...', mask: true })
+          await deleteAcceptanceRecord(record.id)
+          uni.hideLoading()
+          uni.showToast({ title: '删除成功', icon: 'success' })
+          loadSchedules()
+        } catch (error) {
+          uni.hideLoading()
+          console.error('删除失败:', error)
+          uni.showToast({ title: error.message || '删除失败', icon: 'none' })
+        }
+      }
+    }
+  })
+}
+
+// 验收成功回调
+const handleAcceptanceSuccess = () => {
+  // 刷新数据
+  loadSchedules()
+}
+
+// 问题上报成功回调
+const handleIssueSuccess = () => {
+  // 刷新数据
+  loadSchedules()
+  uni.showToast({
+    title: '问题上报成功',
+    icon: 'success'
+  })
 }
 
 // 下拉刷新

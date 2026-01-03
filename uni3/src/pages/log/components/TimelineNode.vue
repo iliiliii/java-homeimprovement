@@ -20,7 +20,16 @@
     <view class="node-content">
       <!-- 节点头部 - 左侧标题，右侧状态 -->
       <view class="node-header">
-        <text class="node-title">{{ schedule.stageName }}</text>
+        <view class="node-left">
+          <!-- 阶段类型标签 -->
+          <text 
+            class="stage-type-tag" 
+            :class="schedule.stageType === 'DESIGN' ? 'type-design' : 'type-construction'"
+          >
+            {{ schedule.stageType === 'DESIGN' ? '设计' : '施工' }}
+          </text>
+          <text class="node-title">{{ schedule.stageName }}</text>
+        </view>
         <view class="node-right">
           <text class="status-text" :class="`status-${schedule.status.toLowerCase()}`">
             {{ schedule.statusText }}
@@ -30,6 +39,18 @@
             {{ schedule.recordCount }}条记录
           </text>
            -->
+        </view>
+      </view>
+      
+      <!-- 员工操作按钮 -->
+      <view v-if="isStaff && canAcceptance" class="node-actions">
+        <view class="action-btn" @click="handleAcceptance">
+          <text class="action-icon">📋</text>
+          <text class="action-text">验收上报</text>
+        </view>
+        <view class="action-btn issue-btn" @click="handleIssueReport">
+          <text class="action-icon">⚠️</text>
+          <text class="action-text">问题上报</text>
         </view>
       </view>
       
@@ -63,6 +84,8 @@
             :record="record"
             @click="handleRecordClick"
             @preview-images="handlePreviewImages"
+            @edit="handleEditRecord"
+            @delete="handleDeleteRecord"
           />
         </view>
         
@@ -79,6 +102,7 @@
 import { ref, computed, onMounted } from 'vue'
 import ScheduleRecord from './ScheduleRecord.vue'
 import { getProjectScheduleRecordList } from '@/api/projectSchedule'
+import { useUserStore } from '@/store/user.js'
 
 const props = defineProps({
   schedule: {
@@ -95,10 +119,20 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['recordClick', 'previewImages'])
+const emit = defineEmits(['recordClick', 'previewImages', 'acceptance', 'editRecord', 'deleteRecord', 'issueReport'])
 
+const userStore = useUserStore()
 const records = ref([])
 const loading = ref(false)
+
+// 是否员工用户
+const isStaff = computed(() => userStore.isStaff)
+
+// 是否可以验收（进行中或已完成的阶段可以验收）
+const canAcceptance = computed(() => {
+  const status = props.schedule.status?.toLowerCase()
+  return status === 'in_progress' || status === '1' || status === 'completed' || status === '2'
+})
 
 // 使用最新记录或空数组
 const initialRecords = computed(() => props.schedule.latestRecords || [])
@@ -106,6 +140,16 @@ const initialRecords = computed(() => props.schedule.latestRecords || [])
 // 切换展开状态（保留方法但不再使用）
 const toggleExpanded = async () => {
   // 默认展开，不需要切换
+}
+
+// 处理验收上报点击
+const handleAcceptance = () => {
+  emit('acceptance', props.schedule)
+}
+
+// 处理问题上报点击
+const handleIssueReport = () => {
+  emit('issueReport', props.schedule)
 }
 
 // 加载验收记录
@@ -153,6 +197,16 @@ const handleRecordClick = (record) => {
 // 处理图片预览
 const handlePreviewImages = (data) => {
   emit('previewImages', data)
+}
+
+// 处理编辑记录
+const handleEditRecord = (record) => {
+  emit('editRecord', record)
+}
+
+// 处理删除记录
+const handleDeleteRecord = (record) => {
+  emit('deleteRecord', record)
 }
 
 // 格式化日期
@@ -275,6 +329,29 @@ onMounted(() => {
   justify-content: space-between;
 }
 
+.node-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.stage-type-tag {
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-weight: 500;
+  
+  &.type-design {
+    background: rgba(250, 140, 22, 0.1);
+    color: #fa8c16;
+  }
+  
+  &.type-construction {
+    background: rgba(22, 119, 255, 0.1);
+    color: #1677ff;
+  }
+}
+
 .node-right {
   display: flex;
   align-items: center;
@@ -374,6 +451,46 @@ onMounted(() => {
   
   &:active {
     opacity: 0.7;
+  }
+}
+
+// 员工操作按钮
+.node-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid $color-gray-100;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 24rpx;
+  background: rgba(173, 155, 75, 0.1);
+  border-radius: 12rpx;
+  
+  &:active {
+    opacity: 0.7;
+  }
+  
+  .action-icon {
+    font-size: 28rpx;
+  }
+  
+  .action-text {
+    font-size: 26rpx;
+    color: $color-brand;
+    font-weight: 500;
+  }
+  
+  &.issue-btn {
+    background: rgba(255, 77, 79, 0.1);
+    
+    .action-text {
+      color: #ff4d4f;
+    }
   }
 }
 </style>
