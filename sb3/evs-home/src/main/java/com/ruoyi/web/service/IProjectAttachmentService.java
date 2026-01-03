@@ -58,4 +58,11 @@ public interface IProjectAttachmentService
      * @return 结果
      */
     public int deleteProjectAttachmentById(String id);
+
+    /**
+     * 查询所有项目的合同总额
+     * 
+     * @return 合同总额
+     */
+    public Double selectTotalContractAmount();
 }

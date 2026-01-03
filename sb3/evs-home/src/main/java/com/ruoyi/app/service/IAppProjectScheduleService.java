@@ -1,5 +1,6 @@
 package com.ruoyi.app.service;
 
+import com.ruoyi.app.dto.request.AcceptanceRecordRequest;
 import com.ruoyi.app.dto.response.ProjectScheduleVO;
 import com.ruoyi.app.dto.response.ProjectScheduleRecordVO;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -37,4 +38,30 @@ public interface IAppProjectScheduleService {
      * @return 记录详情
      */
     ProjectScheduleRecordVO getProjectScheduleRecordDetail(String token, String recordId);
+
+    /**
+     * 新增验收记录（仅员工可用）
+     * @param token 认证Token
+     * @param projectId 项目ID
+     * @param request 验收记录请求
+     * @return 新增记录ID
+     */
+    String addAcceptanceRecord(String token, String projectId, AcceptanceRecordRequest request);
+
+    /**
+     * 编辑验收记录（仅员工可用，且只能编辑自己创建的记录）
+     * @param token 认证Token
+     * @param projectId 项目ID
+     * @param recordId 记录ID
+     * @param request 验收记录请求
+     */
+    void updateAcceptanceRecord(String token, String projectId, String recordId, AcceptanceRecordRequest request);
+
+    /**
+     * 删除验收记录（仅员工可用，且只能删除自己创建的记录）
+     * @param token 认证Token
+     * @param projectId 项目ID
+     * @param recordId 记录ID
+     */
+    void deleteAcceptanceRecord(String token, String projectId, String recordId);
 }

@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.app.mapper.AppProjectMapper;
 import com.ruoyi.web.mapper.ProjectMembersMapper;
 import com.ruoyi.web.mapper.ProjectsMapper;
 import com.ruoyi.web.domain.ProjectMembers;
 import com.ruoyi.web.domain.Projects;
+import com.ruoyi.web.dto.ProjectMembersBatchRequest;
 import com.ruoyi.web.service.IProjectMembersService;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -141,5 +143,43 @@ public class ProjectMembersServiceImpl implements IProjectMembersService
         List<Projects> projects = appProjectMapper.selectProjectsByIds(projectIds);
         
         return projects != null ? projects : new ArrayList<>();
+    }
+
+    /**
+     * 批量保存项目成员（先删除再新增）
+     * 
+     * @param projectId 项目ID
+     * @param members 成员列表
+     * @return 结果
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int batchSaveProjectMembers(String projectId, List<ProjectMembersBatchRequest.MemberItem> members) {
+        // 1. 删除该项目的所有现有成员
+        projectMembersMapper.deleteProjectMembersByProjectId(projectId);
+        
+        // 2. 批量插入新成员
+        if (members == null || members.isEmpty()) {
+            return 0;
+        }
+        
+        int count = 0;
+        String username = SecurityUtils.getUsername();
+        java.util.Date now = DateUtils.getNowDate();
+        
+        for (ProjectMembersBatchRequest.MemberItem item : members) {
+            ProjectMembers member = new ProjectMembers();
+            member.setId(IdUtils.fastSimpleUUID());
+            member.setProjectId(projectId);
+            member.setUserId(item.getUserId());
+            member.setRole(item.getRole());
+            member.setIsActive(1);
+            member.setCreatedAt(now);
+            member.setCreatedBy(username);
+            
+            count += projectMembersMapper.insertProjectMembers(member);
+        }
+        
+        return count;
     }
 }

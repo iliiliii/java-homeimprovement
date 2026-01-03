@@ -66,4 +66,13 @@ public interface IProjectMembersService
      * @return 项目列表
      */
     public List<com.ruoyi.web.domain.Projects> selectProjectsByUserId(Long userId);
+
+    /**
+     * 批量保存项目成员（先删除再新增）
+     * 
+     * @param projectId 项目ID
+     * @param members 成员列表
+     * @return 结果
+     */
+    public int batchSaveProjectMembers(String projectId, List<com.ruoyi.web.dto.ProjectMembersBatchRequest.MemberItem> members);
 }

@@ -102,4 +102,16 @@ public class ProjectAttachmentServiceImpl implements IProjectAttachmentService
     {
         return projectAttachmentMapper.deleteProjectAttachmentById(id);
     }
+
+    /**
+     * 查询所有项目的合同总额
+     * 
+     * @return 合同总额
+     */
+    @Override
+    public Double selectTotalContractAmount()
+    {
+        Double total = projectAttachmentMapper.selectTotalContractAmount();
+        return total != null ? total : 0.0;
+    }
 }

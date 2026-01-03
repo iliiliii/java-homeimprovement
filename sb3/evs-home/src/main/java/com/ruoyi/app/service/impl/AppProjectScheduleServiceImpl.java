@@ -1,5 +1,6 @@
 package com.ruoyi.app.service.impl;
 
+import com.ruoyi.app.dto.request.AcceptanceRecordRequest;
 import com.ruoyi.app.dto.response.ProjectScheduleVO;
 import com.ruoyi.app.dto.response.ProjectScheduleRecordVO;
 import com.ruoyi.app.mapper.AppProjectScheduleMapper;
@@ -7,6 +8,7 @@ import com.ruoyi.app.mapper.AppProjectMapper;
 import com.ruoyi.app.mapper.AppDashboardMapper;
 import com.ruoyi.app.security.AppTokenManager;
 import com.ruoyi.app.service.IAppProjectScheduleService;
+import com.ruoyi.app.util.InputSanitizer;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -40,6 +43,7 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
 
     // 字典类型常量
     private static final String DICT_TYPE_CONSTRUCTION_STAGE = "decoration_construction_stage";
+    private static final String DICT_TYPE_DESIGN_STAGE = "decoration_design_stage";
     private static final String DICT_TYPE_STAGE_STATUS = "decoration_construction_stage_status";
     private static final String DICT_TYPE_RECORD_TYPE = "decoration_record_type";
 
@@ -71,8 +75,8 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
             
             // 为每个进度设置状态文本和阶段名称
             for (ProjectScheduleVO schedule : schedules) {
-                // 设置阶段名称文本（从字典表查询）
-                schedule.setStageName(getStageText(schedule.getStage()));
+                // 设置阶段名称文本（根据阶段类型从对应字典表查询）
+                schedule.setStageName(getStageText(schedule.getStage(), schedule.getStageType()));
                 
                 // 设置状态文本（从字典表查询）
                 schedule.setStatusText(getStatusText(schedule.getStatus()));
@@ -259,18 +263,37 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
     }
 
     /**
-     * 获取阶段显示文本（从字典表查询，带兜底）
+     * 获取阶段显示文本（根据阶段类型从对应字典表查询，带兜底）
      */
-    private String getStageText(String stage) {
+    private String getStageText(String stage, String stageType) {
         if (StringUtils.isEmpty(stage)) {
             return "";
         }
         
+        // 根据阶段类型选择字典
+        String dictType = "DESIGN".equals(stageType) ? DICT_TYPE_DESIGN_STAGE : DICT_TYPE_CONSTRUCTION_STAGE;
+        
         // 先尝试从字典表查询
-        String dictLabel = getDictLabel(DICT_TYPE_CONSTRUCTION_STAGE, stage);
+        String dictLabel = getDictLabel(dictType, stage);
         
         // 如果字典查询返回原值（说明没找到），使用硬编码兜底
         if (dictLabel.equals(stage)) {
+            // 设计阶段兜底
+            if ("DESIGN".equals(stageType)) {
+                switch (stage) {
+                    case "0":
+                        return "前案设计";
+                    case "1":
+                        return "平面图";
+                    case "2":
+                        return "效果图";
+                    case "3":
+                        return "施工图";
+                    default:
+                        return stage;
+                }
+            }
+            // 施工阶段兜底
             switch (stage) {
                 case "DISMANTLING":
                     return "拆除工程";
@@ -294,6 +317,13 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
         }
         
         return dictLabel;
+    }
+
+    /**
+     * 获取阶段显示文本（从字典表查询，带兜底）- 兼容旧方法
+     */
+    private String getStageText(String stage) {
+        return getStageText(stage, "CONSTRUCTION");
     }
 
     /**
@@ -370,6 +400,221 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
                 return "不合格";
             default:
                 return status;
+        }
+    }
+
+    @Override
+    public String addAcceptanceRecord(String token, String projectId, AcceptanceRecordRequest request) {
+        // 验证Token并检查是否为员工用户
+        Map<String, Object> claims = tokenManager.validateToken(extractToken(token));
+        String userType = (String) claims.get("userType");
+        String userId = claims.get("userId").toString();
+
+        // 仅员工可以新增验收记录
+        if (!"staff".equals(userType)) {
+            throw new ServiceException("仅员工可以新增验收记录", 403);
+        }
+
+        // 验证员工是否有权限访问该项目
+        boolean hasAccess = dashboardMapper.checkStaffProjectAccess(userId, projectId);
+        if (!hasAccess) {
+            throw new ServiceException("无权访问该项目", 403);
+        }
+
+        try {
+            // 生成记录ID（格式：REC + 年月日 + 6位序列号）
+            String recordId = generateRecordId();
+
+            // 对文本字段进行安全清理
+            String sanitizedTitle = InputSanitizer.validateAndSanitizeText(request.getAcceptanceTitle(), "验收标题");
+            String sanitizedContent = InputSanitizer.validateAndSanitizeContent(request.getAcceptanceContent(), "验收内容");
+            String sanitizedAcceptor = InputSanitizer.validateAndSanitizeText(request.getAcceptor(), "验收人");
+            String sanitizedImages = InputSanitizer.sanitizeJson(request.getImages());
+            
+            // 验证图片JSON格式
+            if (StringUtils.isNotEmpty(sanitizedImages) && !InputSanitizer.isValidJsonArray(sanitizedImages)) {
+                throw new ServiceException("图片数据格式不正确");
+            }
+
+            // 解析验收时间
+            Date acceptanceTime = null;
+            if (StringUtils.isNotEmpty(request.getAcceptanceTime())) {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    acceptanceTime = sdf.parse(request.getAcceptanceTime());
+                } catch (Exception e) {
+                    log.warn("解析验收时间失败: {}", request.getAcceptanceTime());
+                    acceptanceTime = new Date();
+                }
+            } else {
+                acceptanceTime = new Date();
+            }
+
+            // 插入验收记录
+            int rows = projectScheduleMapper.insertAcceptanceRecord(
+                    recordId,
+                    projectId,
+                    request.getScheduleId(),
+                    StringUtils.isNotEmpty(request.getRecordType()) ? request.getRecordType() : "ACCEPTANCE",
+                    sanitizedImages,
+                    sanitizedTitle,
+                    sanitizedContent,
+                    request.getAcceptanceResult(),
+                    acceptanceTime,
+                    sanitizedAcceptor,
+                    userId
+            );
+
+            if (rows <= 0) {
+                throw new ServiceException("新增验收记录失败");
+            }
+
+            log.info("验收记录新增成功 - recordId: {}, projectId: {}, scheduleId: {}, userId: {}",
+                    recordId, projectId, request.getScheduleId(), userId);
+
+            return recordId;
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("新增验收记录异常", e);
+            throw new ServiceException("新增验收记录失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 生成记录ID（格式：REC + 年月日 + 6位序列号）
+     */
+    private String generateRecordId() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String dateStr = sdf.format(new Date());
+        // 生成6位随机序列号
+        int seq = (int) (Math.random() * 900000) + 100000;
+        return "REC" + dateStr + seq;
+    }
+
+    @Override
+    public void updateAcceptanceRecord(String token, String projectId, String recordId, AcceptanceRecordRequest request) {
+        // 验证Token并检查是否为员工用户
+        Map<String, Object> claims = tokenManager.validateToken(extractToken(token));
+        String userType = (String) claims.get("userType");
+        String userId = claims.get("userId").toString();
+
+        // 仅员工可以编辑验收记录
+        if (!"staff".equals(userType)) {
+            throw new ServiceException("仅员工可以编辑验收记录", 403);
+        }
+
+        // 查询记录是否存在
+        ProjectScheduleRecordVO existingRecord = projectScheduleMapper.selectProjectScheduleRecordById(recordId);
+        if (existingRecord == null) {
+            throw new ServiceException("验收记录不存在", 404);
+        }
+
+        // 验证是否为记录创建者
+        String createBy = projectScheduleMapper.selectRecordCreateBy(recordId);
+        if (!userId.equals(createBy)) {
+            throw new ServiceException("只能编辑自己创建的记录", 403);
+        }
+
+        // 验证员工是否有权限访问该项目
+        boolean hasAccess = dashboardMapper.checkStaffProjectAccess(userId, projectId);
+        if (!hasAccess) {
+            throw new ServiceException("无权访问该项目", 403);
+        }
+
+        try {
+            // 对文本字段进行安全清理
+            String sanitizedTitle = InputSanitizer.validateAndSanitizeText(request.getAcceptanceTitle(), "验收标题");
+            String sanitizedContent = InputSanitizer.validateAndSanitizeContent(request.getAcceptanceContent(), "验收内容");
+            String sanitizedAcceptor = InputSanitizer.validateAndSanitizeText(request.getAcceptor(), "验收人");
+            String sanitizedImages = InputSanitizer.sanitizeJson(request.getImages());
+            
+            // 验证图片JSON格式
+            if (StringUtils.isNotEmpty(sanitizedImages) && !InputSanitizer.isValidJsonArray(sanitizedImages)) {
+                throw new ServiceException("图片数据格式不正确");
+            }
+
+            // 解析验收时间
+            Date acceptanceTime = null;
+            if (StringUtils.isNotEmpty(request.getAcceptanceTime())) {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    acceptanceTime = sdf.parse(request.getAcceptanceTime());
+                } catch (Exception e) {
+                    log.warn("解析验收时间失败: {}", request.getAcceptanceTime());
+                    acceptanceTime = new Date();
+                }
+            }
+
+            // 更新验收记录
+            int rows = projectScheduleMapper.updateAcceptanceRecord(
+                    recordId,
+                    sanitizedImages,
+                    sanitizedTitle,
+                    sanitizedContent,
+                    request.getAcceptanceResult(),
+                    acceptanceTime,
+                    sanitizedAcceptor,
+                    userId
+            );
+
+            if (rows <= 0) {
+                throw new ServiceException("编辑验收记录失败");
+            }
+
+            log.info("验收记录编辑成功 - recordId: {}, userId: {}", recordId, userId);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("编辑验收记录异常", e);
+            throw new ServiceException("编辑验收记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteAcceptanceRecord(String token, String projectId, String recordId) {
+        // 验证Token并检查是否为员工用户
+        Map<String, Object> claims = tokenManager.validateToken(extractToken(token));
+        String userType = (String) claims.get("userType");
+        String userId = claims.get("userId").toString();
+
+        // 仅员工可以删除验收记录
+        if (!"staff".equals(userType)) {
+            throw new ServiceException("仅员工可以删除验收记录", 403);
+        }
+
+        // 查询记录是否存在
+        ProjectScheduleRecordVO existingRecord = projectScheduleMapper.selectProjectScheduleRecordById(recordId);
+        if (existingRecord == null) {
+            throw new ServiceException("验收记录不存在", 404);
+        }
+
+        // 验证是否为记录创建者
+        String createBy = projectScheduleMapper.selectRecordCreateBy(recordId);
+        if (!userId.equals(createBy)) {
+            throw new ServiceException("只能删除自己创建的记录", 403);
+        }
+
+        // 验证员工是否有权限访问该项目
+        boolean hasAccess = dashboardMapper.checkStaffProjectAccess(userId, projectId);
+        if (!hasAccess) {
+            throw new ServiceException("无权访问该项目", 403);
+        }
+
+        try {
+            // 删除验收记录
+            int rows = projectScheduleMapper.deleteAcceptanceRecord(recordId);
+
+            if (rows <= 0) {
+                throw new ServiceException("删除验收记录失败");
+            }
+
+            log.info("验收记录删除成功 - recordId: {}, userId: {}", recordId, userId);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("删除验收记录异常", e);
+            throw new ServiceException("删除验收记录失败: " + e.getMessage());
         }
     }
 }
