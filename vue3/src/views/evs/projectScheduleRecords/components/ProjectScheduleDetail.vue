@@ -102,10 +102,6 @@
                   </el-tag>
                 </div>
                 <div class="timeline-item-description">{{ item.description || '暂无描述' }}</div>
-                <div class="timeline-item-date">
-                  <el-icon><Calendar /></el-icon>
-                  <span>{{ parseTime(item.plannedStartDate, '{y}-{m}-{d}') }}</span>
-                </div>
 
                 <!-- 验收记录展示 -->
                 <div class="acceptance-records-section">
@@ -144,7 +140,7 @@
                   <!-- 简化的统计信息 -->
                   <div v-if="getAcceptanceRecords(item.id).length > 0" class="acceptance-stats">
                     <el-icon class="acceptance-icon"><DocumentChecked /></el-icon>
-                    <span class="acceptance-text">最近验收：{{ parseTime(getLatestAcceptanceTime(item.id), '{m}-{d} {h}:{i}') }}</span>
+                    <span class="acceptance-text">最近验收：{{ parseTime(getLatestAcceptanceTime(item.id), '{y}-{m}-{d} {h}:{i}') }}</span>
                   </div>
                 </div>
               </div>

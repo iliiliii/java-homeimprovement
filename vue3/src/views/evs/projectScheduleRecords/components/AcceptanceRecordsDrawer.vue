@@ -36,7 +36,7 @@
         <div class="schedule-card">
           <!-- 头部：标题 + 状态标签 -->
           <div class="card-header">
-            <h3 class="card-title">{{ currentScheduleItem.taskName || '进度节点' }}</h3>
+            <h3 class="card-title">{{ getScheduleStageName(currentScheduleItem) }}</h3>
             <div class="card-tags">
               <el-tag :type="getScheduleStatusType(currentScheduleItem.status)" size="small">
                 {{ getScheduleStatusText(currentScheduleItem.status) }}
@@ -210,6 +210,9 @@ import { Check, Clock, DocumentChecked, Plus, Edit, Delete, Star } from '@elemen
 import { getCurrentInstance } from 'vue'
 import { useProjectAuth } from '@/utils/projectAuth'
 import AcceptanceReportDialog from './AcceptanceReportDialog.vue'
+
+const { proxy } = getCurrentInstance()
+const { decoration_construction_stage, decoration_design_stage } = proxy.useDict('decoration_construction_stage', 'decoration_design_stage')
 
 const props = defineProps({
   visible: {
@@ -413,6 +416,19 @@ function getSchedulePhaseText(phase) {
     'ACCEPTANCE': '验收阶段'
   }
   return textMap[phase] || '未分类'
+}
+
+// 获取进度节点名称（根据 stage 和 stageType 从字典获取）
+function getScheduleStageName(item) {
+  if (!item) return '进度节点'
+  
+  // 优先使用 taskName 字段
+  if (item.taskName) return item.taskName
+  
+  // 根据阶段类型选择对应的字典
+  const dictData = item.stageType === 'DESIGN' ? decoration_design_stage.value : decoration_construction_stage.value
+  const stageDict = dictData?.find(dict => dict.value === item.stage)
+  return stageDict?.label || item.stage || '进度节点'
 }
 
 function getProgressColor(progress) {
