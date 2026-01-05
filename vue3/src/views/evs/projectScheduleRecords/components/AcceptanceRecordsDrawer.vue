@@ -235,8 +235,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:visible', 'acceptance-success', 'acceptance-error'])
 
-const { proxy } = getCurrentInstance()
-
 // 权限控制
 const { isAdmin } = useProjectAuth()
 
