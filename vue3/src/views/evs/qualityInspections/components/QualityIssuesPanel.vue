@@ -61,7 +61,7 @@
                 </span>
                 <span class="issue-date">
                   <el-icon><Calendar /></el-icon>
-                  {{ parseTime(issue.createdAt, '{y}-{m}-{d} {h}:{i}:{s}') }}
+                  {{ parseTime(issue.createdAt, '{y}-{m}-{d}') }}
                 </span>
               </div>
             </div>
@@ -86,6 +86,14 @@
             >
               查看详情
             </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              text
+              @click.stop="handleDeleteIssue(issue)"
+            >
+              删除
+            </el-button>
           </div>
         </div>
       </div>
@@ -96,20 +104,25 @@
 
     <!-- 问题详情抽屉 -->
     <QualityIssueDetailDrawer
+      ref="issueDetailDrawerRef"
       v-model:visible="drawerVisible"
       :issue="currentIssue"
       :title="currentIssue?.title || '问题详情'"
       @submit-fix="handleSubmitFix"
+      @delete-fix="handleDeleteFixFromDrawer"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick, getCurrentInstance } from 'vue'
 import { WarningFilled, Location, Calendar } from '@element-plus/icons-vue'
 import QualityIssueDetailDrawer from '@/components/QualityIssueDetailDrawer/index.vue'
 
 const { proxy } = getCurrentInstance()
+
+// 获取字典数据
+const { decoration_issue_severity } = proxy.useDict('decoration_issue_severity')
 
 // Props
 const props = defineProps({
@@ -128,13 +141,14 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits(['submit-fix', 'refresh'])
+const emit = defineEmits(['submit-fix', 'refresh', 'delete-issue', 'delete-fix'])
 
 // 响应式数据
 const drawerVisible = ref(false)
 const currentIssue = ref(null)
 const filterStatus = ref('ALL')
 const sortBy = ref('time-desc')
+const issueDetailDrawerRef = ref(null)
 
 // 统计数据
 const totalIssues = computed(() => props.issues.length)
@@ -196,6 +210,26 @@ function handleSubmitFix(issue) {
   emit('submit-fix', issue)
 }
 
+/** 删除问题 */
+function handleDeleteIssue(issue) {
+  emit('delete-issue', issue)
+}
+
+/** 删除整改记录 */
+function handleDeleteFix(fix) {
+  emit('delete-fix', fix)
+}
+
+/** 从抽屉中删除整改记录（删除后刷新抽屉数据） */
+async function handleDeleteFixFromDrawer(fix) {
+  emit('delete-fix', fix)
+  // 等待删除完成后刷新抽屉数据
+  await nextTick()
+  setTimeout(() => {
+    issueDetailDrawerRef.value?.refreshFixes()
+  }, 500)
+}
+
 
 
 /** 获取问题图标颜色 */
@@ -233,10 +267,20 @@ function getIssueStatusText(status) {
 
 /** 获取问题分类标签类型 */
 function getIssueCategoryType(category) {
+  // 优先使用字典数据
+  const dictItem = decoration_issue_severity.value?.find(item => item.value === category)
+  if (dictItem && dictItem.listClass) {
+    return dictItem.listClass
+  }
+  // 后备映射
   const typeMap = {
+    'ENGINEERING_PROBLEM': 'primary',
+    'URGENT': 'danger',
+    'HIGH': 'danger',
+    'MEDIUM': 'warning',
+    'LOW': 'info',
     'GENERAL': 'info',
     'CRITICAL': 'danger',
-    'URGENT': 'warning',
     'OTHER': ''
   }
   return typeMap[category] || ''
@@ -244,10 +288,20 @@ function getIssueCategoryType(category) {
 
 /** 获取问题分类文本 */
 function getIssueCategoryText(category) {
+  // 优先使用字典数据
+  const dictItem = decoration_issue_severity.value?.find(item => item.value === category)
+  if (dictItem) {
+    return dictItem.label
+  }
+  // 后备映射
   const textMap = {
+    'ENGINEERING_PROBLEM': '工程类问题',
+    'URGENT': '紧急',
+    'HIGH': '严重',
+    'MEDIUM': '一般',
+    'LOW': '轻微',
     'GENERAL': '一般问题',
     'CRITICAL': '红线问题',
-    'URGENT': '紧急问题',
     'OTHER': '其他'
   }
   return textMap[category] || '未分类'

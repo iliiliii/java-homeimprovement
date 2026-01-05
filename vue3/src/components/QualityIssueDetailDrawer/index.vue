@@ -38,9 +38,6 @@
           <div class="card-header">
             <h3 class="card-title">{{ currentIssue.title || '质量问题' }}</h3>
             <div class="card-tags">
-              <el-tag :type="getIssueStatusType(currentIssue.status)" size="small">
-                {{ getIssueStatusText(currentIssue.status) }}
-              </el-tag>
               <el-tag :type="getIssueCategoryType(currentIssue.category)" size="small" style="margin-left: 6px;">
                 {{ getIssueCategoryText(currentIssue.category) }}
               </el-tag>
@@ -152,7 +149,19 @@
                 </div>
                 <div class="fix-meta">
                   <span class="fix-creator" v-if="fix.createdBy">{{ fix.createdBy }}</span>
-                  <span class="fix-time">{{ parseTime(fix.createdAt, '{m}-{d} {h}:{i}:{s}') }}</span>
+                  <el-popconfirm
+                    title="确定要删除这条整改记录吗？"
+                    :width="200"
+                    confirm-button-text="确定"
+                    cancel-button-text="取消"
+                    @confirm="handleDeleteFix(fix)"
+                  >
+                    <template #reference>
+                      <el-button type="danger" size="small" text style="margin-left: 8px;">
+                        删除
+                      </el-button>
+                    </template>
+                  </el-popconfirm>
                 </div>
               </div>
 
@@ -205,10 +214,9 @@
 </template>
 
 <script setup name="QualityIssueDetailDrawer">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { getQualityFixesByIssueId } from '@/api/evs/qualityFixes'
 import { Check, WarningFilled, Clock, Plus } from '@element-plus/icons-vue'
-import { getCurrentInstance } from 'vue'
 
 const props = defineProps({
   visible: {
@@ -225,9 +233,12 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:visible', 'submit-fix'])
+const emit = defineEmits(['update:visible', 'submit-fix', 'delete-fix', 'refresh'])
 
 const { proxy } = getCurrentInstance()
+
+// 获取字典数据
+const { decoration_issue_severity } = proxy.useDict('decoration_issue_severity')
 
 // 响应式数据
 const drawerVisible = ref(false)
@@ -462,20 +473,40 @@ function getIssueStatusText(status) {
 }
 
 function getIssueCategoryType(category) {
+  // 优先使用字典数据
+  const dictItem = decoration_issue_severity.value?.find(item => item.value === category)
+  if (dictItem && dictItem.listClass) {
+    return dictItem.listClass
+  }
+  // 后备映射
   const typeMap = {
+    'ENGINEERING_PROBLEM': 'primary',
+    'URGENT': 'danger',
+    'HIGH': 'danger',
+    'MEDIUM': 'warning',
+    'LOW': 'info',
     'GENERAL': 'info',
     'CRITICAL': 'danger',
-    'URGENT': 'warning',
     'OTHER': ''
   }
   return typeMap[category] || ''
 }
 
 function getIssueCategoryText(category) {
+  // 优先使用字典数据
+  const dictItem = decoration_issue_severity.value?.find(item => item.value === category)
+  if (dictItem) {
+    return dictItem.label
+  }
+  // 后备映射
   const textMap = {
+    'ENGINEERING_PROBLEM': '工程类问题',
+    'URGENT': '紧急',
+    'HIGH': '严重',
+    'MEDIUM': '一般',
+    'LOW': '轻微',
     'GENERAL': '一般问题',
     'CRITICAL': '红线问题',
-    'URGENT': '紧急问题',
     'OTHER': '其他'
   }
   return textMap[category] || '未分类'
@@ -544,6 +575,16 @@ function handleAddFix() {
   emit('submit-fix', currentIssue.value)
 }
 
+function handleDeleteFix(fix) {
+  if (!fix) return
+  emit('delete-fix', fix)
+}
+
+// 提供刷新方法供外部调用
+function refreshFixes() {
+  loadIssueFixes()
+}
+
 function handleClose() {
   drawerVisible.value = false
   currentIssue.value = null
@@ -566,7 +607,8 @@ onUnmounted(() => {
 
 // 暴露方法
 defineExpose({
-  loadIssueFixes
+  loadIssueFixes,
+  refreshFixes
 })
 </script>
 

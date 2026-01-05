@@ -112,6 +112,8 @@
               :issue-fixes-map="issueFixesMap"
               :loading="inspectionLoading"
               @submit-fix="handleSubmitFix"
+              @delete-issue="handleDeleteIssue"
+              @delete-fix="handleDeleteFix"
               @refresh="loadProjectInspections(selectedProject?.id)"
             />
           </div>
@@ -269,9 +271,9 @@
 import { listQualityInspections } from "@/api/evs/qualityInspections"
 import { getQualityInspectionsWithIssues } from "@/api/evs/qualityInspections"
 import { listProjectsWithMembers } from "@/api/evs/projects"
-import { addQualityInspections } from "@/api/evs/qualityInspections"
-import { addQualityIssues, listQualityIssues } from "@/api/evs/qualityIssues"
-import { addQualityFixes, getQualityFixesByIssueId } from "@/api/evs/qualityFixes"
+import { addQualityInspections, delQualityInspections } from "@/api/evs/qualityInspections"
+import { addQualityIssues, listQualityIssues, delQualityIssues } from "@/api/evs/qualityIssues"
+import { addQualityFixes, getQualityFixesByIssueId, delQualityFixes } from "@/api/evs/qualityFixes"
 import { Calendar, Location, CircleCheck, Plus, Check, Loading } from "@element-plus/icons-vue"
 import { getToken } from "@/utils/auth"
 import FixSubmissionDialog from './components/FixSubmissionDialog.vue'
@@ -448,6 +450,10 @@ async function loadProjectInspections(projectId) {
 
   inspectionLoading.value = true
   try {
+    // 清除旧数据，确保刷新时数据是最新的
+    inspectionIssuesMap.value.clear()
+    issueFixesMap.value.clear()
+    
     // 使用JOIN查询一次性获取质检记录和问题（解决N+1问题）
     const response = await getQualityInspectionsWithIssues(projectId)
     const inspections = response.data || response.rows || []
@@ -777,6 +783,85 @@ function handleDrawerFixSuccess(fixData) {
 function handleDrawerFixError(error) {
   console.error('抽屉整改提交失败:', error)
   // 错误信息已在抽屉组件中处理
+}
+
+/** 删除整改记录 */
+async function handleDeleteFix(fix) {
+  if (!fix || !fix.id) {
+    proxy.$modal.msgError('数据错误')
+    return
+  }
+
+  try {
+    await delQualityFixes(fix.id)
+    proxy.$modal.msgSuccess('整改记录删除成功')
+    
+    // 刷新数据
+    if (selectedProject.value) {
+      loadProjectInspections(selectedProject.value.id)
+    }
+  } catch (error) {
+    console.error('删除整改记录失败:', error)
+    proxy.$modal.msgError('删除失败：' + (error.msg || error.message || '未知错误'))
+  }
+}
+
+/** 删除问题上报记录 */
+async function handleDeleteIssue(issue) {
+  if (!issue || !issue.id) {
+    proxy.$modal.msgError('数据错误')
+    return
+  }
+
+  // 获取该问题的整改记录
+  const fixes = issueFixesMap.value.get(issue.id) || []
+  
+  try {
+    if (fixes.length > 0) {
+      // 有整改记录，需要先确认
+      await proxy.$modal.confirm(
+        `该问题有 ${fixes.length} 条整改记录，删除问题将同时删除所有关联的整改记录。确定要继续吗？`,
+        '警告',
+        {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      
+      // 先删除所有整改记录
+      for (const fix of fixes) {
+        await delQualityFixes(fix.id)
+      }
+    } else {
+      // 没有整改记录，简单确认
+      await proxy.$modal.confirm('确定要删除这条问题上报记录吗？')
+    }
+    
+    // 删除问题记录
+    await delQualityIssues(issue.id)
+    
+    // 如果有关联的质检记录，也删除
+    if (issue.qualityInspectionId) {
+      try {
+        await delQualityInspections(issue.qualityInspectionId)
+      } catch (e) {
+        console.warn('删除关联质检记录失败（可能已被删除）:', e)
+      }
+    }
+    
+    proxy.$modal.msgSuccess(fixes.length > 0 ? '问题及关联整改记录删除成功' : '问题删除成功')
+    
+    // 刷新数据
+    if (selectedProject.value) {
+      loadProjectInspections(selectedProject.value.id)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除问题失败:', error)
+      proxy.$modal.msgError('删除失败：' + (error.msg || error.message || '未知错误'))
+    }
+  }
 }
 
 /** 获取问题状态标签类型 */
