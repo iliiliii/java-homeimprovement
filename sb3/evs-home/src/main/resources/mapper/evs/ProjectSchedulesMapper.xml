@@ -62,7 +62,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="stageOrder != null "> and ps.stage_order = #{stageOrder}</if>
             <if test="status != null  and status != ''"> and ps.status = #{status}</if>
         </where>
-        order by ps.project_id, ps.stage_order desc
+        order by ps.project_id, ps.stage_order asc
     </select>
 
     <select id="selectProjectSchedulesById" parameterType="ProjectSchedules" resultMap="ProjectSchedulesResult">

@@ -45,9 +45,19 @@ export function delProjectSchedules(id) {
 
 // 更新项目进度排序
 export function updateProjectSchedulesOrder(id, stageOrder) {
+  // 确保 stageOrder 是数字类型，且不为 null/undefined
+  const orderValue = stageOrder != null ? Number(stageOrder) : null
+  if (orderValue === null || isNaN(orderValue)) {
+    console.error('无效的 stageOrder 值:', stageOrder)
+    return Promise.reject(new Error('无效的排序值'))
+  }
+  console.log('更新排序API调用:', { id, stageOrder: orderValue })
   return request({
     url: '/evs/projectSchedules',
     method: 'put',
-    data: { id, stageOrder }
+    data: { 
+      id, 
+      stageOrder: orderValue 
+    }
   })
 }

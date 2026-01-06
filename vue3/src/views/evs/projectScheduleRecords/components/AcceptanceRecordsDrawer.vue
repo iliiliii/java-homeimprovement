@@ -41,9 +41,6 @@
               <el-tag :type="getScheduleStatusType(currentScheduleItem.status)" size="small">
                 {{ getScheduleStatusText(currentScheduleItem.status) }}
               </el-tag>
-              <el-tag type="primary" size="small" style="margin-left: 6px;">
-                {{ getSchedulePhaseText(currentScheduleItem.phase) }}
-              </el-tag>
             </div>
           </div>
 
@@ -57,11 +54,7 @@
               </div>
               <div class="field-item">
                 <span class="field-label">计划时间</span>
-                <span class="field-value">{{ formatDateTimeRange(currentScheduleItem.startDate, currentScheduleItem.endDate) }}</span>
-              </div>
-              <div class="field-item">
-                <span class="field-label">实际时间</span>
-                <span class="field-value">{{ formatDateTimeRange(currentScheduleItem.actualStartDate, currentScheduleItem.actualEndDate) }}</span>
+                <span class="field-value">{{ proxy.parseTime(currentScheduleItem.planStartDate, '{y}-{m}-{d}') }}</span>
               </div>
             </div>
           </div>
@@ -393,11 +386,9 @@ function getScheduleStatusType(status) {
 
 function getScheduleStatusText(status) {
   const textMap = {
-    'NOT_STARTED': '未开始',
+    'PLANNED': '未开始',
     'IN_PROGRESS': '进行中',
-    'COMPLETED': '已完成',
-    'DELAYED': '已延期',
-    'ON_HOLD': '暂停'
+    'COMPLETED': '已完成'
   }
   return textMap[status] || '未知'
 }
@@ -694,8 +685,7 @@ onUnmounted(() => {
       }
 
       .field-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
         gap: 12px;
 
         .field-item {

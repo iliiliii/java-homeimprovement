@@ -219,8 +219,8 @@ const acceptanceRules = {
           const now = new Date()
           const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
           const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-
-          // 验收时间不能早于一周前
+          callback()
+          /* 验收时间不能早于一周前
           if (selectedTime < oneWeekAgo) {
             callback(new Error('验收时间不能早于一周前'))
           }
@@ -230,6 +230,7 @@ const acceptanceRules = {
           } else {
             callback()
           }
+          */
         } else {
           callback()
         }

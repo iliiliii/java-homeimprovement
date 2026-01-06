@@ -18,6 +18,16 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="项目状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择项目状态" clearable style="width: 130px">
+          <el-option
+            v-for="dict in decoration_project_status"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -89,6 +99,7 @@ import { Plus } from "@element-plus/icons-vue"
 import { getToken } from "@/utils/auth"
 
 const { proxy } = getCurrentInstance()
+const { decoration_project_status } = proxy.useDict('decoration_project_status')
 
 // 图片上传配置
 const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/common/upload')
@@ -181,16 +192,18 @@ function getList() {
     // 兼容不同的返回格式（rows 或 data）
     const rows = response.rows || response.data || []
     console.log('[进度记录] 获取到项目列表:', rows.length, '条记录')
-    if (rows.length > 0) {
-      console.log('[进度记录] 项目状态分布:', rows.map(p => ({ name: p.name, status: p.status })))
-    }
     
-    // 筛选进行中的项目（忽略大小写）
-    inProgressProjects.value = rows.filter(project => {
-      const status = (project.status || '').toUpperCase()
-      return status === 'IN_PROGRESS' || status === 'PLANNED'
-    })
-    console.log('[进度记录] 过滤后进行中的项目:', inProgressProjects.value.length, '条')
+    // 根据筛选条件过滤项目
+    if (queryParams.value.status) {
+      inProgressProjects.value = rows.filter(project => {
+        const status = (project.status || '').toUpperCase()
+        return status === queryParams.value.status.toUpperCase()
+      })
+    } else {
+      // 默认显示所有项目
+      inProgressProjects.value = rows
+    }
+    console.log('[进度记录] 显示项目数:', inProgressProjects.value.length, '条')
     loading.value = false
 
     if (selectedProject.value && !inProgressProjects.value.find(p => p.id === selectedProject.value.id)) {
@@ -314,7 +327,7 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
-  queryParams.value.status = 'IN_PROGRESS'
+  queryParams.value.status = null
   handleQuery()
 }
 
