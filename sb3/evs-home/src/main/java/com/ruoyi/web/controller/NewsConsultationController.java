@@ -20,6 +20,7 @@ import com.ruoyi.web.domain.NewsConsultation;
 import com.ruoyi.web.service.INewsConsultationService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.github.pagehelper.PageHelper;
 
 /**
  * 新闻咨询设置Controller
@@ -42,6 +43,8 @@ public class NewsConsultationController extends BaseController
     public TableDataInfo list(NewsConsultation newsConsultation)
     {
         startPage();
+        // 设置排序：按sort_order降序排列（值越大越靠前，新发布的显示在最前面）
+        PageHelper.orderBy("sort_order desc, created_at desc");
         List<NewsConsultation> list = newsConsultationService.selectNewsConsultationList(newsConsultation);
         return getDataTable(list);
     }

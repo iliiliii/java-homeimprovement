@@ -28,12 +28,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectNewsConsultationList" parameterType="NewsConsultation" resultMap="NewsConsultationResult">
         <include refid="selectNewsConsultationVo"/>
         <where>  
-            <if test="title != null  and title != ''"> and title = #{title}</if>
+            <if test="title != null  and title != ''"> and title like concat('%', #{title}, '%')</if>
             <if test="publishPosition != null  and publishPosition != ''"> and publish_position = #{publishPosition}</if>
             <if test="publishTime != null "> and publish_time = #{publishTime}</if>
             <if test="publishStatus != null  and publishStatus != ''"> and publish_status = #{publishStatus}</if>
             <if test="sortOrder != null "> and sort_order = #{sortOrder}</if>
         </where>
+        order by sort_order desc, created_at desc
+    </select>
+    
+    <!-- 获取当前最小排序值 -->
+    <select id="selectMinSortOrder" resultType="Integer">
+        select COALESCE(MIN(sort_order), 100) from news_consultation
     </select>
     
     <select id="selectNewsConsultationById" parameterType="String" resultMap="NewsConsultationResult">

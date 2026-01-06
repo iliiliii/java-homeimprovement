@@ -11,9 +11,49 @@
       </el-button>
     </div>
 
+    <!-- 搜索筛选区域 -->
+    <el-card shadow="never" style="margin-bottom: 16px;">
+      <el-form :model="queryParams" ref="queryRef" :inline="true">
+        <el-form-item label="发布位置" prop="publishPosition">
+          <el-select 
+            v-model="queryParams.publishPosition" 
+            placeholder="全部位置" 
+            clearable 
+            style="width: 200px;"
+            @change="handleQuery"
+          >
+            <el-option
+              v-for="dict in decoration_news_position"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="发布状态" prop="publishStatus">
+          <el-select 
+            v-model="queryParams.publishStatus" 
+            placeholder="全部状态" 
+            clearable 
+            style="width: 150px;"
+            @change="handleQuery"
+          >
+            <el-option label="已发布" value="PUBLISHED" />
+            <el-option label="草稿" value="DRAFT" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <!-- 资讯列表表格 -->
-    <el-card shadow="never" style="margin-top: 20px;">
+    <el-card shadow="never">
       <el-table v-loading="loading" :data="newsConsultationList" style="width: 100%">
+        
+        
         <el-table-column label="标题" min-width="100">
           <template #default="scope">
             <div style="display: flex; align-items: center;">
@@ -43,7 +83,28 @@
             </div>
           </template>
         </el-table-column>
-        
+        <el-table-column label="排序" width="100" align="center">
+          <template #default="scope">
+            <el-button
+              type="primary"
+              link
+              size="small"
+              :icon="Top"
+              :disabled="scope.$index === 0 || isMoving"
+              @click="handleMoveUp(scope.$index)"
+              title="上移"
+            />
+            <el-button
+              type="primary"
+              link
+              size="small"
+              :icon="Bottom"
+              :disabled="scope.$index === newsConsultationList.length - 1 || isMoving"
+              @click="handleMoveDown(scope.$index)"
+              title="下移"
+            />
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="scope">
             <el-tag 
@@ -179,8 +240,9 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="排序" prop="sortOrder">
+        <el-form-item v-if="form.id" label="排序" prop="sortOrder">
           <el-input-number v-model="form.sortOrder" :min="0" placeholder="请输入排序" style="width: 100%" />
+          <div style="font-size: 12px; color: #909399; margin-top: 4px;">数值越大排序越靠前</div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -201,8 +263,8 @@
 </template>
 
 <script setup name="NewsConsultationCard">
-import { listNewsConsultation, getNewsConsultation, delNewsConsultation, addNewsConsultation, updateNewsConsultation } from "@/api/evs/newsConsultation"
-import { Document, Calendar, VideoPlay, View, Loading, Check } from '@element-plus/icons-vue'
+import { listNewsConsultation, getNewsConsultation, delNewsConsultation, addNewsConsultation, updateNewsConsultation, updateNewsConsultationOrder } from "@/api/evs/newsConsultation"
+import { Document, Calendar, VideoPlay, View, Loading, Check, Top, Bottom } from '@element-plus/icons-vue'
 import { useUploadManager, uploadPresets } from '@/composables/useUploadManager'
 import ImageUploadCard from '@/components/ImageUploadCard/index.vue'
 
@@ -214,6 +276,7 @@ const open = ref(false)
 const loading = ref(true)
 const total = ref(0)
 const title = ref("")
+const isMoving = ref(false) // 防抖状态，防止重复操作
 
 // 封面图片上传状态
 const coverImageFileList = ref([])
@@ -316,6 +379,122 @@ function getList() {
   })
 }
 
+/** 搜索按钮操作 */
+function handleQuery() {
+  queryParams.value.pageNum = 1
+  getList()
+}
+
+/** 重置按钮操作 */
+function resetQuery() {
+  proxy.resetForm("queryRef")
+  handleQuery()
+}
+
+/** 上移操作 */
+async function handleMoveUp(index) {
+  // 防抖/节流：如果正在执行移动操作，直接返回
+  if (isMoving.value) {
+    console.warn('移动操作正在进行中，请稍候...')
+    return
+  }
+  
+  if (index <= 0) return
+  
+  // 获取当前记录和上一条记录
+  const currentItem = newsConsultationList.value[index]
+  const prevItem = newsConsultationList.value[index - 1]
+  
+  // 获取当前记录的sortOrder
+  const currentSortOrder = currentItem.sortOrder
+  // 获取上一条记录的sortOrder
+  const prevSortOrder = prevItem.sortOrder
+  
+  // 验证sortOrder值有效性
+  if (currentSortOrder == null || prevSortOrder == null) {
+    proxy.$modal.msgError("排序值无效，请刷新后重试")
+    return
+  }
+  
+  // 交换两个sortOrder值
+  const newCurrentSortOrder = prevSortOrder
+  const newPrevSortOrder = currentSortOrder
+  
+  console.log('上移操作 - 交换sortOrder:', {
+    当前记录: { id: currentItem.id, 原sortOrder: currentSortOrder, 新sortOrder: newCurrentSortOrder },
+    上一条记录: { id: prevItem.id, 原sortOrder: prevSortOrder, 新sortOrder: newPrevSortOrder }
+  })
+  
+  isMoving.value = true
+  
+  try {
+    await updateNewsConsultationOrder(currentItem.id, newCurrentSortOrder)
+    await updateNewsConsultationOrder(prevItem.id, newPrevSortOrder)
+    
+    proxy.$modal.msgSuccess("排序已更新")
+    await getList()
+  } catch (error) {
+    console.error('更新排序失败:', error)
+    proxy.$modal.msgError("更新排序失败")
+  } finally {
+    setTimeout(() => {
+      isMoving.value = false
+    }, 100)
+  }
+}
+
+/** 下移操作 */
+async function handleMoveDown(index) {
+  // 防抖/节流：如果正在执行移动操作，直接返回
+  if (isMoving.value) {
+    console.warn('移动操作正在进行中，请稍候...')
+    return
+  }
+  
+  if (index >= newsConsultationList.value.length - 1) return
+  
+  // 获取当前记录和下一条记录
+  const currentItem = newsConsultationList.value[index]
+  const nextItem = newsConsultationList.value[index + 1]
+  
+  // 获取当前记录的sortOrder
+  const currentSortOrder = currentItem.sortOrder
+  // 获取下一条记录的sortOrder
+  const nextSortOrder = nextItem.sortOrder
+  
+  // 验证sortOrder值有效性
+  if (currentSortOrder == null || nextSortOrder == null) {
+    proxy.$modal.msgError("排序值无效，请刷新后重试")
+    return
+  }
+  
+  // 交换两个sortOrder值
+  const newCurrentSortOrder = nextSortOrder
+  const newNextSortOrder = currentSortOrder
+  
+  console.log('下移操作 - 交换sortOrder:', {
+    当前记录: { id: currentItem.id, 原sortOrder: currentSortOrder, 新sortOrder: newCurrentSortOrder },
+    下一条记录: { id: nextItem.id, 原sortOrder: nextSortOrder, 新sortOrder: newNextSortOrder }
+  })
+  
+  isMoving.value = true
+  
+  try {
+    await updateNewsConsultationOrder(currentItem.id, newCurrentSortOrder)
+    await updateNewsConsultationOrder(nextItem.id, newNextSortOrder)
+    
+    proxy.$modal.msgSuccess("排序已更新")
+    await getList()
+  } catch (error) {
+    console.error('更新排序失败:', error)
+    proxy.$modal.msgError("更新排序失败")
+  } finally {
+    setTimeout(() => {
+      isMoving.value = false
+    }, 100)
+  }
+}
+
 // 取消按钮
 function cancel() {
   open.value = false
@@ -350,6 +529,21 @@ function resetForm() {
 /** 新增按钮操作 */
 function handleAdd() {
   resetForm()
+  // 计算新增资讯的排序值：使用当前最大值 + 1，确保新增的排在最前面（降序排列）
+  if (newsConsultationList.value.length > 0) {
+    const validOrders = newsConsultationList.value
+      .map(item => item.sortOrder)
+      .filter(order => order != null)
+    
+    if (validOrders.length > 0) {
+      const maxOrder = Math.max(...validOrders)
+      form.value.sortOrder = maxOrder + 1
+    } else {
+      form.value.sortOrder = 100
+    }
+  } else {
+    form.value.sortOrder = 100
+  }
   open.value = true
   title.value = "新建资讯"
 }

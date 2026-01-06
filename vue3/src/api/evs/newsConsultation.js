@@ -42,3 +42,17 @@ export function delNewsConsultation(id) {
     method: 'delete'
   })
 }
+
+// 更新新闻咨询排序
+export function updateNewsConsultationOrder(id, sortOrder) {
+  const orderValue = sortOrder != null ? Number(sortOrder) : null
+  if (orderValue === null || isNaN(orderValue)) {
+    console.error('无效的 sortOrder 值:', sortOrder)
+    return Promise.reject(new Error('无效的排序值'))
+  }
+  return request({
+    url: '/evs/newsConsultation',
+    method: 'put',
+    data: { id, sortOrder: orderValue }
+  })
+}
