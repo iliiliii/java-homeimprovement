@@ -391,16 +391,18 @@ function getList() {
     // 兼容不同的返回格式（rows 或 data）
     const rows = response.rows || response.data || []
     console.log('[质量检测] 获取到项目列表:', rows.length, '条记录')
-    if (rows.length > 0) {
-      console.log('[质量检测] 项目状态分布:', rows.map(p => ({ name: p.name, status: p.status })))
-    }
     
-    // 筛选进行中的项目（忽略大小写）
-    inProgressProjects.value = rows.filter(project => {
-      const status = (project.status || '').toUpperCase()
-      return status === 'IN_PROGRESS' || status === 'PLANNED'
-    })
-    console.log('[质量检测] 过滤后进行中的项目:', inProgressProjects.value.length, '条')
+    // 根据筛选条件过滤项目
+    if (queryParams.value.status) {
+      inProgressProjects.value = rows.filter(project => {
+        const status = (project.status || '').toUpperCase()
+        return status === queryParams.value.status.toUpperCase()
+      })
+    } else {
+      // 默认显示所有项目
+      inProgressProjects.value = rows
+    }
+    console.log('[质量检测] 显示项目数:', inProgressProjects.value.length, '条')
 
     // 如果当前选中的项目不在列表中，清空选择
     if (selectedProject.value && !inProgressProjects.value.find(p => p.id === selectedProject.value.id)) {
@@ -992,7 +994,7 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
-  queryParams.value.status = 'IN_PROGRESS'
+  queryParams.value.status = null
   handleQuery()
 }
 
