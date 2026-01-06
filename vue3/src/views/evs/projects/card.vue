@@ -245,7 +245,7 @@
           <span>{{ currentProgressProject.name }} - 进度管理</span>
         </div>
       </template>
-      <div style="max-height: calc(90vh - 150px); overflow-y: auto; padding: 0 20px;">
+      <div style="max-height: calc(90vh - 80px); overflow-y: auto; padding: 0 20px;">
         <ProjectProgress v-if="currentProgressProject" :project="currentProgressProject" @save="handleSaveProgress" />
       </div>
     </el-dialog>

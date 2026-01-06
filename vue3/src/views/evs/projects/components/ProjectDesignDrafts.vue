@@ -117,7 +117,7 @@
                       link
                       size="small"
                       :icon="Top"
-                      :disabled="getRoomIndex(room.id) === 0"
+                      :disabled="getRoomIndex(room.id) === 0 || isMoving"
                       @click="handleMoveUp(getRoomIndex(room.id))"
                       title="上移"
                     />
@@ -126,7 +126,7 @@
                       link
                       size="small"
                       :icon="Bottom"
-                      :disabled="getRoomIndex(room.id) === filteredRooms.length - 1"
+                      :disabled="getRoomIndex(room.id) === filteredRooms.length - 1 || isMoving"
                       @click="handleMoveDown(getRoomIndex(room.id))"
                       title="下移"
                     />
@@ -502,50 +502,140 @@ function getRoomIndex(roomId) {
   return filteredRooms.value.findIndex(r => r.id === roomId)
 }
 
+// 防抖状态，防止重复操作
+const isMoving = ref(false)
+
 /** 上移房间 */
 async function handleMoveUp(index) {
+  // 防抖/节流：如果正在执行移动操作，直接返回
+  if (isMoving.value) {
+    console.warn('移动操作正在进行中，请稍候...')
+    return
+  }
+  
   if (index <= 0) return
   
+  // 获取当前记录和上一条记录
   const currentRoom = filteredRooms.value[index]
   const prevRoom = filteredRooms.value[index - 1]
   
-  // 交换排序值
-  const totalRooms = filteredRooms.value.length
-  const newCurrentOrder = (index - 1) * 100  // 上移后位置更靠前，值更小
-  const newPrevOrder = index * 100           // 下移后位置更靠后，值更大
+  // 获取当前记录的sortOrder
+  const currentSortOrder = currentRoom.sortOrder
+  // 获取上一条记录的sortOrder
+  const prevSortOrder = prevRoom.sortOrder
+  
+  // 验证sortOrder值有效性
+  if (!currentSortOrder || !prevSortOrder || currentSortOrder <= 0 || prevSortOrder <= 0) {
+    proxy.$modal.msgError("排序值无效，请刷新后重试")
+    return
+  }
+  
+  // 交换两个sortOrder值
+  // 当前记录使用上一条记录的sortOrder（更小的值，位置更靠前）
+  const newCurrentSortOrder = prevSortOrder
+  // 上一条记录使用当前记录的sortOrder（更大的值，位置更靠后）
+  const newPrevSortOrder = currentSortOrder
+  
+  console.log('上移操作 - 交换sortOrder:', {
+    当前记录: {
+      id: currentRoom.id,
+      原sortOrder: currentSortOrder,
+      新sortOrder: newCurrentSortOrder
+    },
+    上一条记录: {
+      id: prevRoom.id,
+      原sortOrder: prevSortOrder,
+      新sortOrder: newPrevSortOrder
+    }
+  })
+  
+  // 设置移动状态为true，防止重复操作
+  isMoving.value = true
   
   try {
-    // 依次更新，避免并发问题
-    await updateProjectRoomsOrder(currentRoom.id, newCurrentOrder)
-    await updateProjectRoomsOrder(prevRoom.id, newPrevOrder)
+    // 发起第一条更新请求：更新当前记录的sortOrder
+    await updateProjectRoomsOrder(currentRoom.id, newCurrentSortOrder)
+    // 发起第二条更新请求：更新上一条记录的sortOrder
+    await updateProjectRoomsOrder(prevRoom.id, newPrevSortOrder)
+    
     proxy.$modal.msgSuccess("排序已更新")
-    loadRooms() // 重新加载数据
+    // 等待数据加载完成后再重置状态
+    await loadRooms()
   } catch (error) {
     console.error('更新排序失败:', error)
     proxy.$modal.msgError("更新排序失败")
+  } finally {
+    // 操作完成，重置移动状态（延迟100ms，确保UI更新完成）
+    setTimeout(() => {
+      isMoving.value = false
+    }, 100)
   }
 }
 
 /** 下移房间 */
 async function handleMoveDown(index) {
+  // 防抖/节流：如果正在执行移动操作，直接返回
+  if (isMoving.value) {
+    console.warn('移动操作正在进行中，请稍候...')
+    return
+  }
+  
   if (index >= filteredRooms.value.length - 1) return
   
+  // 获取当前记录和下一条记录
   const currentRoom = filteredRooms.value[index]
   const nextRoom = filteredRooms.value[index + 1]
   
-  // 交换排序值
-  const newCurrentOrder = (index + 1) * 100  // 下移后位置更靠后，值更大
-  const newNextOrder = index * 100           // 上移后位置更靠前，值更小
+  // 获取当前记录的sortOrder
+  const currentSortOrder = currentRoom.sortOrder
+  // 获取下一条记录的sortOrder
+  const nextSortOrder = nextRoom.sortOrder
+  
+  // 验证sortOrder值有效性
+  if (!currentSortOrder || !nextSortOrder || currentSortOrder <= 0 || nextSortOrder <= 0) {
+    proxy.$modal.msgError("排序值无效，请刷新后重试")
+    return
+  }
+  
+  // 交换两个sortOrder值
+  // 当前记录使用下一条记录的sortOrder（更大的值，位置更靠后）
+  const newCurrentSortOrder = nextSortOrder
+  // 下一条记录使用当前记录的sortOrder（更小的值，位置更靠前）
+  const newNextSortOrder = currentSortOrder
+  
+  console.log('下移操作 - 交换sortOrder:', {
+    当前记录: {
+      id: currentRoom.id,
+      原sortOrder: currentSortOrder,
+      新sortOrder: newCurrentSortOrder
+    },
+    下一条记录: {
+      id: nextRoom.id,
+      原sortOrder: nextSortOrder,
+      新sortOrder: newNextSortOrder
+    }
+  })
+  
+  // 设置移动状态为true，防止重复操作
+  isMoving.value = true
   
   try {
-    // 依次更新，避免并发问题
-    await updateProjectRoomsOrder(currentRoom.id, newCurrentOrder)
-    await updateProjectRoomsOrder(nextRoom.id, newNextOrder)
+    // 发起第一条更新请求：更新当前记录的sortOrder
+    await updateProjectRoomsOrder(currentRoom.id, newCurrentSortOrder)
+    // 发起第二条更新请求：更新下一条记录的sortOrder
+    await updateProjectRoomsOrder(nextRoom.id, newNextSortOrder)
+    
     proxy.$modal.msgSuccess("排序已更新")
-    loadRooms() // 重新加载数据
+    // 等待数据加载完成后再重置状态
+    await loadRooms()
   } catch (error) {
     console.error('更新排序失败:', error)
     proxy.$modal.msgError("更新排序失败")
+  } finally {
+    // 操作完成，重置移动状态（延迟100ms，确保UI更新完成）
+    setTimeout(() => {
+      isMoving.value = false
+    }, 100)
   }
 }
 

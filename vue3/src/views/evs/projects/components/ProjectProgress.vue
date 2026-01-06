@@ -87,7 +87,7 @@
                   link
                   size="small"
                   :icon="Top"
-                  :disabled="index === 0"
+                  :disabled="index === 0 || isMoving"
                   @click="handleMoveUp(index)"
                   title="上移"
                 />
@@ -96,7 +96,7 @@
                   link
                   size="small"
                   :icon="Bottom"
-                  :disabled="index === timelineItems.length - 1"
+                  :disabled="index === timelineItems.length - 1 || isMoving"
                   @click="handleMoveDown(index)"
                   title="下移"
                 />
@@ -279,6 +279,7 @@ const timelineItems = ref([]) // 时间轴条目数组
 const isAddingTimeline = ref(false)
 const editingTimelineItem = ref(null) // 当前编辑的条目
 const loading = ref(false)
+const isMoving = ref(false) // 是否正在执行移动操作（防抖/节流）
 const timelineForm = ref({
   title: '',
   description: '',
@@ -381,17 +382,32 @@ function calculateTimelinePercentage(completed, total) {
 }
 
 // 数据转换：将后端数据转换为组件所需格式
+// 注意：后端接口已按stageOrder升序排列，无需前端再次排序
 function convertFromBackendData(backendItems) {
-  return backendItems.map(item => ({
+  let converted = backendItems.map((item, index) => ({
     id: item.id,
     title: item.stage,
     description: item.description || '',
     date: item.planStartDate || item.actualStartDate || '未设置',
     status: mapStatusFromBackend(item.status),
     stageType: item.stageType || 'CONSTRUCTION', // 默认施工阶段
-    stageOrder: item.stageOrder || 0,
+    stageOrder: item.stageOrder != null && item.stageOrder > 0 ? Number(item.stageOrder) : null, // 保持null，后续会重新分配
     completionRate: item.completionRate || 0
-  })).sort((a, b) => (b.stageOrder || 0) - (a.stageOrder || 0)) // 降序：stageOrder 越大越靠前
+  }))
+  
+  // 如果存在无效的stageOrder（null或0），按照索引位置重新分配（100, 200, 300...）
+  const hasInvalidOrder = converted.some(item => item.stageOrder == null || item.stageOrder === 0)
+  if (hasInvalidOrder) {
+    console.warn('检测到无效的stageOrder，重新分配排序值')
+    converted = converted.map((item, index) => ({
+      ...item,
+      stageOrder: (index + 1) * 100 // 从100开始，每次+100
+    }))
+  }
+  
+  // 后端接口已按stageOrder升序返回，无需前端排序
+  console.log('转换后的时间轴数据:', converted.map(item => ({ id: item.id, title: item.title, stageOrder: item.stageOrder })))
+  return converted
 }
 
 // 数据转换：将组件数据转换为后端所需格式
@@ -402,12 +418,54 @@ function convertToBackendData(componentItem) {
     : decoration_construction_stage.value
   const stageDict = dictData.find(dict => dict.value === componentItem.title)
 
+  // 计算新阶段的排序值：如果是新增阶段，放在最下方（最大的stageOrder值）
+  let stageOrder = componentItem.stageOrder
+  
+  // 如果是新增阶段（没有id），计算最大排序值并+100
+  if (!componentItem.id) {
+    if (timelineItems.value.length === 0) {
+      // 如果没有现有阶段，从100开始（第一个阶段）
+      stageOrder = 100
+      console.log('新增第一个阶段，stageOrder = 100')
+    } else {
+      // 获取现有阶段的最大排序值，新阶段+100，确保放在最后
+      const validOrders = timelineItems.value
+        .map(item => item.stageOrder)
+        .filter(order => order != null && order > 0)
+      
+      if (validOrders.length === 0) {
+        // 如果所有项的stageOrder都无效，从100开始
+        stageOrder = 100
+      } else {
+        const maxOrder = Math.max(...validOrders)
+        stageOrder = maxOrder + 100
+      }
+      console.log('新增阶段排序计算:', { 
+        totalItems: timelineItems.value.length,
+        validOrders,
+        maxOrder: validOrders.length > 0 ? Math.max(...validOrders) : 0,
+        newStageOrder: stageOrder 
+      })
+    }
+  } else {
+    // 编辑模式：使用原有的stageOrder，如果没有则使用字典排序值或默认值
+    if (!stageOrder || stageOrder === 0) {
+      // 编辑时如果stageOrder无效，尝试使用字典排序值，否则使用当前位置计算
+      const currentIndex = timelineItems.value.findIndex(item => item.id === componentItem.id)
+      if (currentIndex >= 0) {
+        stageOrder = (currentIndex + 1) * 100
+      } else {
+        stageOrder = stageDict?.dictSort || (timelineItems.value.length + 1) * 100
+      }
+    }
+  }
+
   return {
     id: componentItem.id,
     projectId: props.project.id,
     stageType: componentItem.stageType,
     stage: componentItem.title,
-    stageOrder: stageDict?.dictSort || 999,
+    stageOrder: stageOrder,
     planStartDate: componentItem.date,
     actualStartDate: componentItem.status === 'inProgress' ? componentItem.date : null,
     actualEndDate: componentItem.status === 'completed' ? componentItem.date : null,
@@ -631,45 +689,135 @@ function handleDeleteTimelineItem(itemId) {
 
 /** 上移时间轴条目 */
 async function handleMoveUp(index) {
+  // 防抖/节流：如果正在执行移动操作，直接返回
+  if (isMoving.value) {
+    console.warn('移动操作正在进行中，请稍候...')
+    return
+  }
+  
   if (index <= 0) return
   
+  // 获取当前记录和上一条记录
   const currentItem = timelineItems.value[index]
   const prevItem = timelineItems.value[index - 1]
   
-  const totalItems = timelineItems.value.length
-  const newCurrentOrder = (totalItems - index + 1) * 100
-  const newPrevOrder = (totalItems - index) * 100
+  // 获取当前记录的stageOrder
+  const currentStageOrder = currentItem.stageOrder
+  // 获取上一条记录的stageOrder
+  const prevStageOrder = prevItem.stageOrder
+  
+  // 验证stageOrder值有效性
+  if (!currentStageOrder || !prevStageOrder || currentStageOrder <= 0 || prevStageOrder <= 0) {
+    proxy.$modal.msgError("排序值无效，请刷新后重试")
+    return
+  }
+  
+  // 交换两个stageOrder值
+  // 当前记录使用上一条记录的stageOrder（更小的值，位置更靠前）
+  const newCurrentStageOrder = prevStageOrder
+  // 上一条记录使用当前记录的stageOrder（更大的值，位置更靠后）
+  const newPrevStageOrder = currentStageOrder
+  
+  console.log('上移操作 - 交换stageOrder:', {
+    当前记录: {
+      id: currentItem.id,
+      原stageOrder: currentStageOrder,
+      新stageOrder: newCurrentStageOrder
+    },
+    上一条记录: {
+      id: prevItem.id,
+      原stageOrder: prevStageOrder,
+      新stageOrder: newPrevStageOrder
+    }
+  })
+  
+  // 设置移动状态为true，防止重复操作
+  isMoving.value = true
   
   try {
-    await updateProjectSchedulesOrder(currentItem.id, newCurrentOrder)
-    await updateProjectSchedulesOrder(prevItem.id, newPrevOrder)
+    // 发起第一条更新请求：更新当前记录的stageOrder
+    await updateProjectSchedulesOrder(currentItem.id, newCurrentStageOrder)
+    // 发起第二条更新请求：更新上一条记录的stageOrder
+    await updateProjectSchedulesOrder(prevItem.id, newPrevStageOrder)
+    
     proxy.$modal.msgSuccess("排序已更新")
-    loadProjectSchedules()
+    // 等待数据加载完成后再重置状态
+    await loadProjectSchedules()
   } catch (error) {
     console.error('更新排序失败:', error)
     proxy.$modal.msgError("更新排序失败")
+  } finally {
+    // 操作完成，重置移动状态（延迟100ms，确保UI更新完成）
+    setTimeout(() => {
+      isMoving.value = false
+    }, 100)
   }
 }
 
 /** 下移时间轴条目 */
 async function handleMoveDown(index) {
+  // 防抖/节流：如果正在执行移动操作，直接返回
+  if (isMoving.value) {
+    console.warn('移动操作正在进行中，请稍候...')
+    return
+  }
+  
   if (index >= timelineItems.value.length - 1) return
   
+  // 获取当前记录和下一条记录
   const currentItem = timelineItems.value[index]
   const nextItem = timelineItems.value[index + 1]
   
-  const totalItems = timelineItems.value.length
-  const newCurrentOrder = (totalItems - index - 1) * 100
-  const newNextOrder = (totalItems - index) * 100
+  // 获取当前记录的stageOrder
+  const currentStageOrder = currentItem.stageOrder
+  // 获取下一条记录的stageOrder
+  const nextStageOrder = nextItem.stageOrder
+  
+  // 验证stageOrder值有效性
+  if (!currentStageOrder || !nextStageOrder || currentStageOrder <= 0 || nextStageOrder <= 0) {
+    proxy.$modal.msgError("排序值无效，请刷新后重试")
+    return
+  }
+  
+  // 交换两个stageOrder值
+  // 当前记录使用下一条记录的stageOrder（更大的值，位置更靠后）
+  const newCurrentStageOrder = nextStageOrder
+  // 下一条记录使用当前记录的stageOrder（更小的值，位置更靠前）
+  const newNextStageOrder = currentStageOrder
+  
+  console.log('下移操作 - 交换stageOrder:', {
+    当前记录: {
+      id: currentItem.id,
+      原stageOrder: currentStageOrder,
+      新stageOrder: newCurrentStageOrder
+    },
+    下一条记录: {
+      id: nextItem.id,
+      原stageOrder: nextStageOrder,
+      新stageOrder: newNextStageOrder
+    }
+  })
+  
+  // 设置移动状态为true，防止重复操作
+  isMoving.value = true
   
   try {
-    await updateProjectSchedulesOrder(currentItem.id, newCurrentOrder)
-    await updateProjectSchedulesOrder(nextItem.id, newNextOrder)
+    // 发起第一条更新请求：更新当前记录的stageOrder
+    await updateProjectSchedulesOrder(currentItem.id, newCurrentStageOrder)
+    // 发起第二条更新请求：更新下一条记录的stageOrder
+    await updateProjectSchedulesOrder(nextItem.id, newNextStageOrder)
+    
     proxy.$modal.msgSuccess("排序已更新")
-    loadProjectSchedules()
+    // 等待数据加载完成后再重置状态
+    await loadProjectSchedules()
   } catch (error) {
     console.error('更新排序失败:', error)
     proxy.$modal.msgError("更新排序失败")
+  } finally {
+    // 操作完成，重置移动状态（延迟100ms，确保UI更新完成）
+    setTimeout(() => {
+      isMoving.value = false
+    }, 100)
   }
 }
 
