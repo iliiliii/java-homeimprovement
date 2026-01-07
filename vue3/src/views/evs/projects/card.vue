@@ -22,7 +22,7 @@
         />
       </el-form-item>
         <el-form-item label="项目状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择项目状态" clearable style="width: 150px">
+        <el-select v-model="queryParams.status" placeholder="请选择项目状态" clearable style="width: 160px">
           <el-option
             v-for="dict in decoration_project_status"
             :key="dict.value"
