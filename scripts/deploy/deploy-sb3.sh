@@ -157,43 +157,48 @@ local_deploy() {
 local_restart() {
     log_info "重启本地服务..."
     
-    # 停止旧进程
-    PID=$(pgrep -f "$JAR_NAME" || true)
+    # 停止旧进程 (排除 grep 自身)
+    PID=$(pgrep -f "java.*$JAR_NAME" || true)
     if [ -n "$PID" ]; then
         log_info "停止进程: $PID"
         sudo kill $PID 2>/dev/null || true
         sleep 3
-        if pgrep -f "$JAR_NAME" > /dev/null; then
+        # 检查是否还在运行
+        if pgrep -f "java.*$JAR_NAME" > /dev/null 2>&1; then
             sudo kill -9 $PID 2>/dev/null || true
+            sleep 1
         fi
     fi
     
     # 启动新进程
     log_info "启动服务..."
     cd "$DEPLOY_PATH"
-    sudo nohup java $JAVA_OPTS \
-        -jar "$JAR_NAME" \
-        --spring.profiles.active=$SPRING_PROFILE \
-        > "$LOG_PATH/app.log" 2>&1 &
     
-    sleep 3
+    # 使用 sudo -u 或直接 sudo 启动，确保 nohup 正常工作
+    sudo bash -c "nohup java $JAVA_OPTS -jar $DEPLOY_PATH/$JAR_NAME --spring.profiles.active=$SPRING_PROFILE > $LOG_PATH/app.log 2>&1 &"
     
-    if pgrep -f "$JAR_NAME" > /dev/null; then
-        log_success "服务启动成功, PID: $(pgrep -f "$JAR_NAME")"
+    # 等待服务启动
+    sleep 5
+    
+    # 检查启动状态
+    NEW_PID=$(pgrep -f "java.*$JAR_NAME" || true)
+    if [ -n "$NEW_PID" ]; then
+        log_success "服务启动成功, PID: $NEW_PID"
     else
         log_error "服务启动失败，请检查日志: $LOG_PATH/app.log"
-        tail -30 "$LOG_PATH/app.log"
+        echo "--- 最近日志 ---"
+        tail -50 "$LOG_PATH/app.log" 2>/dev/null || echo "日志文件不存在"
         exit 1
     fi
 }
 
 local_stop() {
     log_info "停止本地服务..."
-    PID=$(pgrep -f "$JAR_NAME" || true)
+    PID=$(pgrep -f "java.*$JAR_NAME" || true)
     if [ -n "$PID" ]; then
         sudo kill $PID
         sleep 2
-        if pgrep -f "$JAR_NAME" > /dev/null; then
+        if pgrep -f "java.*$JAR_NAME" > /dev/null 2>&1; then
             sudo kill -9 $PID 2>/dev/null || true
         fi
         log_success "服务已停止"
@@ -203,10 +208,10 @@ local_stop() {
 }
 
 local_status() {
-    PID=$(pgrep -f "$JAR_NAME" || true)
+    PID=$(pgrep -f "java.*$JAR_NAME" || true)
     if [ -n "$PID" ]; then
         log_success "服务运行中, PID: $PID"
-        ps -p $PID -o pid,ppid,%cpu,%mem,etime,cmd
+        ps -p $PID -o pid,ppid,%cpu,%mem,etime,cmd 2>/dev/null || true
     else
         log_warn "服务未运行"
     fi
@@ -283,23 +288,25 @@ remote_restart() {
     SSH_OPTS=$(get_ssh_opts)
     
     ssh $SSH_OPTS "$REMOTE_USER@$REMOTE_HOST" "
-        PID=\$(pgrep -f '$JAR_NAME' || true)
+        PID=\$(pgrep -f 'java.*$JAR_NAME' || true)
         if [ -n \"\$PID\" ]; then
             echo '停止进程: '\$PID
-            kill \$PID
+            kill \$PID 2>/dev/null || true
             sleep 3
-            pgrep -f '$JAR_NAME' > /dev/null && kill -9 \$PID 2>/dev/null || true
+            pgrep -f 'java.*$JAR_NAME' > /dev/null 2>&1 && kill -9 \$PID 2>/dev/null || true
+            sleep 1
         fi
         
         cd $DEPLOY_PATH
         nohup java $JAVA_OPTS -jar $JAR_NAME --spring.profiles.active=$SPRING_PROFILE > $LOG_PATH/app.log 2>&1 &
-        sleep 3
+        sleep 5
         
-        if pgrep -f '$JAR_NAME' > /dev/null; then
-            echo '服务启动成功, PID: '\$(pgrep -f '$JAR_NAME')
+        NEW_PID=\$(pgrep -f 'java.*$JAR_NAME' || true)
+        if [ -n \"\$NEW_PID\" ]; then
+            echo '服务启动成功, PID: '\$NEW_PID
         else
-            echo '服务启动失败'
-            tail -30 $LOG_PATH/app.log
+            echo '服务启动失败，查看日志:'
+            tail -50 $LOG_PATH/app.log 2>/dev/null || echo '日志文件不存在'
             exit 1
         fi
     "
@@ -310,10 +317,11 @@ remote_stop() {
     log_info "停止远程服务..."
     SSH_OPTS=$(get_ssh_opts)
     ssh $SSH_OPTS "$REMOTE_USER@$REMOTE_HOST" "
-        PID=\$(pgrep -f '$JAR_NAME' || true)
+        PID=\$(pgrep -f 'java.*$JAR_NAME' || true)
         if [ -n \"\$PID\" ]; then
-            kill \$PID; sleep 2
-            pgrep -f '$JAR_NAME' > /dev/null && kill -9 \$PID 2>/dev/null || true
+            kill \$PID 2>/dev/null || true
+            sleep 2
+            pgrep -f 'java.*$JAR_NAME' > /dev/null 2>&1 && kill -9 \$PID 2>/dev/null || true
             echo '服务已停止'
         else
             echo '服务未运行'
@@ -324,10 +332,10 @@ remote_stop() {
 remote_status() {
     SSH_OPTS=$(get_ssh_opts)
     ssh $SSH_OPTS "$REMOTE_USER@$REMOTE_HOST" "
-        PID=\$(pgrep -f '$JAR_NAME' || true)
+        PID=\$(pgrep -f 'java.*$JAR_NAME' || true)
         if [ -n \"\$PID\" ]; then
             echo '服务运行中, PID: '\$PID
-            ps -p \$PID -o pid,ppid,%cpu,%mem,etime,cmd
+            ps -p \$PID -o pid,ppid,%cpu,%mem,etime,cmd 2>/dev/null || true
         else
             echo '服务未运行'
         fi
