@@ -8,6 +8,18 @@
 
 set -e
 
+# 本地路径 (需要先定义，用于加载配置文件)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SB3_DIR="$PROJECT_ROOT/sb3"
+
+# ==================== 加载配置文件 ====================
+CONFIG_FILE="$SCRIPT_DIR/config.env"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+    echo -e "\033[0;34m[INFO]\033[0m 已加载配置文件: $CONFIG_FILE"
+fi
+
 # ==================== 配置区域 ====================
 PROJECT_NAME="ruoyi-admin"
 JAR_NAME="ruoyi-admin.jar"
@@ -22,19 +34,14 @@ REMOTE_USER="${REMOTE_USER:-root}"
 REMOTE_PORT="${REMOTE_PORT:-22}"
 SSH_KEY="${SSH_KEY:-~/.ssh/id_rsa}"
 
-# 部署路径
-DEPLOY_PATH="${DEPLOY_PATH:-/opt/evs-home/backend}"
+# 部署路径 (优先使用 BACKEND_* 变量，兼容通用 DEPLOY_PATH)
+DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-${DEPLOY_PATH:-/opt/evs-home/backend}}"
 BACKUP_PATH="${BACKUP_PATH:-/opt/evs-home/backup}"
-LOG_PATH="${LOG_PATH:-/opt/evs-home/logs}"
+LOG_PATH="${BACKEND_LOG_PATH:-${LOG_PATH:-/opt/evs-home/logs}}"
 
 # JVM 配置
 JAVA_OPTS="${JAVA_OPTS:--Xms512m -Xmx1024m -XX:+UseG1GC}"
 SPRING_PROFILE="${SPRING_PROFILE:-prod}"
-
-# 本地路径
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SB3_DIR="$PROJECT_ROOT/sb3"
 
 # ==================== 颜色输出 ====================
 RED='\033[0;31m'

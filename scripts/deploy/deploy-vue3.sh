@@ -8,6 +8,18 @@
 
 set -e
 
+# 本地路径 (需要先定义，用于加载配置文件)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+VUE3_DIR="$PROJECT_ROOT/vue3"
+
+# ==================== 加载配置文件 ====================
+CONFIG_FILE="$SCRIPT_DIR/config.env"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+    echo -e "\033[0;34m[INFO]\033[0m 已加载配置文件: $CONFIG_FILE"
+fi
+
 # ==================== 配置区域 ====================
 PROJECT_NAME="evs-home-admin"
 VERSION="3.9.0"
@@ -21,15 +33,10 @@ REMOTE_USER="${REMOTE_USER:-root}"
 REMOTE_PORT="${REMOTE_PORT:-22}"
 SSH_KEY="${SSH_KEY:-~/.ssh/id_rsa}"
 
-# 部署路径
-DEPLOY_PATH="${DEPLOY_PATH:-/opt/evs-home/admin}"
-BACKUP_PATH="${BACKUP_PATH:-/opt/evs-home/backup/admin}"
+# 部署路径 (优先使用 ADMIN_* 变量)
+DEPLOY_PATH="${ADMIN_DEPLOY_PATH:-${DEPLOY_PATH:-/opt/evs-home/admin}}"
+BACKUP_PATH="${BACKUP_PATH:-/opt/evs-home/backup}/admin"
 NGINX_CONF_PATH="${NGINX_CONF_PATH:-/etc/nginx/conf.d}"
-
-# 本地路径
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-VUE3_DIR="$PROJECT_ROOT/vue3"
 
 # ==================== 颜色输出 ====================
 RED='\033[0;31m'
