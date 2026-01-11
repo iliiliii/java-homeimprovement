@@ -457,27 +457,44 @@ export DEPLOY_PATH=/data/app/backend
 
 ### 配置文件
 
-复制 `config.env.example` 为 `config.env` 并修改：
+脚本会自动加载 `scripts/deploy/config.env` 配置文件（如果存在）。
 
 ```bash
+# 1. 复制配置模板
 cp config.env.example config.env
+
+# 2. 编辑配置
 vim config.env
-source config.env
+
+# 3. 运行脚本 (会自动加载 config.env)
+./deploy-sb3.sh deploy
 ```
 
 ### 配置项说明
 
 ```bash
-# ==================== 服务器配置 ====================
+# ==================== 部署模式 ====================
+DEPLOY_MODE=local              # local 或 remote
+
+# ==================== 远程服务器配置 ====================
 REMOTE_HOST=192.168.1.100      # 服务器 IP
 REMOTE_USER=root               # SSH 用户
 REMOTE_PORT=22                 # SSH 端口
 SSH_KEY=~/.ssh/id_rsa          # SSH 私钥路径
 
 # ==================== 部署路径 ====================
-DEPLOY_PATH=/opt/evs-home/backend    # 后端部署路径
-BACKUP_PATH=/opt/evs-home/backup     # 备份路径
-LOG_PATH=/opt/evs-home/logs          # 日志路径
+# 后端
+BACKEND_DEPLOY_PATH=/opt/evs-home/backend
+BACKEND_LOG_PATH=/opt/evs-home/logs
+
+# 管理后台
+ADMIN_DEPLOY_PATH=/opt/evs-home/admin
+
+# H5
+H5_DEPLOY_PATH=/opt/evs-home/h5
+
+# 备份
+BACKUP_PATH=/opt/evs-home/backup
 
 # ==================== JVM 配置 ====================
 JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC"
@@ -485,6 +502,16 @@ SPRING_PROFILE=prod            # Spring 环境 (dev/test/prod)
 
 # ==================== Nginx 配置 ====================
 NGINX_CONF_PATH=/etc/nginx/conf.d
+```
+
+### 配置优先级
+
+命令行参数 > config.env 配置文件 > 脚本默认值
+
+```bash
+# config.env 中设置了 REMOTE_HOST=192.168.1.100
+# 但命令行指定 --host 会覆盖配置文件
+./deploy-sb3.sh --host 192.168.1.200 deploy
 ```
 
 ---
