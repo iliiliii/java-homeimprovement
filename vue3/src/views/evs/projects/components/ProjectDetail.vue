@@ -27,10 +27,14 @@
               </div>
               <div style="font-size: 14px; color: #666;">管理项目预算、施工进度和项目信息</div>
             </div>
-            <div style="flex: 2; display: flex; justify-content: flex-end; align-items: center; gap: 16px;">
+            <div style="flex: 2; display: flex; justify-content: flex-end; align-items: center;">
               <el-button size="default" @click="handleTeamAllocation(currentProject)" style="padding: 10px 20px;">
                 <el-icon style="margin-right: 8px;"><User /></el-icon>
                 分配团队
+              </el-button>
+              <el-button size="default" @click="handleExportTimeline(currentProject)" style="padding: 10px 20px;">
+                <el-icon style="margin-right: 8px;"><Download /></el-icon>
+                导出长图
               </el-button>
               <!-- 
               <el-button size="default" @click="handleBudgetManagement(currentProject)" style="padding: 10px 20px;">
@@ -207,12 +211,19 @@
     @rooms-updated="handleRoomsUpdated"
     @designs-updated="handleDesignsUpdated"
   />
+
+  <!-- 导出长图组件 -->
+  <ProjectTimelineExport
+    v-model="exportTimelineOpen"
+    :project="currentProject"
+  />
 </template>
 
 <script setup>
-import { User, Setting, Wallet, Clock, Edit, Picture } from '@element-plus/icons-vue'
+import { User, Setting, Wallet, Clock, Edit, Picture, Download } from '@element-plus/icons-vue'
 import ProjectMember from './ProjectMember.vue'
 import ProjectDesignDrafts from './ProjectDesignDrafts.vue'
+import ProjectTimelineExport from './ProjectTimelineExport.vue'
 import { listProjectBudgets } from '@/api/evs/projectBudgets'
 import { listProjectSchedules } from '@/api/evs/projectSchedules'
 
@@ -236,6 +247,9 @@ const teamAllocationOpen = ref(false)
 
 // 设计稿管理相关
 const designDraftsOpen = ref(false)
+
+// 导出长图相关
+const exportTimelineOpen = ref(false)
 
 // 时间轴状态配置（用于详情弹窗显示）
 const timelineStatusConfig = {
@@ -467,6 +481,12 @@ function handleDesignsUpdated(data) {
     projectId: currentProject.value.id,
     ...data
   })
+}
+
+/** 导出长图 */
+function handleExportTimeline(project) {
+  currentProject.value = project
+  exportTimelineOpen.value = true
 }
 
 // 暴露方法给父组件
