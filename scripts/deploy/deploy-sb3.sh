@@ -41,7 +41,8 @@ LOG_PATH="${BACKEND_LOG_PATH:-${LOG_PATH:-/opt/evs-home/logs}}"
 
 # JVM 配置
 JAVA_OPTS="${JAVA_OPTS:--Xms512m -Xmx1024m -XX:+UseG1GC}"
-SPRING_PROFILE="${SPRING_PROFILE:-prod}"
+# Spring Profile: 留空则使用项目默认配置 (application.yml 中的 profiles.active)
+SPRING_PROFILE="${SPRING_PROFILE:-}"
 
 # ==================== 颜色输出 ====================
 RED='\033[0;31m'
@@ -170,12 +171,18 @@ local_restart() {
         fi
     fi
     
+    # 构建启动命令
+    START_CMD="nohup java $JAVA_OPTS -jar $DEPLOY_PATH/$JAR_NAME"
+    # 只有指定了 profile 才添加参数
+    if [ -n "$SPRING_PROFILE" ]; then
+        START_CMD="$START_CMD --spring.profiles.active=$SPRING_PROFILE"
+    fi
+    START_CMD="$START_CMD > $LOG_PATH/app.log 2>&1 &"
+    
     # 启动新进程
     log_info "启动服务..."
     cd "$DEPLOY_PATH"
-    
-    # 使用 sudo -u 或直接 sudo 启动，确保 nohup 正常工作
-    sudo bash -c "nohup java $JAVA_OPTS -jar $DEPLOY_PATH/$JAR_NAME --spring.profiles.active=$SPRING_PROFILE > $LOG_PATH/app.log 2>&1 &"
+    sudo bash -c "$START_CMD"
     
     # 等待服务启动
     sleep 5
@@ -287,6 +294,12 @@ remote_restart() {
     log_info "重启远程服务..."
     SSH_OPTS=$(get_ssh_opts)
     
+    # 构建启动命令参数
+    PROFILE_ARG=""
+    if [ -n "$SPRING_PROFILE" ]; then
+        PROFILE_ARG="--spring.profiles.active=$SPRING_PROFILE"
+    fi
+    
     ssh $SSH_OPTS "$REMOTE_USER@$REMOTE_HOST" "
         PID=\$(pgrep -f 'java.*$JAR_NAME' || true)
         if [ -n \"\$PID\" ]; then
@@ -298,7 +311,7 @@ remote_restart() {
         fi
         
         cd $DEPLOY_PATH
-        nohup java $JAVA_OPTS -jar $JAR_NAME --spring.profiles.active=$SPRING_PROFILE > $LOG_PATH/app.log 2>&1 &
+        nohup java $JAVA_OPTS -jar $JAR_NAME $PROFILE_ARG > $LOG_PATH/app.log 2>&1 &
         sleep 5
         
         NEW_PID=\$(pgrep -f 'java.*$JAR_NAME' || true)
