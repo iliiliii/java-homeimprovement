@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">资讯设置</h2>
+        <h2 class="page-title">新闻资讯</h2>
         <p class="page-subtitle">管理系统资讯和公告信息,支持多位置发布</p>
       </div>
       <el-button type="primary" icon="Plus" @click="handleAdd" v-hasPermi="['evs:newsConsultation:add']">
@@ -561,12 +561,21 @@ function handleUpdate(row) {
         // 将封面图片转换为ImageUploadCard可识别的格式
         const coverImageUrl = form.value.coverImage
         if (coverImageUrl) {
-          // 直接使用后端返回的路径，不拼接任何前缀
-          // 后端返回格式：/profile/upload/xxx.jpg 或 http://...
+          // 需要拼接 VITE_APP_BASE_API 前缀，否则图片无法正确显示
+          const baseUrl = import.meta.env.VITE_APP_BASE_API
+          let fullUrl = coverImageUrl
+          
+          // 如果不是完整URL且不以baseUrl开头，则拼接baseUrl
+          if (!coverImageUrl.startsWith('http') && !coverImageUrl.startsWith(baseUrl)) {
+            const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+            const imagePath = coverImageUrl.startsWith('/') ? coverImageUrl : '/' + coverImageUrl
+            fullUrl = cleanBaseUrl + imagePath
+          }
+          
           coverImageFileList.value = [{
             uid: 'existing-cover',
             name: 'cover-image.jpg',
-            url: coverImageUrl,  // 直接使用，不拼接 VITE_APP_BASE_API
+            url: fullUrl,
             status: 'success'
           }]
         }
