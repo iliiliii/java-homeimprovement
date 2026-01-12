@@ -337,13 +337,27 @@ function handleUpdate(row) {
 
         if (Array.isArray(imageUrls) && imageUrls.length > 0) {
           // 转换为ImageUploadCard组件可识别的格式
-          imagesFileList.value = uploadRef.value?.parseFileIdsToList?.(imageUrls) ||
-            imageUrls.map((url, index) => ({
-              uid: `existing-${index}`,
-              name: `image-${index}.jpg`,
-              url: url,  // 直接使用后端返回的路径
-              status: 'success'
-            }))
+          // 优先使用组件的 parseFileIdsToList 方法（已处理URL拼接）
+          // 如果组件未初始化，则手动拼接 VITE_APP_BASE_API
+          if (uploadRef.value?.parseFileIdsToList) {
+            imagesFileList.value = uploadRef.value.parseFileIdsToList(imageUrls)
+          } else {
+            const baseUrl = import.meta.env.VITE_APP_BASE_API
+            imagesFileList.value = imageUrls.map((url, index) => {
+              let fullUrl = url
+              if (!url.startsWith('http') && !url.startsWith(baseUrl)) {
+                const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+                const imagePath = url.startsWith('/') ? url : '/' + url
+                fullUrl = cleanBaseUrl + imagePath
+              }
+              return {
+                uid: `existing-${index}`,
+                name: `image-${index}.jpg`,
+                url: fullUrl,
+                status: 'success'
+              }
+            })
+          }
         }
       } catch (error) {
         console.warn('解析现有图片数据失败:', error)

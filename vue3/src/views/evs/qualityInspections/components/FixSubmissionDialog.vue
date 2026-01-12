@@ -252,13 +252,27 @@ watch(() => props.visible, (newVal) => {
 
       // 处理编辑模式下的图片回显
       if (images.length > 0) {
-        imagesFileList.value = uploadRef.value?.parseFileIdsToList?.(images) ||
-          images.map((url, index) => ({
-            uid: `existing-${index}`,
-            name: `image-${index}.jpg`,
-            url: url,  // 直接使用后端返回的路径
-            status: 'success'
-          }))
+        // 优先使用组件的 parseFileIdsToList 方法（已处理URL拼接）
+        // 如果组件未初始化，则手动拼接 VITE_APP_BASE_API
+        if (uploadRef.value?.parseFileIdsToList) {
+          imagesFileList.value = uploadRef.value.parseFileIdsToList(images)
+        } else {
+          const baseUrl = import.meta.env.VITE_APP_BASE_API
+          imagesFileList.value = images.map((url, index) => {
+            let fullUrl = url
+            if (!url.startsWith('http') && !url.startsWith(baseUrl)) {
+              const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+              const imagePath = url.startsWith('/') ? url : '/' + url
+              fullUrl = cleanBaseUrl + imagePath
+            }
+            return {
+              uid: `existing-${index}`,
+              name: `image-${index}.jpg`,
+              url: fullUrl,
+              status: 'success'
+            }
+          })
+        }
       }
     } else {
       // 新建模式：初始化空表单
