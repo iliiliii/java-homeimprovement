@@ -149,14 +149,15 @@
               <!-- 验收图片 -->
               <div v-if="hasAcceptanceImages(record)" class="acceptance-images">
                 <div class="images-label">验收图片：</div>
-                <div class="images-grid">
-                  <el-image
+                <div
+                  class="images-grid"
+                  v-viewer="getViewerOptions(getAcceptanceImages(record))"
+                >
+                  <img
                     v-for="(img, imgIndex) in getAcceptanceImages(record)"
                     :key="imgIndex"
                     :src="getImageUrl(img)"
-                    :preview-src-list="getAcceptanceImageUrls(record)"
                     fit="cover"
-                    style="width: 60px; height: 60px; margin: 4px; border-radius: 4px;"
                     class="preview-image"
                   />
                 </div>
@@ -206,6 +207,26 @@ import AcceptanceReportDialog from './AcceptanceReportDialog.vue'
 
 const { proxy } = getCurrentInstance()
 const { decoration_construction_stage, decoration_design_stage } = proxy.useDict('decoration_construction_stage', 'decoration_design_stage')
+
+// v-viewer 配置选项
+function getViewerOptions(images) {
+  return {
+    toolbar: true,
+    navbar: images && images.length > 1,
+    title: false,
+    tooltip: true,
+    movable: true,
+    zoomable: true,
+    rotatable: true,
+    scalable: true,
+    transition: true,
+    keyboard: true,
+    loop: true,
+    minZoomRatio: 0.1,
+    maxZoomRatio: 5,
+    zIndex: 9999
+  }
+}
 
 const props = defineProps({
   visible: {
@@ -818,6 +839,11 @@ onUnmounted(() => {
         gap: 6px;
 
         .preview-image {
+          width: 60px;
+          height: 60px;
+          margin: 4px;
+          border-radius: 4px;
+          object-fit: cover;
           cursor: pointer;
           transition: all 0.3s ease;
           border-radius: 6px;
