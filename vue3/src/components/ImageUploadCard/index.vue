@@ -129,18 +129,18 @@
       </div>
     </div>
 
-    <!-- 图片预览组件 - 直接使用 v-viewer 全屏预览 -->
+    <!-- 隐藏的图片容器，用于 v-viewer 预览 -->
     <div
-      v-if="showPreview"
-      class="preview-wrapper"
-      @click.self="closePreview"
+      ref="viewerContainerRef"
+      v-viewer="viewerOptions"
+      class="viewer-container"
+      style="display: none;"
     >
-      <ImagePreview
-        :images="previewImages"
-        :options="previewOptions"
-        width="100%"
-        height="100%"
-        :z-index="3000"
+      <img
+        v-for="(url, index) in previewImages"
+        :key="index"
+        :src="url"
+        :alt="`图片${index + 1}`"
       />
     </div>
   </div>
@@ -288,8 +288,10 @@ const fileList = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-// 预览控制状态 - 替换原来的对话框模式
-const showPreview = ref(false)
+// v-viewer 容器引用
+const viewerContainerRef = ref(null)
+
+// 预览控制状态
 const currentPreviewIndex = ref(0)
 
 // 计算预览图片列表
@@ -328,7 +330,7 @@ const previewImages = computed(() => {
 })
 
 // 预览选项配置 - 优化版本，直接使用 v-viewer 功能
-const previewOptions = computed(() => ({
+const viewerOptions = computed(() => ({
   // 工具栏配置
   toolbar: true,
   zoomOn: true,
@@ -342,7 +344,7 @@ const previewOptions = computed(() => ({
   download: true,
 
   // 导航和交互
-  navbar: true,
+  navbar: previewImages.value.length > 1,
   title: false,
   tooltip: true,
   movable: true,
@@ -356,6 +358,9 @@ const previewOptions = computed(() => ({
   // 缩放限制
   minZoomRatio: 0.1,
   maxZoomRatio: 5,
+
+  // z-index
+  zIndex: 9999,
 
   // 设置初始查看的图片索引
   initialViewIndex: currentPreviewIndex.value
@@ -439,10 +444,21 @@ function handleExceed() {
 function handlePictureCardPreview(file) {
   // 计算当前图片在预览列表中的索引
   const fileIndex = fileList.value.findIndex(f => f.uid === file.uid)
-  currentPreviewIndex.value = Math.max(0, fileIndex)
-
-  // 显示预览组件
-  showPreview.value = true
+  // 需要找到在 previewImages 中的实际索引（过滤掉无效图片后的索引）
+  let previewIndex = 0
+  let validCount = 0
+  for (let i = 0; i < fileList.value.length; i++) {
+    const f = fileList.value[i]
+    // 检查是否是有效的可预览图片
+    if (f.status !== 'fail' && f.status !== 'error' && f.status !== 'uploading' && (f.url || f.response)) {
+      if (i === fileIndex) {
+        previewIndex = validCount
+        break
+      }
+      validCount++
+    }
+  }
+  currentPreviewIndex.value = previewIndex
 
   // 获取当前图片URL用于事件发送
   let previewUrl = ''
@@ -464,11 +480,18 @@ function handlePictureCardPreview(file) {
     previewUrl = URL.createObjectURL(file.raw)
   }
 
+  // 直接使用 v-viewer API 打开全屏预览
+  nextTick(() => {
+    if (viewerContainerRef.value && viewerContainerRef.value.$viewer) {
+      viewerContainerRef.value.$viewer.view(previewIndex)
+    }
+  })
+
   // 发送预览事件，包含更多上下文信息
   emit('preview', {
     file,
     url: previewUrl,
-    index: currentPreviewIndex.value,
+    index: previewIndex,
     totalImages: previewImages.value.length,
     allImages: previewImages.value
   })
@@ -732,31 +755,10 @@ async function handleHttpRequest(options) {
   }
 }
 
-// 关闭预览
-function closePreview() {
-  showPreview.value = false
-  currentPreviewIndex.value = 0
-}
-
-// 预览图片错误处理 - ImagePreview 组件会自动处理，这里保留日志
+// 预览图片错误处理 - v-viewer 会自动处理，这里保留日志
 function handlePreviewError(event) {
   console.warn('预览图片加载失败:', event.target?.src)
-  // ImagePreview 组件会自动处理错误图片，这里不需要额外处理
 }
-
-// 监听 ESC 键关闭预览
-onMounted(() => {
-  const handleKeydown = (e) => {
-    if (e.key === 'Escape' && showPreview.value) {
-      closePreview()
-    }
-  }
-  document.addEventListener('keydown', handleKeydown)
-
-  onUnmounted(() => {
-    document.removeEventListener('keydown', handleKeydown)
-  })
-})
 
 // 删除前确认钩子 - 防重复点击版本
 function beforeRemove(file) {
@@ -1267,19 +1269,9 @@ defineExpose({
   }
 }
 
-// 图片预览包装器样式
-.preview-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
-  z-index: 2999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
+// 隐藏的 v-viewer 容器
+.viewer-container {
+  display: none;
 }
 
 // 旋转动画
