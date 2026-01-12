@@ -347,14 +347,23 @@ watch(() => [props.visible, props.isEdit, props.editRecord], async ([visible, is
 
       // 处理编辑模式下的图片回显
       if (images.length > 0) {
-        // 直接使用后端返回的路径，不拼接任何前缀
-        // 后端返回格式：/profile/upload/xxx.jpg 或 http://...
-        imagesFileList.value = images.map((url, index) => ({
-          uid: `existing-${index}`,
-          name: `image-${index}.jpg`,
-          url: url,  // 直接使用，不拼接 VITE_APP_BASE_API
-          status: 'success'
-        }))
+        // 需要拼接 VITE_APP_BASE_API 前缀，否则图片无法正确显示
+        const baseUrl = import.meta.env.VITE_APP_BASE_API
+        imagesFileList.value = images.map((url, index) => {
+          let fullUrl = url
+          // 如果不是完整URL且不以baseUrl开头，则拼接baseUrl
+          if (!url.startsWith('http') && !url.startsWith(baseUrl)) {
+            const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+            const imagePath = url.startsWith('/') ? url : '/' + url
+            fullUrl = cleanBaseUrl + imagePath
+          }
+          return {
+            uid: `existing-${index}`,
+            name: `image-${index}.jpg`,
+            url: fullUrl,
+            status: 'success'
+          }
+        })
       }
       console.log('表单数据已预填充', acceptanceForm.value)
     } catch (error) {
