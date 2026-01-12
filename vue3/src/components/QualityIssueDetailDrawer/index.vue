@@ -84,14 +84,14 @@
           <!-- 现场图片 -->
           <div class="info-section" v-if="hasIssueImages">
             <div class="section-title">现场照片</div>
-            <div class="images-preview">
-              <el-image
+            <div
+              class="images-preview"
+              v-viewer="getViewerOptions(getIssueImages())"
+            >
+              <img
                 v-for="(img, index) in getIssueImages()"
                 :key="index"
                 :src="getImageUrl(img)"
-                :preview-src-list="getIssueImageUrls()"
-                fit="cover"
-                style="width: 80px; height: 80px; margin-right: 8px; border-radius: 4px;"
                 class="preview-image"
               />
             </div>
@@ -178,14 +178,14 @@
               <!-- 整改图片 -->
               <div v-if="hasFixImages(fix)" class="fix-images">
                 <div class="images-label">整改图片：</div>
-                <div class="images-grid">
-                  <el-image
+                <div
+                  class="images-grid"
+                  v-viewer="getViewerOptions(getFixImages(fix))"
+                >
+                  <img
                     v-for="(img, imgIndex) in getFixImages(fix)"
                     :key="imgIndex"
                     :src="getImageUrl(img)"
-                    :preview-src-list="getFixImageUrls(fix)"
-                    fit="cover"
-                    style="width: 60px; height: 60px; margin: 4px; border-radius: 4px;"
                     class="preview-image"
                   />
                 </div>
@@ -239,6 +239,26 @@ const { proxy } = getCurrentInstance()
 
 // 获取字典数据
 const { decoration_issue_severity } = proxy.useDict('decoration_issue_severity')
+
+// v-viewer 配置选项
+function getViewerOptions(images) {
+  return {
+    toolbar: true,
+    navbar: images && images.length > 1,
+    title: false,
+    tooltip: true,
+    movable: true,
+    zoomable: true,
+    rotatable: true,
+    scalable: true,
+    transition: true,
+    keyboard: true,
+    loop: true,
+    minZoomRatio: 0.1,
+    maxZoomRatio: 5,
+    zIndex: 9999
+  }
+}
 
 // 响应式数据
 const drawerVisible = ref(false)
