@@ -22,7 +22,7 @@ const getBaseUrl = () => {
   }
   
   // 生产环境使用正式域名
-  return 'http://123.207.3.93:3000/prod-api'
+  return 'http://hsdlp.gzcelestial.com/prod-api'
 }
 
 const BASE_URL = getBaseUrl()

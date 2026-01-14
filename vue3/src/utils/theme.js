@@ -43,7 +43,12 @@ export function getLightColor(color, level) {
 export function getDarkColor(color, level) {
 	let rgb = hexToRgb(color)
 	for (let i = 0; i < 3; i++) {
-		rgb[i] = Math.floor(rgb[i] * (1 - level))
+		rgb[i] = Math.floor((255 - rgb[i]) * level + rgb[i])
 	}
 	return rgbToHex(rgb[0], rgb[1], rgb[2])
+	// let rgb = hexToRgb(color)
+	// for (let i = 0; i < 3; i++) {
+	// 	rgb[i] = Math.floor(rgb[i] * (1 - level))
+	// }
+	// return rgbToHex(rgb[0], rgb[1], rgb[2])
 }
