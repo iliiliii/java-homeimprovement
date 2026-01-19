@@ -16,13 +16,12 @@ const getBaseUrl = () => {
     
     // #ifdef MP-WEIXIN
     // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
-    // return 'http://172.31.102.128:8080'
-    return 'http://localhost:8080'
+    return 'http://192.168.5.102:8080'
     // #endif
   }
   
   // 生产环境使用正式域名
-  return 'http://hsdlp.gzcelestial.com/prod-api'
+  return 'https://hsdlp.gzcelestial.com/prod-api'
 }
 
 const BASE_URL = getBaseUrl()
@@ -235,6 +234,14 @@ const request = (options) => {
     timeout: options.timeout || 30000
   })
   
+  console.log('[Request] 发起请求:', {
+    url: config.url,
+    method: config.method,
+    data: config.data,
+    header: config.header,
+    timeout: config.timeout
+  })
+  
   return new Promise((resolve, reject) => {
     // 显示加载提示
     if (options.loading !== false) {
@@ -244,14 +251,35 @@ const request = (options) => {
     uni.request({
       ...config,
       success: (response) => {
+        console.log('[Request] 请求成功响应:', {
+          statusCode: response.statusCode,
+          header: response.header,
+          data: response.data
+        })
         responseInterceptor(response, options)
           .then(resolve)
           .catch(reject)
       },
       fail: (error) => {
-        console.error('请求失败', error)
-        uni.showToast({ title: '网络请求失败', icon: 'none' })
-        reject(new Error(error.errMsg || '网络请求失败'))
+        console.error('[Request] 请求失败:', {
+          errMsg: error.errMsg,
+          errno: error.errno,
+          error: error
+        })
+        
+        let errorMessage = '网络请求失败'
+        if (error.errMsg) {
+          if (error.errMsg.includes('timeout')) {
+            errorMessage = '请求超时，请检查网络连接'
+          } else if (error.errMsg.includes('fail')) {
+            errorMessage = '网络连接失败，请检查网络设置'
+          } else {
+            errorMessage = error.errMsg
+          }
+        }
+        
+        uni.showToast({ title: errorMessage, icon: 'none' })
+        reject(new Error(errorMessage))
       },
       complete: () => {
         if (options.loading !== false) {

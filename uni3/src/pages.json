@@ -106,6 +106,20 @@
         "navigationBarTitleText": "文档",
         "navigationStyle": "default"
       }
+    },
+    {
+      "path": "pages/test/network-test",
+      "style": {
+        "navigationBarTitleText": "网络测试",
+        "navigationStyle": "default"
+      }
+    },
+    {
+      "path": "pages/test/wechat-binding",
+      "style": {
+        "navigationBarTitleText": "微信绑定测试",
+        "navigationStyle": "default"
+      }
     }
   ],
   "tabBar": {
@@ -135,7 +149,7 @@
   },
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "逅时代设计",
+    "navigationBarTitleText": "逅管家",
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#FFFFFF"
   }

@@ -28,7 +28,8 @@ export function createApp() {
 const whiteList = [
   '/pages/login/index',
   '/pages/protocol/index',
-  '/pages/privacy/index'
+  '/pages/privacy/index',
+  '/pages/test/wechat-binding'
 ]
 
 // 检查是否在白名单中

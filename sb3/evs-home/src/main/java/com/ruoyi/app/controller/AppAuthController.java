@@ -2,6 +2,7 @@ package com.ruoyi.app.controller;
 
 import com.ruoyi.app.dto.request.*;
 import com.ruoyi.app.dto.response.AppLoginResponse;
+import com.ruoyi.app.dto.response.OpenidBindingCheckResponse;
 import com.ruoyi.app.service.IAppAuthService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.ServletUtils;
@@ -21,6 +22,56 @@ public class AppAuthController {
     
     @Autowired
     private IAppAuthService authService;
+    
+    /**
+     * 健康检查接口
+     */
+    @GetMapping("/health")
+    public AjaxResult health() {
+        return AjaxResult.success("服务正常运行");
+    }
+    
+    /**
+     * 检查openid绑定状态
+     */
+    @PostMapping("/check-openid-binding")
+    public AjaxResult checkOpenidBinding(@Validated @RequestBody CheckOpenidBindingRequest request) {
+        try {
+            String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
+            OpenidBindingCheckResponse response = authService.checkOpenidBinding(request, ipAddress);
+            return AjaxResult.success(response);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * openid直接登录（已绑定用户）
+     */
+    @PostMapping("/openid-login")
+    public AjaxResult openidLogin(@Validated @RequestBody OpenidLoginRequest request) {
+        try {
+            String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
+            AppLoginResponse response = authService.openidLogin(request, ipAddress);
+            return AjaxResult.success(response);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 绑定手机号到openid
+     */
+    @PostMapping("/bind-phone-to-openid")
+    public AjaxResult bindPhoneToOpenid(@Validated @RequestBody BindPhoneToOpenidRequest request) {
+        try {
+            String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
+            AppLoginResponse response = authService.bindPhoneToOpenid(request, ipAddress);
+            return AjaxResult.success(response);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
     
     /**
      * 微信登录
@@ -107,6 +158,20 @@ public class AppAuthController {
             authService.logout(token);
         }
         return AjaxResult.success("退出成功");
+    }
+    
+    /**
+     * 解除微信绑定
+     */
+    @PostMapping("/unbind-wechat")
+    public AjaxResult unbindWechat(@Validated @RequestBody UnbindWechatRequest request) {
+        try {
+            String ipAddress = IpUtils.getIpAddr(ServletUtils.getRequest());
+            authService.unbindWechat(request, ipAddress);
+            return AjaxResult.success("解除绑定成功");
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
     }
     
     /**

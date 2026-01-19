@@ -30,10 +30,26 @@ public class WechatServiceImpl implements IWechatService {
     @Value("${app.wechat.secret:}")
     private String appSecret;
     
+    @Value("${app.wechat.dev-mode:false}")
+    private boolean devMode;
+    
     private final RestTemplate restTemplate = new RestTemplate();
     
     @Override
     public WxSession code2Session(String code) {
+        // 开发模式：跳过微信API调用，返回模拟数据
+        if (devMode) {
+            log.info("开发模式：模拟微信登录，code: {}", code);
+            WxSession session = new WxSession();
+            // 使用code生成一个固定的openid，这样同一个code总是返回相同的openid
+            String mockOpenId = "mock_openid_" + Math.abs(code.hashCode() % 10000);
+            session.setOpenId(mockOpenId);
+            session.setUnionId("mock_unionid_" + Math.abs(code.hashCode() % 1000));
+            session.setSessionKey("mock_session_key");
+            log.info("开发模式返回模拟数据: openid={}", mockOpenId);
+            return session;
+        }
+        
         if (appId == null || appId.isEmpty() || appSecret == null || appSecret.isEmpty()) {
             throw new ServiceException("微信小程序配置未完成，请联系管理员");
         }

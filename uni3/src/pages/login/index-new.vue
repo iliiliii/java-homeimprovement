@@ -1,5 +1,6 @@
 <template>
   <view class="login-container">
+  
     <!-- 顶部装饰背景 -->
     <view class="header-bg">
       <view class="bg-blob blob-1"></view>
@@ -23,26 +24,35 @@
     
     <!-- 登录表单 -->
     <view class="glass-card login-form">
-      <!-- 微信一键登录 -->
-      <view v-if="loginMode === 'wechat'" class="login-mode-content">
-        <view v-if="false" class="mode-header">
-          <view class="mode-title">微信一键登录</view>
-          <view class="mode-desc">快速安全，无需输入密码</view>
+      <!-- 检查中状态 -->
+      <view v-if="bindingStep === 'check'" class="login-mode-content">
+        <view class="loading-state">
+          <view class="loading-spinner"></view>
+          <text class="loading-text">正在检查登录状态...</text>
         </view>
+      </view>
+      
+      <!-- 微信登录 -->
+      <view v-else-if="bindingStep === 'normal'" class="login-mode-content">
         
+        <!-- 微信登录按钮 -->
         <button 
           class="glass-btn primary-btn wechat-btn" 
-          open-type="getPhoneNumber" 
-          @getphonenumber="handleWechatLogin"
+          @click="handleWechatLogin"
+          :disabled="loading"
         >
           <SvgIcon name="brand-wechat" size="42rpx" style="margin-right: 12rpx;" color="#fff"/>
-          微信一键登录
+          {{ loading ? '登录中...' : '微信登录' }}
         </button>
         
         <view class="switch-mode">
           <text @click="switchLoginMode('sms')">使用短信验证码登录</text>
           <text class="divider">|</text>
           <text @click="switchLoginMode('password')">使用密码登录</text>
+        </view>
+        
+        <view class="contact-admin">
+          <text @click="showContactAdminModal">没有账号？联系管理员添加</text>
         </view>
       </view>
       
@@ -174,23 +184,60 @@
     <view class="copyright">
       <text>{{ APP_CONFIG.copyright.text }}</text>
     </view>
+    
+    <!-- 自定义绑定组件 -->
+    <WechatBindingGuide 
+      :visible="showBindingGuide"
+      @confirm="handleBindingGuideConfirm"
+      @cancel="handleBindingGuideCancel"
+      @close="handleBindingGuideClose"
+    />
+    
+    <PhoneBindingModal 
+      :visible="showPhoneModal"
+      :retryCount="phoneRetryCount"
+      @confirm="handlePhoneConfirm"
+      @cancel="handlePhoneCancel"
+      @close="handlePhoneClose"
+    />
+    
+    <BindingSuccessModal 
+      :visible="showSuccessModal"
+      :userInfo="bindingResult?.userInfo"
+      @close="handleSuccessModalClose"
+    />
   </view>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import { wechatLogin, smsLogin, passwordLogin, sendCode } from '@/api/auth'
+import { smsLogin, passwordLogin, sendCode, checkPhoneExists, checkOpenidBinding, openidLogin, bindPhoneToOpenid } from '@/api/auth'
 import { getDeviceId } from '@/utils/device'
 import SvgIcon from '@/components/SvgIcon.vue'
+import WechatBindingGuide from '@/components/WechatBindingGuide.vue'
+import PhoneBindingModal from '@/components/PhoneBindingModal.vue'
+import BindingSuccessModal from '@/components/BindingSuccessModal.vue'
 import { APP_CONFIG } from '@/config/app.js'
+import { CONTACT_CONFIG } from '@/config/contact.js'
 
 const userStore = useUserStore()
 
-// 登录模式：wechat | sms | password
+// 登录模式：wechat | sms | password | bind
 const loginMode = ref('wechat')
 const loading = ref(false)
 const agreed = ref(false)
+
+// 绑定状态
+const bindingStep = ref('check') // check | normal
+const userOpenid = ref('')
+
+// 自定义组件状态
+const showBindingGuide = ref(false)
+const showPhoneModal = ref(false)
+const showSuccessModal = ref(false)
+const phoneRetryCount = ref(0)
+const bindingResult = ref(null)
 
 // 开发者模式
 const showDevMode = ref(false)  // 开发时设为true，生产时设为false
@@ -208,12 +255,27 @@ const passwordForm = reactive({
   password: ''
 })
 
-// 验证码倒计时
+// 手动绑定表单（保留用于其他登录方式）
+const bindForm = reactive({
+  phone: '',
+  code: ''
+})
 const countdown = ref(0)
 let countdownTimer = null
 
 onMounted(() => {
-  // 尝试静默登录
+  // 检查是否是主动退出登录
+  const manualLogout = uni.getStorageSync('manualLogout')
+  if (manualLogout) {
+    // 清除退出标记
+    uni.removeStorageSync('manualLogout')
+    // 主动退出登录，不进行自动登录检查，直接显示登录界面
+    console.log('[登录页面] 检测到主动退出登录，跳过自动登录检查')
+    bindingStep.value = 'normal'
+    return
+  }
+  
+  // 正常进入登录页面，尝试静默登录检查
   attemptSilentLogin()
 })
 
@@ -232,10 +294,110 @@ const attemptSilentLogin = async () => {
       await userStore.validateToken()
       // token有效，跳转首页
       navigateToHome()
+      return
     } catch (error) {
       // token无效，清除
       userStore.logout()
     }
+  }
+  
+  // 没有有效token，尝试微信静默登录检查
+  await checkWechatLoginStatus()
+}
+
+// 检查微信登录状态和openid绑定情况
+const checkWechatLoginStatus = async () => {
+  try {
+    bindingStep.value = 'check'
+    
+    // 1. 检查微信环境
+    const accountInfo = uni.getAccountInfoSync()
+    if (!accountInfo || !accountInfo.miniProgram) {
+      console.log('[静默登录] 非微信小程序环境')
+      bindingStep.value = 'normal'
+      return
+    }
+    
+    // 2. 静默获取微信登录凭证
+    const loginRes = await uni.login({ provider: 'weixin' })
+    if (!loginRes.code) {
+      console.log('[静默登录] 获取微信凭证失败')
+      bindingStep.value = 'normal'
+      return
+    }
+    
+    console.log('[静默登录] 获取微信code成功，检查绑定状态')
+    
+    // 3. 检查openid是否已绑定
+    const checkResult = await checkOpenidBindingStatus(loginRes.code)
+    
+    if (checkResult.isBound) {
+      // 已绑定，尝试静默登录
+      console.log('[静默登录] 检测到已绑定，尝试静默登录')
+      userOpenid.value = checkResult.openid
+      await performSilentLogin(checkResult.openid)
+    } else {
+      // 未绑定，显示正常登录界面
+      console.log('[静默登录] 检测到未绑定，显示登录界面')
+      userOpenid.value = checkResult.openid
+      bindingStep.value = 'normal'
+    }
+    
+  } catch (error) {
+    console.error('[静默登录] 检查失败:', error)
+    // 静默登录失败不显示错误，直接显示登录界面
+    bindingStep.value = 'normal'
+  }
+}
+
+// 执行静默登录
+const performSilentLogin = async (openid) => {
+  try {
+    console.log('[静默登录] 开始静默登录')
+    
+    const result = await openidLogin({
+      openid: openid,
+      deviceId: getDeviceId()
+    })
+    
+    console.log('[静默登录] 静默登录成功:', result.userInfo)
+    
+    // 保存登录信息
+    userStore.setLoginInfo(result)
+    
+    // 直接跳转首页，不显示提示
+    navigateToHome()
+    
+  } catch (error) {
+    console.error('[静默登录] 静默登录失败:', error)
+    // 静默登录失败，显示正常登录界面
+    bindingStep.value = 'normal'
+  }
+}
+
+// 检查openid绑定状态
+const checkOpenidBindingStatus = async (code) => {
+  try {
+    console.log('[API调用] 检查openid绑定状态, code:', code)
+    
+    const result = await checkOpenidBinding(code)
+    console.log('[API调用] 检查绑定状态成功:', result)
+    return result
+  } catch (error) {
+    console.error('[API调用] 检查绑定状态失败:', error)
+    
+    // 详细错误信息
+    if (error.message) {
+      console.error('[API调用] 错误消息:', error.message)
+    }
+    if (error.statusCode) {
+      console.error('[API调用] HTTP状态码:', error.statusCode)
+    }
+    if (error.data) {
+      console.error('[API调用] 错误数据:', error.data)
+    }
+    
+    throw new Error(`检查绑定状态失败: ${error.message}`)
   }
 }
 
@@ -257,55 +419,323 @@ const openPrivacy = () => {
   uni.navigateTo({ url: '/pages/privacy/index' })
 }
 
-// ==================== 微信登录 ====================
-const handleWechatLogin = async (e) => {
+// ==================== 微信登录/绑定 ====================
+const handleWechatLogin = async () => {
   if (!agreed.value) {
     uni.showToast({ title: '请阅读并同意用户协议和隐私政策', icon: 'none' })
     return
   }
-
-  if (e.detail.errMsg === 'getPhoneNumber:ok') {
-    const phoneCode = e.detail.code
+  
+  try {
+    loading.value = true
+    uni.showLoading({ title: '正在登录...', mask: true })
     
-    try {
-      loading.value = true
-      uni.showLoading({ title: '登录中...', mask: true })
-      
-      // 1. 获取微信登录凭证
-      const loginRes = await uni.login({ provider: 'weixin' })
-      const wxCode = loginRes.code
-      
-      // 2. 调用后端登录接口
-      const result = await wechatLogin({
-        code: wxCode,
-        phoneCode: phoneCode,
-        deviceId: getDeviceId()
-      })
-      
-      // 3. 保存登录信息
-      userStore.setLoginInfo(result)
-      
-      // 4. 跳转首页
-      uni.showToast({ title: '登录成功', icon: 'success' })
-      setTimeout(() => {
-        navigateToHome()
-      }, 500)
-      
-    } catch (error) {
-      console.error('微信登录失败', error)
-      uni.showToast({ 
-        title: error.message || '登录失败，请重试', 
-        icon: 'none' 
-      })
-    } finally {
-      loading.value = false
-      uni.hideLoading()
+    console.log('[微信登录] 开始微信一键登录流程')
+    
+    // 1. 获取微信登录凭证
+    const loginRes = await uni.login({ provider: 'weixin' })
+    if (!loginRes.code) {
+      throw new Error('获取微信登录凭证失败，请重试')
     }
-  } else if (e.detail.errMsg === 'getPhoneNumber:fail user deny') {
-    uni.showToast({ title: '需要授权手机号才能登录', icon: 'none' })
-  } else {
-    uni.showToast({ title: '获取手机号失败', icon: 'none' })
+    
+    console.log('[微信登录] 获取微信code成功:', loginRes.code)
+    
+    // 2. 检查openid绑定状态
+    const checkResult = await checkOpenidBindingStatus(loginRes.code)
+    console.log('[微信登录] 绑定状态检查结果:', checkResult)
+    
+    if (checkResult.isBound) {
+      // 已绑定，直接使用openid登录
+      console.log('[微信登录] 检测到已绑定，执行直接登录')
+      await performOpenidLogin(checkResult.openid)
+    } else {
+      // 未绑定，需要绑定手机号
+      console.log('[微信登录] 检测到未绑定，需要绑定手机号')
+      userOpenid.value = checkResult.openid
+      await showPhoneBindingFlow()
+    }
+    
+  } catch (error) {
+    console.error('[微信登录] 登录流程失败:', error)
+    handleLoginError(error)
+  } finally {
+    loading.value = false
+    uni.hideLoading()
   }
+}
+
+// 执行openid直接登录
+const performOpenidLogin = async (openid) => {
+  try {
+    console.log('[直接登录] 使用openid登录:', openid)
+    
+    const result = await openidLogin({
+      openid: openid,
+      deviceId: getDeviceId()
+    })
+    
+    console.log('[直接登录] 登录成功:', result.userInfo)
+    
+    // 保存登录信息
+    userStore.setLoginInfo(result)
+    
+    // 显示成功提示
+    uni.showToast({ 
+      title: `欢迎回来，${result.userInfo.name}`, 
+      icon: 'success',
+      duration: 2000
+    })
+    
+    // 跳转首页
+    setTimeout(() => {
+      navigateToHome()
+    }, 1000)
+    
+  } catch (error) {
+    console.error('[直接登录] 登录失败:', error)
+    throw new Error(`登录失败: ${error.message}`)
+  }
+}
+
+// 显示手机号绑定流程
+const showPhoneBindingFlow = async () => {
+  try {
+    console.log('[绑定流程] 开始手机号绑定流程')
+    
+    // 显示绑定引导
+    showBindingGuide.value = true
+    
+  } catch (error) {
+    console.error('[绑定流程] 绑定流程失败:', error)
+    throw error
+  }
+}
+
+// 绑定引导组件事件处理
+const handleBindingGuideConfirm = () => {
+  showBindingGuide.value = false
+  showPhoneModal.value = true
+  phoneRetryCount.value = 0
+}
+
+const handleBindingGuideCancel = () => {
+  showBindingGuide.value = false
+  console.log('[绑定流程] 用户取消绑定')
+}
+
+const handleBindingGuideClose = () => {
+  showBindingGuide.value = false
+}
+
+// 手机号输入组件事件处理
+const handlePhoneConfirm = async (phone) => {
+  try {
+    showPhoneModal.value = false
+    await performPhoneBinding(phone)
+  } catch (error) {
+    console.error('[手机号绑定] 绑定失败:', error)
+    
+    // 处理特定的绑定错误
+    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
+      await showPhoneNotFoundDialog()
+    } else if (error.message.includes('手机号格式')) {
+      // 格式错误，重新显示输入框
+      phoneRetryCount.value++
+      if (phoneRetryCount.value < 3) {
+        showPhoneModal.value = true
+      } else {
+        uni.showToast({ title: '手机号格式错误次数过多', icon: 'none' })
+      }
+    } else {
+      uni.showToast({ title: error.message || '绑定失败，请重试', icon: 'none' })
+    }
+  }
+}
+
+const handlePhoneCancel = () => {
+  showPhoneModal.value = false
+  console.log('[绑定流程] 用户取消输入手机号')
+}
+
+const handlePhoneClose = () => {
+  showPhoneModal.value = false
+}
+
+// 执行手机号绑定
+const performPhoneBinding = async (phone) => {
+  try {
+    console.log('[手机号绑定] 开始绑定手机号:', phone)
+    
+    uni.showLoading({ title: '正在绑定...', mask: true })
+    
+    const result = await bindPhoneToOpenid({
+      openid: userOpenid.value,
+      phone: phone,
+      deviceId: getDeviceId()
+    })
+    
+    console.log('[手机号绑定] 绑定成功:', result.userInfo)
+    
+    // 保存登录信息
+    userStore.setLoginInfo(result)
+    
+    // 保存绑定结果用于成功页面显示
+    bindingResult.value = result
+    
+    // 显示成功模态框
+    showSuccessModal.value = true
+    
+  } catch (error) {
+    console.error('[手机号绑定] 绑定失败:', error)
+    
+    // 处理特定的绑定错误
+    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
+      await showPhoneNotFoundDialog(phone)
+    } else if (error.message.includes('已绑定其他')) {
+      uni.showModal({
+        title: '绑定失败',
+        content: '该手机号已绑定其他微信账号，一个手机号只能绑定一个微信账号。',
+        showCancel: false,
+        confirmText: '我知道了'
+      })
+    } else {
+      throw error
+    }
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 绑定成功模态框关闭处理
+const handleSuccessModalClose = () => {
+  showSuccessModal.value = false
+  navigateToHome()
+}
+
+// 显示手机号未找到对话框
+const showPhoneNotFoundDialog = async (phone) => {
+  return new Promise((resolve) => {
+    uni.showModal({
+      title: '手机号未注册',
+      content: `手机号 ${phone} 未在系统中注册。\n\n请联系管理员将您的手机号添加到系统中，或使用其他已注册的手机号。`,
+      confirmText: '联系管理员',
+      cancelText: '重新输入',
+      success: async (res) => {
+        if (res.confirm) {
+          // 联系管理员
+          showContactAdminModal()
+          resolve()
+        } else {
+          // 重新输入手机号
+          showPhoneModal.value = true
+          phoneRetryCount.value = 0
+          resolve()
+        }
+      }
+    })
+  })
+}
+
+// 处理登录错误
+const handleLoginError = (error) => {
+  console.error('[错误处理] 处理登录错误:', error)
+  
+  let errorMessage = '登录失败，请重试'
+  let showContactAdmin = false
+  let showRetry = true
+  
+  // 根据错误类型分类处理
+  if (error.message.includes('网络') || error.message.includes('超时') || error.message.includes('连接')) {
+    errorMessage = '网络连接失败，请检查网络后重试'
+    showRetry = true
+  } else if (error.message.includes('微信') && error.message.includes('凭证')) {
+    errorMessage = '微信授权失败，请重新打开小程序'
+    showRetry = true
+  } else if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
+    errorMessage = '您的手机号未在系统中注册'
+    showContactAdmin = true
+    showRetry = false
+  } else if (error.message.includes('已绑定其他')) {
+    errorMessage = '该手机号已绑定其他微信账号'
+    showRetry = false
+  } else if (error.message.includes('账号已禁用') || error.message.includes('已停用')) {
+    errorMessage = '您的账号已被停用'
+    showContactAdmin = true
+    showRetry = false
+  } else if (error.message.includes('账号已锁定')) {
+    errorMessage = '您的账号已被锁定，请稍后重试'
+    showRetry = false
+  } else if (error.message) {
+    errorMessage = error.message
+    // 判断是否需要联系管理员
+    showContactAdmin = !error.message.includes('网络') && 
+                     !error.message.includes('超时') && 
+                     !error.message.includes('格式')
+  }
+  
+  // 显示错误对话框
+  if (showContactAdmin) {
+    uni.showModal({
+      title: '登录失败',
+      content: `${errorMessage}\n\n如需帮助，请联系系统管理员。`,
+      confirmText: '联系管理员',
+      cancelText: '我知道了',
+      success: (res) => {
+        if (res.confirm) {
+          showContactAdminModal()
+        }
+      }
+    })
+  } else if (showRetry) {
+    uni.showModal({
+      title: '登录失败',
+      content: errorMessage,
+      confirmText: '重试',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 重试登录
+          setTimeout(() => {
+            handleWechatLogin()
+          }, 500)
+        }
+      }
+    })
+  } else {
+    uni.showModal({
+      title: '登录失败',
+      content: errorMessage,
+      showCancel: false,
+      confirmText: '我知道了'
+    })
+  }
+}
+
+// 显示联系管理员弹窗
+const showContactAdminModal = () => {
+  const admin = CONTACT_CONFIG.admin
+  
+  uni.showModal({
+    title: '联系系统管理员',
+    content: `管理员：${admin.name}\n电话：${admin.phone}\n工作时间：${admin.workTime}\n\n请说明您需要添加账号到系统中`,
+    confirmText: '拨打电话',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        // 拨打管理员电话
+        uni.makePhoneCall({
+          phoneNumber: admin.phone,
+          fail: () => {
+            uni.showToast({ 
+              title: '无法拨打电话，请手动拨打：' + admin.phone, 
+              icon: 'none',
+              duration: 3000
+            })
+          }
+        })
+      }
+    }
+  })
 }
 
 // ==================== 短信验证码登录 ====================
@@ -443,6 +873,10 @@ const handlePasswordLogin = async () => {
 // 跳转首页
 const navigateToHome = () => {
   uni.switchTab({ url: '/pages/dashboard/index' })
+}
+
+const navigateToTest = () => {
+  uni.navigateTo({ url: '/pages/test/wechat-binding' })
 }
 
 // ==================== 开发者模式 ====================
@@ -821,6 +1255,78 @@ const devSkipToHome = () => {
     }
   }
   
+  .login-tips {
+    margin: 32rpx 0;
+    padding: 24rpx;
+    background: $color-gray-50;
+    border-radius: $radius-l;
+    border-left: 4rpx solid $color-brand;
+  }
+  
+  .binding-tips {
+    margin: 32rpx 0;
+    padding: 24rpx;
+    background: $color-gray-50;
+    border-radius: $radius-l;
+    border-left: 4rpx solid $color-gray-500;
+  }
+  
+  .tip-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 16rpx;
+    font-size: 24rpx;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    text {
+      flex: 1;
+    }
+  }
+  
+  .loading-state {
+    text-align: center;
+    padding: 80rpx 0;
+  }
+  
+  .loading-spinner {
+    width: 60rpx;
+    height: 60rpx;
+    border: 4rpx solid $color-gray-200;
+    border-top: 4rpx solid $color-brand;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 24rpx;
+  }
+  
+  .loading-text {
+    font-size: 28rpx;
+    color: $color-text-secondary;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .back-btn {
+    margin-top: 32rpx;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26rpx;
+    color: $color-text-tertiary;
+    
+    &:active {
+      opacity: 0.6;
+    }
+  }
+  
   .switch-mode {
     margin-top: 32rpx;
     text-align: center;
@@ -833,6 +1339,23 @@ const devSkipToHome = () => {
       &.divider {
         margin: 0 20rpx;
         color: $color-border-medium;
+      }
+    }
+  }
+  
+  .contact-admin {
+    margin-top: 24rpx;
+    text-align: center;
+    
+    text {
+      font-size: 24rpx;
+      color: $color-brand;
+      padding: 16rpx;
+      border-radius: $radius-m;
+      background: $color-brand-50;
+      
+      &:active {
+        background: $color-brand-100;
       }
     }
   }

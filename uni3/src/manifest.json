@@ -1,7 +1,7 @@
 {
-  "name": "逅时代设计",
+  "name": "逅管家",
   "appid": "__UNI__EVSHOME",
-  "description": "逅时代设计 - 装修设计公司",
+  "description": "逅管家 - 装修设计公司",
   "versionName": "1.0.0",
   "versionCode": "100",
   "transformPx": false,
@@ -52,7 +52,7 @@
   "quickapp": {},
   "mp-weixin": {
     "darkmode": false,
-    "appid": "touristappid",
+    "appid": "wx607d3206ed1ec9e6",
     "setting": {
       "urlCheck": false,
       "es6": true,

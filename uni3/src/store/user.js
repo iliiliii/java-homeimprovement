@@ -154,19 +154,27 @@ export const useUserStore = defineStore('user', () => {
       await validateTokenApi()
       return true
     } catch (error) {
+      console.log('[UserStore] Token验证失败:', error.message)
+      
       // Token无效，尝试刷新
       if (refreshToken.value) {
         try {
+          console.log('[UserStore] 尝试刷新Token')
           await refreshAccessToken()
+          
+          // 刷新成功后重新验证
+          await validateTokenApi()
           return true
         } catch (refreshError) {
+          console.error('[UserStore] 刷新Token失败:', refreshError.message)
           // 刷新失败，清除登录状态
           logout()
-          throw new Error('登录已过期')
+          throw new Error('登录已过期，请重新登录')
         }
       } else {
+        console.log('[UserStore] 无RefreshToken，清除登录状态')
         logout()
-        throw new Error('登录已过期')
+        throw new Error('登录已过期，请重新登录')
       }
     }
   }
@@ -211,7 +219,11 @@ export const useUserStore = defineStore('user', () => {
     projects.value = []
     currentProjectId.value = ''
     
-    // 清除所有本地存储（包括可能遗漏的缓存）
+    // 设置主动退出标记，防止自动重新登录
+    uni.setStorageSync('manualLogout', true)
+    
+    // 清除所有本地存储（除了退出标记）
+    const manualLogout = uni.getStorageSync('manualLogout')
     try {
       uni.clearStorageSync()
     } catch (e) {
@@ -224,6 +236,9 @@ export const useUserStore = defineStore('user', () => {
       uni.removeStorageSync('projects')
       uni.removeStorageSync('currentProjectId')
     }
+    
+    // 重新设置退出标记（因为clearStorageSync会清除所有）
+    uni.setStorageSync('manualLogout', manualLogout)
     
     // 跳转登录页（注意：登录页是index-new）
     uni.reLaunch({ url: '/pages/login/index-new' })
