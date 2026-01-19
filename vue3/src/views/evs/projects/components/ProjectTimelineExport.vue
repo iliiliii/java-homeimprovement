@@ -214,7 +214,7 @@ const previewVisible = ref(false)
 const previewImage = ref('')
 
 // 公司信息
-const companyName = ref('逅时代装饰')
+const companyName = ref('逅时代')
 const logoUrl = ref(logoImage)
 
 // 客户名称
