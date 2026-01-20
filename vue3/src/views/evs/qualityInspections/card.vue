@@ -9,7 +9,7 @@
     </div>
 
     <!-- 搜索表单 -->
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" class="search-form">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" class="search-form" label-width="auto">
       <el-form-item label="项目名称" prop="name">
         <el-input
           v-model="queryParams.name"
