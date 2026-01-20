@@ -46,6 +46,7 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
     // 字典类型常量
     private static final String DICT_TYPE_PROJECT_STATUS = "decoration_project_status";
     private static final String DICT_TYPE_CONSTRUCTION_STAGE = "decoration_construction_stage";
+    private static final String DICT_TYPE_DESIGN_STAGE = "decoration_design_stage";
     private static final String DICT_TYPE_STAGE_STATUS = "decoration_construction_stage_status";
     private static final String DICT_TYPE_POST_ROLES = "decoration_post_roles";
     private static final String DICT_TYPE_ROOM_TYPE = "decoration_room_type";
@@ -85,10 +86,29 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
     }
 
     /**
-     * 获取阶段名称文本
+     * 获取阶段名称文本（同时从施工阶段和设计阶段字典中搜索）
      */
     private String getStageText(String stage) {
-        return getDictLabel(DICT_TYPE_CONSTRUCTION_STAGE, stage);
+        if (stage == null || stage.isEmpty()) {
+            return stage;
+        }
+        
+        // 先从施工阶段字典中查找
+        String label = getDictLabel(DICT_TYPE_CONSTRUCTION_STAGE, stage);
+        
+        // 如果在施工阶段字典中没找到（返回原值），则从设计阶段字典中查找
+        if (label.equals(stage)) {
+            label = getDictLabel(DICT_TYPE_DESIGN_STAGE, stage);
+        }
+        
+        return label;
+    }
+
+    /**
+     * 获取设计阶段名称文本
+     */
+    private String getDesignStageText(String stage) {
+        return getDictLabel(DICT_TYPE_DESIGN_STAGE, stage);
     }
 
     /**
