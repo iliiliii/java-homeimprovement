@@ -1,7 +1,7 @@
 <template>
   <view v-if="visible" class="image-viewer" @touchmove.stop.prevent>
     <!-- 背景遮罩 -->
-    <view class="viewer-mask" @click="handleClose"></view>
+    <view class="viewer-mask" @click=""></view>
     
     <!-- 顶部导航栏 -->
     <view class="viewer-header" :style="{ paddingTop: statusBarHeight + 'px' }">
@@ -55,8 +55,7 @@
               mode="aspectFit"
               @load="handleImageLoad(index)"
               @error="handleImageError(index)"
-              @click="handleImageClick"
-              @longpress="handleLongPress"
+
             />
           </movable-view>
         </movable-area>
@@ -199,7 +198,7 @@ const getImageUrl = (img) => {
 // 滑动切换
 const handleSwiperChange = (e) => {
   currentIndex.value = e.detail.current
-  scaleValue.value = 1 // 重置缩放
+  scaleValue.value = 1 // 立即重置缩放，无动画
   emit('change', { index: currentIndex.value, image: props.images[currentIndex.value] })
 }
 
@@ -216,7 +215,7 @@ const handleMoveChange = (e) => {
 // 跳转到指定图片
 const goToImage = (index) => {
   currentIndex.value = index
-  scaleValue.value = 1
+  scaleValue.value = 1 // 立即重置缩放，无动画
 }
 
 // 图片加载完成
@@ -493,7 +492,6 @@ defineExpose({
   overflow: hidden;
   opacity: 0.6;
   border: 4rpx solid transparent;
-  transition: all 0.3s;
   
   &.active {
     opacity: 1;
