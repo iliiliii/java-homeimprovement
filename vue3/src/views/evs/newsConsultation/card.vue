@@ -12,42 +12,40 @@
     </div>
 
     <!-- 搜索筛选区域 -->
-    <el-card shadow="never" style="margin-bottom: 16px;">
-      <el-form :model="queryParams" ref="queryRef" :inline="true">
-        <el-form-item label="发布位置" prop="publishPosition">
-          <el-select 
-            v-model="queryParams.publishPosition" 
-            placeholder="全部位置" 
-            clearable 
-            style="width: 200px;"
-            @change="handleQuery"
-          >
-            <el-option
-              v-for="dict in decoration_news_position"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="发布状态" prop="publishStatus">
-          <el-select 
-            v-model="queryParams.publishStatus" 
-            placeholder="全部状态" 
-            clearable 
-            style="width: 150px;"
-            @change="handleQuery"
-          >
-            <el-option label="已发布" value="PUBLISHED" />
-            <el-option label="草稿" value="DRAFT" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" class="search-form">
+      <el-form-item label="发布位置" prop="publishPosition">
+        <el-select 
+          v-model="queryParams.publishPosition" 
+          placeholder="全部位置" 
+          clearable 
+          style="width: 200px;"
+          @change="handleQuery"
+        >
+          <el-option
+            v-for="dict in decoration_news_position"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="发布状态" prop="publishStatus">
+        <el-select 
+          v-model="queryParams.publishStatus" 
+          placeholder="全部状态" 
+          clearable 
+          style="width: 150px;"
+          @change="handleQuery"
+        >
+          <el-option label="已发布" value="PUBLISHED" />
+          <el-option label="草稿" value="DRAFT" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
 
     <!-- 资讯列表表格 -->
     <el-card shadow="never">
@@ -274,6 +272,7 @@ const { decoration_news_position } = proxy.useDict('decoration_news_position')
 const newsConsultationList = ref([])
 const open = ref(false)
 const loading = ref(true)
+const showSearch = ref(true)
 const total = ref(0)
 const title = ref("")
 const isMoving = ref(false) // 防抖状态，防止重复操作
@@ -674,20 +673,36 @@ getList()
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  align-items: center;
+  margin-bottom: 12px;
 
   .page-title {
+    margin: 0;
     font-size: 24px;
     font-weight: 600;
-    margin: 0 0 8px 0;
     color: #303133;
   }
 
   .page-subtitle {
+    margin: 4px 0 0 0;
     font-size: 14px;
     color: #909399;
-    margin: 0;
+  }
+}
+
+.search-form {
+  display: flex;
+  justify-content: start;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+  :deep(.el-form-item) {
+    margin-bottom: 0 !important;
+    margin-right: 16px;
   }
 }
 

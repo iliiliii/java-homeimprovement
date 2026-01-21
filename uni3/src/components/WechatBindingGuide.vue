@@ -4,8 +4,8 @@
       
       <!-- 头部 -->
       <view class="guide-header">
-        <text class="guide-title">微信账号绑定</text>
-        <text class="guide-subtitle">将您的微信账号与系统账户关联</text>
+        <text class="guide-title">账号关联</text>
+        <text class="guide-subtitle">关联微信账号以便下次快速登录</text>
       </view>
       
       <!-- 说明内容 -->
@@ -14,8 +14,8 @@
           <view class="benefit-item">
             <view class="benefit-number">1</view>
             <view class="benefit-text">
-              <text class="benefit-title">快速登录</text>
-              <text class="benefit-desc">下次直接微信登录，无需输入密码</text>
+              <text class="benefit-title">便捷登录</text>
+              <text class="benefit-desc">下次可选择微信快速登录</text>
             </view>
           </view>
           

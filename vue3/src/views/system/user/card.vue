@@ -38,7 +38,7 @@
             </el-avatar>
           </template>
         </el-table-column>
-        <el-table-column label="姓名" align="center" width="180">
+        <el-table-column label="账号(名称)" align="center" width="180">
           <template #default="{ row }">
             {{ row.userName }}（{{ row.nickName }}）
           </template>
@@ -111,8 +111,8 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="用户昵称" prop="nickName">
-              <el-input v-model="form.nickName" placeholder="请输入用户昵称" maxlength="30" />
+            <el-form-item label="用户名称" prop="nickName">
+              <el-input v-model="form.nickName" placeholder="请输入用户名称" maxlength="30" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -240,7 +240,7 @@ const data = reactive({
       { required: true, message: "用户账号不能为空", trigger: "blur" },
       { min: 2, max: 20, message: "用户账号长度必须介于 2 和 20 之间", trigger: "blur" }
     ],
-    nickName: [{ required: true, message: "用户昵称不能为空", trigger: "blur" }],
+    nickName: [{ required: true, message: "用户名称不能为空", trigger: "blur" }],
     password: [
       {
         required: () => !form.value.userId,
