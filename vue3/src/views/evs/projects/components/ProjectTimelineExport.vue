@@ -9,14 +9,47 @@
     class="export-dialog"
   >
     <div class="export-actions">
-      <el-button type="primary" :loading="exporting" @click="handleExport">
-        <el-icon><Download /></el-icon>
-        {{ exporting ? '正在生成...' : '下载长图' }}
-      </el-button>
-      <el-button @click="handlePreview" :disabled="exporting">
-        <el-icon><View /></el-icon>
-        预览
-      </el-button>
+      
+      
+      <div class="action-buttons">
+        <el-button type="primary" :loading="exporting" @click="handleExport">
+          <el-icon><Download /></el-icon>
+          {{ exporting ? '正在生成...' : '下载长图' }}
+        </el-button>
+        <el-button @click="handlePreview" :disabled="exporting">
+          <el-icon><View /></el-icon>
+          预览
+        </el-button>
+        <!-- 阶段选择器 -->
+      <div class="stage-selector">
+        <el-select
+          v-model="selectedStages"
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="选择导出阶段（不选则导出全部）"
+          style="width: 300px;"
+          clearable
+        >
+          <el-option
+            v-for="stage in availableStages"
+            :key="stage.id"
+            :label="stage.name"
+            :value="stage.id"
+          >
+            <span class="stage-option">
+              <span 
+                class="stage-type-tag" 
+                :class="stage.stageType === 'DESIGN' ? 'type-design' : 'type-construction'"
+              >
+                {{ stage.stageType === 'DESIGN' ? '设计' : '施工' }}
+              </span>
+              {{ stage.name }}
+            </span>
+          </el-option>
+        </el-select>
+      </div>
+      </div>
     </div>
 
     <!-- 预览区域 -->
@@ -52,28 +85,29 @@
 
         <!-- 时间轴内容 -->
         <div class="timeline-section">
-          <div class="section-title">📋 项目进度时间轴</div>
+          <div class="section-title">项目进度</div>
           <div class="timeline" v-if="schedules.length > 0">
             <div 
-              v-for="(schedule, index) in schedules" 
+              v-for="(schedule, index) in filteredSchedules" 
               :key="schedule.id" 
               class="timeline-node"
+              :class="{ 'single-stage': isSingleStage }"
             >
-              <!-- 时间线 -->
-              <div class="timeline-line">
+              <!-- 时间线 (只在多阶段时显示) -->
+              <div v-if="!isSingleStage" class="timeline-line">
                 <div 
                   class="timeline-dot" 
                   :class="getStatusClass(schedule.status)"
                 ></div>
                 <div 
-                  v-if="index < schedules.length - 1" 
+                  v-if="index < filteredSchedules.length - 1" 
                   class="timeline-connector"
                   :class="getStatusClass(schedule.status)"
                 ></div>
               </div>
 
               <!-- 节点内容 -->
-              <div class="node-content">
+              <div class="node-content" :class="{ 'full-width': isSingleStage }">
                 <div class="node-header">
                   <div class="node-left">
                     <span 
@@ -132,15 +166,28 @@
                       </div>
                       <!-- 图片展示 -->
                       <div v-if="hasRecordImages(record)" class="record-images">
-                        <img 
-                          v-for="(img, imgIndex) in getRecordImages(record).slice(0, 4)" 
-                          :key="imgIndex" 
-                          :src="getFullImageUrl(img)" 
-                          class="record-image"
-                        />
-                        <div v-if="getRecordImages(record).length > 4" class="image-more">
-                          +{{ getRecordImages(record).length - 4 }}
-                        </div>
+                        <!-- 如果选择了特定阶段，显示大图 -->
+                        <template v-if="selectedStages.length > 0">
+                          <div 
+                            v-for="(img, imgIndex) in getRecordImages(record)" 
+                            :key="imgIndex" 
+                            class="record-image-large"
+                          >
+                            <img 
+                              :src="getFullImageUrl(img)" 
+                              class="large-image"
+                            />
+                          </div>
+                        </template>
+                        <!-- 默认显示所有小图 -->
+                        <template v-else>
+                          <img 
+                            v-for="(img, imgIndex) in getRecordImages(record)" 
+                            :key="imgIndex" 
+                            :src="getFullImageUrl(img)" 
+                            class="record-image"
+                          />
+                        </template>
                       </div>
                     </div>
                   </div>
@@ -212,10 +259,38 @@ const exporting = ref(false)
 const schedules = ref([])
 const previewVisible = ref(false)
 const previewImage = ref('')
+const selectedStages = ref([]) // 选中的阶段ID数组
 
 // 公司信息
 const companyName = ref('逅时代')
 const logoUrl = ref(logoImage)
+
+// 可选择的阶段列表
+const availableStages = computed(() => {
+  return schedules.value.map(schedule => ({
+    id: schedule.id,
+    name: getScheduleStageName(schedule),
+    stageType: schedule.stageType
+  }))
+})
+
+// 过滤后的进度列表
+const filteredSchedules = computed(() => {
+  // 如果没有选择阶段，返回所有进度（保持原有导出方式）
+  if (selectedStages.value.length === 0) {
+    return schedules.value
+  }
+  
+  // 根据选择的阶段过滤
+  return schedules.value.filter(schedule => 
+    selectedStages.value.includes(schedule.id)
+  )
+})
+
+// 判断是否为单阶段模式
+const isSingleStage = computed(() => {
+  return selectedStages.value.length === 1
+})
 
 // 客户名称
 const customerName = computed(() => {
@@ -227,6 +302,8 @@ const exportContent = ref(null)
 // 监听对话框打开
 watch(dialogVisible, async (val) => {
   if (val && props.project?.id) {
+    // 重置选择状态
+    selectedStages.value = []
     await loadData()
   }
 })
@@ -475,10 +552,50 @@ async function handlePreview() {
 
 .export-actions {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1px solid #eee;
+}
+
+.stage-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-selector .el-select {
+  flex: 1;
+}
+
+.stage-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-option .stage-type-tag {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.stage-option .stage-type-tag.type-design {
+  background: rgba(250, 140, 22, 0.1);
+  color: #fa8c16;
+}
+
+.stage-option .stage-type-tag.type-construction {
+  background: rgba(22, 119, 255, 0.1);
+  color: #1677ff;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
 }
 
 .preview-container {
@@ -584,6 +701,11 @@ async function handlePreview() {
   position: relative;
 }
 
+/* 单阶段模式：不显示时间轴，内容撑满 */
+.timeline-node.single-stage {
+  gap: 0;
+}
+
 .timeline-line {
   display: flex;
   flex-direction: column;
@@ -645,6 +767,12 @@ async function handlePreview() {
   padding: 12px;
   margin-bottom: 12px;
   min-width: 0;
+}
+
+/* 单阶段模式：内容撑满整个容器 */
+.node-content.full-width {
+  width: 100%;
+  margin-bottom: 0;
 }
 
 .node-header {
@@ -829,18 +957,23 @@ async function handlePreview() {
   border-radius: 6px;
   object-fit: cover;
   background: #f0f0f0;
+  flex-shrink: 0;
 }
 
-.image-more {
-  width: 60px;
-  height: 60px;
-  border-radius: 6px;
+.record-image-large {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.large-image {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 8px;
+  object-fit: contain;
   background: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #999;
+  display: block;
+  margin: 0 auto;
 }
 
 /* 空状态 */
