@@ -101,4 +101,30 @@ public class AppWechatBindingsController extends BaseController
     {
         return toAjax(appWechatBindingsService.deleteAppWechatBindingsByIds(ids));
     }
+    
+    /**
+     * 管理员解除微信绑定（通过userId）
+     */
+    @PreAuthorize("@ss.hasPermi('evs:appWechatBindings:remove')")
+    @Log(title = "解除微信绑定", businessType = BusinessType.DELETE)
+    @DeleteMapping("/unbind/user/{userId}")
+    public AjaxResult unbindByUserId(@PathVariable String userId)
+    {
+        return toAjax(appWechatBindingsService.deleteAppWechatBindingsByUserId(userId));
+    }
+    
+    /**
+     * 管理员解除微信绑定（通过openId）
+     */
+    @PreAuthorize("@ss.hasPermi('evs:appWechatBindings:remove')")
+    @Log(title = "解除微信绑定", businessType = BusinessType.DELETE)
+    @DeleteMapping("/unbind/openid/{openId}")
+    public AjaxResult unbindByOpenId(@PathVariable String openId)
+    {
+        AppWechatBindings binding = appWechatBindingsService.selectAppWechatBindingsByOpenId(openId);
+        if (binding == null) {
+            return error("未找到该微信绑定信息");
+        }
+        return toAjax(appWechatBindingsService.deleteAppWechatBindingsById(binding.getId()));
+    }
 }

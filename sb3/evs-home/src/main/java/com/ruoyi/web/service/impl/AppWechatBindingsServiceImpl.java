@@ -146,4 +146,22 @@ public class AppWechatBindingsServiceImpl implements IAppWechatBindingsService
         }
         return 0;
     }
+    
+    /**
+     * 根据userId删除微信绑定信息
+     * 
+     * @param userId 用户ID
+     * @return 结果
+     */
+    @Override
+    public int deleteAppWechatBindingsByUserId(String userId)
+    {
+        AppWechatBindings query = new AppWechatBindings();
+        query.setUserId(userId);
+        List<AppWechatBindings> list = appWechatBindingsMapper.selectAppWechatBindingsList(query);
+        if (!list.isEmpty()) {
+            return appWechatBindingsMapper.deleteAppWechatBindingsById(list.get(0).getId());
+        }
+        return 0;
+    }
 }

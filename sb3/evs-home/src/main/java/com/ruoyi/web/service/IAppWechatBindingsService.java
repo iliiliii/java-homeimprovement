@@ -68,6 +68,14 @@ public interface IAppWechatBindingsService
     public AppWechatBindings selectAppWechatBindingsByOpenId(String openId);
     
     /**
+     * 根据userId删除微信绑定信息
+     * 
+     * @param userId 用户ID
+     * @return 结果
+     */
+    public int deleteAppWechatBindingsByUserId(String userId);
+    
+    /**
      * 根据手机号查询微信绑定信息
      * 
      * @param phone 手机号
