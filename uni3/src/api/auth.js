@@ -59,8 +59,8 @@ export const openidLogin = (data) => {
 }
 
 /**
- * 绑定手机号到openid
- * @param {Object} data - { openid, phone, deviceId }
+ * 绑定手机号到openid（用于导入历史数据）
+ * @param {Object} data - { code, phone, deviceId }
  * @returns {Promise}
  */
 export const bindPhoneToOpenid = (data) => {

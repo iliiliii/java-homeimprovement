@@ -16,6 +16,7 @@ export const isGuestMode = () => {
  * @returns {Boolean}
  */
 export const isStaff = () => {
+  if (isGuestMode()) return false
   const userStore = useUserStore()
   return userStore.userType === 'staff'
 }
@@ -25,27 +26,20 @@ export const isStaff = () => {
  * @returns {Boolean}
  */
 export const isCustomer = () => {
+  if (isGuestMode()) return true // 游客模式视为客户
   const userStore = useUserStore()
   return userStore.userType === 'customer'
 }
 
 /**
- * 是否有页面权限
+ * 是否有页面权限（游客可访问所有页面）
  * @param {String} pagePath - 页面路径
  * @returns {Boolean}
  */
 export const hasPagePermission = (pagePath) => {
-  // 游客模式可访问的页面
-  const guestAllowedPages = [
-    '/pages/dashboard/',   // 首页（部分功能）
-    '/pages/design/',      // 设计图库
-    '/pages/brand/',       // 品牌展示
-    '/pages/login/'        // 登录页
-  ]
-  
-  // 如果是游客模式
+  // 游客模式可以访问所有页面
   if (isGuestMode()) {
-    return guestAllowedPages.some(path => pagePath.startsWith(path))
+    return true
   }
   
   // 员工专属页面列表
@@ -65,12 +59,16 @@ export const hasPagePermission = (pagePath) => {
 }
 
 /**
- * 检查是否已登录
+ * 检查是否已登录（游客模式也视为已登录）
  * @returns {Boolean}
  */
 export const isLoggedIn = () => {
+  // 游客模式视为已登录
+  if (isGuestMode()) return true
+  
+  // 正式用户检查token
   const userStore = useUserStore()
-  return !!userStore.token && !isGuestMode()
+  return !!userStore.token
 }
 
 /**
@@ -89,43 +87,29 @@ export const getUserTypeText = () => {
 }
 
 /**
- * 检查功能权限（用于页面内的功能控制）
+ * 检查功能权限（游客模式下某些功能受限）
  * @param {String} feature - 功能名称
  * @returns {Boolean}
  */
 export const hasFeaturePermission = (feature) => {
-  // 游客模式限制的功能
-  const guestRestrictedFeatures = [
-    'project-detail',     // 项目详情
-    'schedule-detail',    // 施工进度
-    'quality-check',      // 质检记录
-    'shopping-list',      // 购物清单
-    'project-log',        // 施工日志
-    'profile-edit'        // 个人信息编辑
-  ]
-  
-  if (isGuestMode()) {
-    return !guestRestrictedFeatures.includes(feature)
-  }
-  
+  // 游客模式下，所有功能都可以尝试访问
+  // 但会显示示例数据或提示导入历史数据
   return true
 }
 
 /**
- * 提示登录
+ * 提示导入历史数据
  */
-export const promptLogin = (message = '此功能需要登录后使用') => {
+export const promptImportData = (message = '导入历史数据后可查看完整信息') => {
   uni.showModal({
-    title: '需要登录',
+    title: '提示',
     content: message,
-    confirmText: '去登录',
-    cancelText: '取消',
+    confirmText: '去导入',
+    cancelText: '稍后',
     success: (res) => {
       if (res.confirm) {
-        // 清除游客模式标记
-        uni.removeStorageSync('guestMode')
-        // 跳转登录页
-        uni.reLaunch({ url: '/pages/login/index-new' })
+        // 跳转到个人中心
+        uni.switchTab({ url: '/pages/profile/index' })
       }
     }
   })

@@ -45,13 +45,13 @@
           {{ loading ? '登录中...' : '微信登录' }}
         </button>
         
-        <view class="switch-mode">
+        <view v-if="false" class="switch-mode">
           <text @click="switchLoginMode('sms')">使用短信验证码登录</text>
           <text class="divider">|</text>
           <text @click="switchLoginMode('password')">使用密码登录</text>
         </view>
         
-        <view class="contact-admin">
+        <view  v-if="false" class="contact-admin">
           <text @click="showContactAdminModal">没有账号？联系管理员添加</text>
         </view>
       </view>
@@ -275,9 +275,39 @@ onMounted(() => {
     return
   }
   
-  // 正常进入登录页面，尝试静默登录检查
-  attemptSilentLogin()
+  // 检查是否是游客模式
+  const isGuest = uni.getStorageSync('guestMode')
+  if (isGuest) {
+    // 游客模式，直接跳转首页
+    console.log('[登录页面] 检测到游客模式，跳转首页')
+    uni.reLaunch({ url: '/pages/dashboard/index' })
+    return
+  }
+  
+  // 检查是否有token（已绑定用户）
+  const token = uni.getStorageSync('token')
+  if (token) {
+    // 有token，验证后跳转
+    console.log('[登录页面] 检测到token，验证后跳转')
+    validateAndNavigate()
+    return
+  }
+  
+  // 显示登录界面
+  bindingStep.value = 'normal'
 })
+
+// 验证token并跳转
+const validateAndNavigate = async () => {
+  try {
+    await userStore.validateToken()
+    navigateToHome()
+  } catch (error) {
+    console.error('[登录页面] Token验证失败:', error)
+    userStore.logout()
+    bindingStep.value = 'normal'
+  }
+}
 
 onUnmounted(() => {
   if (countdownTimer) {
@@ -449,10 +479,30 @@ const handleWechatLogin = async () => {
       console.log('[微信登录] 检测到已绑定，执行直接登录')
       await performOpenidLogin(checkResult.openid)
     } else {
-      // 未绑定，需要绑定手机号
-      console.log('[微信登录] 检测到未绑定，需要绑定手机号')
+      // 未绑定，进入游客模式
+      console.log('[微信登录] 检测到未绑定，进入游客模式')
+      
+      // 保存openid用于后续导入数据（重要：保存openid而不是code）
       userOpenid.value = checkResult.openid
-      await showPhoneBindingFlow()
+      uni.setStorageSync('wechatOpenid', checkResult.openid)
+      
+      // 不再保存code，因为code只能使用一次
+      // uni.setStorageSync('wechatCode', loginRes.code)
+      
+      // 设置游客模式标记
+      uni.setStorageSync('guestMode', true)
+      
+      // 显示成功提示
+      uni.showToast({ 
+        title: '登录成功', 
+        icon: 'success',
+        duration: 1500
+      })
+      
+      // 跳转到首页（游客模式）
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/dashboard/index' })
+      }, 1000)
     }
     
   } catch (error) {
@@ -609,7 +659,18 @@ const performPhoneBinding = async (phone) => {
 // 绑定成功模态框关闭处理
 const handleSuccessModalClose = () => {
   showSuccessModal.value = false
-  navigateToHome()
+  
+  // 清除游客模式标记
+  uni.removeStorageSync('guestMode')
+  
+  // 使用 reLaunch 重新启动小程序，刷新所有页面
+  console.log('[绑定成功] 重新启动小程序以刷新所有数据')
+  uni.reLaunch({ 
+    url: '/pages/dashboard/index',
+    success: () => {
+      console.log('[绑定成功] 小程序已刷新')
+    }
+  })
 }
 
 // 显示手机号未找到对话框

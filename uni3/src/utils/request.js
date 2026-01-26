@@ -16,7 +16,7 @@ const getBaseUrl = () => {
     
     // #ifdef MP-WEIXIN
     // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
-    return 'https://hsdlp.gzcelestial.com/prod-api'
+    // return 'https://hsdlp.gzcelestial.com/prod-api'
     return 'http://192.168.5.102:8080'
     // #endif
   }
@@ -207,6 +207,15 @@ const refreshTokenRequest = (refreshToken) => {
  * 跳转登录页
  */
 const redirectToLogin = () => {
+  // 检查是否是游客模式
+  const isGuest = uni.getStorageSync('guestMode') === true
+  
+  if (isGuest) {
+    // 游客模式下，不跳转登录页，只是返回错误
+    console.log('[Request] 游客模式，API调用失败但不跳转登录页')
+    return
+  }
+  
   // 清除登录信息
   uni.removeStorageSync('token')
   uni.removeStorageSync('refreshToken')
@@ -217,7 +226,7 @@ const redirectToLogin = () => {
   uni.removeStorageSync('currentProjectId')
   
   // 跳转登录页
-  uni.reLaunch({ url: '/pages/login/index' })
+  uni.reLaunch({ url: '/pages/login/index-new' })
 }
 
 /**
