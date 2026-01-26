@@ -1450,10 +1450,10 @@ const devSkipToHome = () => {
 }
 
 .agreement-text {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: $color-text-tertiary;
   flex: 1;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .link {

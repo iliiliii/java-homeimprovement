@@ -252,13 +252,7 @@ const formatAmount = (amount) => {
 
 // 格式化总金额（保留两位小数，带千分位）
 const formatTotalAmount = (amount) => {
-  if (amount >= 10000) {
-    const wan = amount / 10000
-    const w = wan.toString()
-    return { number: w.toString().slice(0,w.indexOf('.')+2), unit: '万' }
-  } else {
-    return { number: amount.toFixed(2), unit: '元' }
-  }
+  return formatAmount(amount)
 }
 
 // 关于我们
@@ -481,249 +475,12 @@ onMounted(() => {
   // 检查是否是游客模式
   const isGuest = uni.getStorageSync('guestMode') === true
   
-  if (isGuest) {
-    // 游客模式，不加载项目数据
-    console.log('[Profile] 游客模式，不加载项目数据')
-    return
-  }
-  
-  // 正式用户，加载项目数据
-  loadProjectData()
-})
-const handleAbout = () => {
-  uni.navigateTo({
-    url: '/pages/brand/index'
-  })
-}
-
-// 品牌页面
-const handleBrand = () => {
-  uni.navigateTo({
-    url: '/pages/brand/index'
-  })
-}
-
-// 退出登录
-const handleLogout = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要退出登录吗？',
-    success: (res) => {
-      if (res.confirm) {
-        // 清除游客模式标记和微信信息
-        uni.removeStorageSync('guestMode')
-        uni.removeStorageSync('wechatOpenid')
-        userStore.logout()
-      }
-    }
-  })
-}
-
-// 导入历史数据
-const handleImportData = () => {
-  console.log('[导入数据] 开始导入历史数据流程')
-  showBindingGuide.value = true
-}
-
-// 绑定引导确认
-const handleBindingGuideConfirm = () => {
-  showBindingGuide.value = false
-  showPhoneModal.value = true
-  phoneRetryCount.value = 0
-}
-
-// 绑定引导取消
-const handleBindingGuideCancel = () => {
-  showBindingGuide.value = false
-  console.log('[导入数据] 用户取消导入')
-}
-
-// 绑定引导关闭
-const handleBindingGuideClose = () => {
-  showBindingGuide.value = false
-}
-
-// 手机号确认
-const handlePhoneConfirm = async (phone) => {
-  try {
-    showPhoneModal.value = false
-    await performPhoneBinding(phone)
-  } catch (error) {
-    console.error('[导入数据] 绑定失败:', error)
-    
-    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
-      await showPhoneNotFoundDialog(phone)
-    } else if (error.message.includes('账号格式')) {
-      phoneRetryCount.value++
-      if (phoneRetryCount.value < 3) {
-        showPhoneModal.value = true
-      } else {
-        uni.showToast({ title: '账号格式错误次数过多', icon: 'none' })
-      }
-    } else {
-      uni.showToast({ title: error.message || '导入失败，请重试', icon: 'none' })
-    }
-  }
-}
-
-// 手机号取消
-const handlePhoneCancel = () => {
-  showPhoneModal.value = false
-  console.log('[导入数据] 用户取消输入账号')
-}
-
-// 手机号关闭
-const handlePhoneClose = () => {
-  showPhoneModal.value = false
-}
-
-// 执行手机号绑定
-const performPhoneBinding = async (phone) => {
-  try {
-    console.log('[导入数据] 开始绑定账号:', phone)
-    
-    uni.showLoading({ title: '正在导入数据...', mask: true })
-    
-    // 获取保存的微信openid（不再使用code，因为code只能用一次）
-    const wechatOpenid = uni.getStorageSync('wechatOpenid')
-    if (!wechatOpenid) {
-      throw new Error('微信登录信息已过期，请重新登录')
-    }
-    
-    console.log('[导入数据] 使用保存的openid进行绑定')
-    
-    // 直接使用openid执行绑定操作
-    const result = await bindPhoneToOpenid({
-      openid: wechatOpenid,
-      phone: phone,
-      deviceId: getDeviceId()
-    })
-    
-    console.log('[导入数据] 绑定成功:', result.userInfo)
-    
-    // 清除游客模式标记
-    uni.removeStorageSync('guestMode')
-    
-    // 保存登录信息
-    userStore.setLoginInfo(result)
-    
-    // 显示成功提示
-    uni.showToast({ 
-      title: '历史数据导入成功', 
-      icon: 'success',
-      duration: 1500
-    })
-    
-    // 延迟后重新启动小程序，刷新所有页面
-    setTimeout(() => {
-      console.log('[导入数据] 重新启动小程序以刷新所有数据')
-      uni.reLaunch({ 
-        url: '/pages/dashboard/index',
-        success: () => {
-          console.log('[导入数据] 小程序已刷新')
-        }
-      })
-    }, 1500)
-    
-  } catch (error) {
-    console.error('[导入数据] 绑定失败:', error)
-    
-    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
-      await showPhoneNotFoundDialog(phone)
-    } else if (error.message.includes('已绑定其他')) {
-      uni.showModal({
-        title: '导入失败',
-        content: '该账号已绑定其他微信账号，一个账号只能绑定一个微信账号。',
-        showCancel: false,
-        confirmText: '我知道了'
-      })
-    } else if (error.message.includes('微信账号已绑定其他')) {
-      uni.showModal({
-        title: '导入失败',
-        content: '该微信账号已绑定其他账号，请使用已绑定的账号登录。',
-        showCancel: false,
-        confirmText: '我知道了'
-      })
-    } else if (error.message.includes('登录信息已过期')) {
-      // 微信信息过期，需要重新登录
-      uni.showModal({
-        title: '登录信息已过期',
-        content: '请重新登录后再试',
-        showCancel: false,
-        confirmText: '重新登录',
-        success: () => {
-          uni.removeStorageSync('guestMode')
-          uni.removeStorageSync('wechatOpenid')
-          uni.reLaunch({ url: '/pages/login/index-new' })
-        }
-      })
-    } else {
-      throw error
-    }
-  } finally {
-    uni.hideLoading()
-  }
-}
-
-// 显示手机号未找到对话框
-const showPhoneNotFoundDialog = async (phone) => {
-  return new Promise((resolve) => {
-    uni.showModal({
-      title: '账号未注册',
-      content: `账号 ${phone} 未在系统中注册。\n\n请联系管理员将您的账号添加到系统中，或使用其他已注册的账号。`,
-      confirmText: '重新输入',
-      cancelText: '取消',
-      success: async (res) => {
-        if (res.confirm) {
-          // 重新输入手机号
-          showPhoneModal.value = true
-          phoneRetryCount.value = 0
-          resolve()
-        } else {
-          resolve()
-        }
-      }
-    })
-  })
-}
-
-// 获取设备ID
-const getDeviceId = () => {
-  let deviceId = uni.getStorageSync('deviceId')
-  if (!deviceId) {
-    deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-    uni.setStorageSync('deviceId', deviceId)
-  }
-  return deviceId
-}
-
-// 刷新所有数据
-const refreshData = async () => {
-  // 检查是否是游客模式
-  const isGuest = uni.getStorageSync('guestMode') === true
-  
-  if (isGuest) {
-    // 游客模式，不刷新数据
-    console.log('[Profile] 游客模式，不刷新数据')
-    return
-  }
-  
-  await loadProjectData()
-  // 项目数据加载后，watch会自动触发loadContractAmounts
-}
-
-onMounted(() => {
-  // statusBarHeight removed
-  
-  // 预估初始高度 (status bar + 44)
-  const sys = uni.getSystemInfoSync()
-  headerHeight.value = (sys.statusBarHeight || 20) + 56
-  
-  // 获取精确高度
-  setTimeout(updateHeaderHeight, 200)
-  
-  // 检查是否是游客模式
-  const isGuest = uni.getStorageSync('guestMode') === true
+  console.log('[Profile] onMounted 开始')
+  console.log('[Profile] 游客模式:', isGuest)
+  console.log('[Profile] isCustomer:', isCustomer.value)
+  console.log('[Profile] userType:', userStore.userType)
+  console.log('[Profile] token:', userStore.token ? '存在' : '不存在')
+  console.log('[Profile] userInfo:', userStore.userInfo)
   
   if (isGuest) {
     // 游客模式，不加载项目数据
@@ -732,6 +489,7 @@ onMounted(() => {
   }
   
   // 正式用户，加载项目数据
+  console.log('[Profile] 正式用户，开始加载项目数据')
   loadProjectData()
 })
 
@@ -752,11 +510,15 @@ onPullDownRefresh(async () => {
 // 页面内容区域
 .page-content {
   padding: 16rpx 32rpx 32rpx;
+  // 为固定头部留出空间：状态栏高度(约44px) + 导航栏高度(56px) = 100px
+  margin-top: 100px;
+  // padding-top: 100px;
 }
 
 // 项目概况区域
 .project-brief-section {
   margin-bottom: 32rpx;
+  margin-left: -20rpx;
 }
 
 // 费用统计区域
