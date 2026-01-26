@@ -26,7 +26,7 @@ export function createApp() {
 
 // 不需要登录的页面
 const whiteList = [
-  '/pages/login/index',
+  '/pages/login/index-new',
   '/pages/protocol/index',
   '/pages/privacy/index',
   '/pages/test/wechat-binding'
@@ -50,7 +50,7 @@ uni.addInterceptor('navigateTo', {
     // 检查登录状态
     if (!isLoggedIn()) {
       uni.showToast({ title: '请先登录', icon: 'none' })
-      uni.reLaunch({ url: '/pages/login/index' })
+      uni.reLaunch({ url: '/pages/login/index-new' })
       return false
     }
     
@@ -75,7 +75,7 @@ uni.addInterceptor('redirectTo', {
     
     if (!isLoggedIn()) {
       uni.showToast({ title: '请先登录', icon: 'none' })
-      uni.reLaunch({ url: '/pages/login/index' })
+      uni.reLaunch({ url: '/pages/login/index-new' })
       return false
     }
     
@@ -99,11 +99,11 @@ uni.addInterceptor('reLaunch', {
     
     if (!isLoggedIn()) {
       // reLaunch到登录页，不拦截
-      if (url === '/pages/login/index') {
+      if (url === '/pages/login/index-new') {
         return true
       }
       uni.showToast({ title: '请先登录', icon: 'none' })
-      args.url = '/pages/login/index'
+      args.url = '/pages/login/index-new'
       return true
     }
     
@@ -123,7 +123,7 @@ uni.addInterceptor('switchTab', {
     
     if (!isLoggedIn()) {
       uni.showToast({ title: '请先登录', icon: 'none' })
-      uni.reLaunch({ url: '/pages/login/index' })
+      uni.reLaunch({ url: '/pages/login/index-new' })
       return false
     }
     

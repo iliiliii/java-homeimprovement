@@ -12,29 +12,38 @@
     <scroll-view 
       class="scroll-content" 
       scroll-y
-      :show-scrollbar="false" 
-      v-if="projects.length > 0"
+      :show-scrollbar="false"
     >
       <!-- 头部占位：优先使用测量高度，失败则使用粗略估算高度 (状态栏 + 导航栏 + 副标题 + 边距) -->
       <!-- 头部占位：状态栏 + 导航栏 (56px) -->
       <view :style="{ height: (statusBarHeight + 56) + 'px' }"></view>
+      
       <!-- Banner 轮播 -->
       <BannerSwiper 
         :banners="bannerList" 
         @click="handleBannerClick"
       />
       
-       <!-- 项目卡片滑动区域 -->
-       <ProjectCardSwiper
-         v-if="projects.length > 0"
-         :projects="projects"
-         :user-info="userInfo"
-         :current="currentIndex"
-         @update:current="index => currentIndex = index"
-         @change="handleSwiperChange"
-         @click="handleCardClick"
-       />
+      <!-- 项目卡片滑动区域（仅在有项目时显示） -->
+      <ProjectCardSwiper
+        v-if="projects.length > 0"
+        :projects="projects"
+        :user-info="userInfo"
+        :current="currentIndex"
+        @update:current="index => currentIndex = index"
+        @change="handleSwiperChange"
+        @click="handleCardClick"
+      />
       
+      <!-- 无项目提示（游客模式或无项目时显示）
+      <view v-else class="no-project-tip">
+        <view class="tip-icon">📋</view>
+        <text class="tip-text">{{ isGuestMode ? '导入历史数据后可查看您的项目' : '暂无关联项目' }}</text>
+        <view v-if="isGuestMode" class="tip-action" @click="goToProfile">
+          <text>去导入数据</text>
+        </view>
+      </view>
+       -->
       <!-- 资讯 Tab -->
       <view class="news-section">
         <NewsTab :current="currentTab" @change="handleTabChange">
@@ -67,11 +76,6 @@
       <!-- 底部安全距离占位，确保内容不被 TabBar 遮挡
       <view style="height: 160rpx;"></view> -->
     </scroll-view>
-    
-    <!-- 无项目提示 -->
-    <view class="no-project" v-else :style="{ paddingTop: (statusBarHeight + 56) + 'px' }">
-      <text>暂无关联项目</text>
-    </view>
   </view>
 </template>
 
@@ -123,6 +127,9 @@ const newsPageSize = 20
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
+
+// 游客模式判断
+const isGuestMode = computed(() => uni.getStorageSync('guestMode') === true)
 
 // 监听 currentProject 变化，同步更新 currentIndex
 watch(() => props.currentProject, (newProject) => {
@@ -248,6 +255,11 @@ const handleNewsClick = (item) => {
   window.open(item.jumpUrl, '_blank')
   // #endif
 }
+
+// 跳转到个人中心导入数据
+const goToProfile = () => {
+  uni.switchTab({ url: '/pages/profile/index' })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -338,6 +350,50 @@ const handleNewsClick = (item) => {
     background-size: 60rpx;
     background-repeat: no-repeat;
     background-position: center;
+  }
+}
+
+// 无项目提示（新样式，更友好）
+.no-project-tip {
+  margin: $spacing-l $spacing-l $spacing-m;
+  padding: $spacing-xl;
+  background: linear-gradient(135deg, $color-gray-50 0%, $color-white 100%);
+  border-radius: $radius-2xl;
+  border: 2rpx dashed $color-border;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-m;
+}
+
+.tip-icon {
+  font-size: 80rpx;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.tip-text {
+  font-size: 28rpx;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.tip-action {
+  margin-top: $spacing-s;
+  padding: 20rpx 48rpx;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border-radius: $radius-full;
+  
+  text {
+    font-size: 28rpx;
+    color: $color-white;
+    font-weight: 500;
+  }
+  
+  &:active {
+    opacity: 0.8;
+    transform: scale(0.98);
   }
 }
 

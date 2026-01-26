@@ -4,8 +4,8 @@
       
       <!-- 头部 -->
       <view class="guide-header">
-        <text class="guide-title">账号关联</text>
-        <text class="guide-subtitle">关联微信账号以便下次快速登录</text>
+        <text class="guide-title">导入历史数据</text>
+        <text class="guide-subtitle">关联您的账号以查看历史项目信息</text>
       </view>
       
       <!-- 说明内容 -->
@@ -14,44 +14,44 @@
           <view class="benefit-item">
             <view class="benefit-number">1</view>
             <view class="benefit-text">
-              <text class="benefit-title">便捷登录</text>
-              <text class="benefit-desc">下次可选择微信快速登录</text>
+              <text class="benefit-title">查看历史项目</text>
+              <text class="benefit-desc">导入您之前的项目数据和进度</text>
             </view>
           </view>
           
           <view class="benefit-item">
             <view class="benefit-number">2</view>
             <view class="benefit-text">
-              <text class="benefit-title">安全保障</text>
-              <text class="benefit-desc">微信官方认证，保护您的账户安全</text>
+              <text class="benefit-title">同步施工记录</text>
+              <text class="benefit-desc">查看完整的施工日志和质检报告</text>
             </view>
           </view>
           
           <view class="benefit-item">
             <view class="benefit-number">3</view>
             <view class="benefit-text">
-              <text class="benefit-title">身份验证</text>
-              <text class="benefit-desc">仅限系统中已注册的手机号可绑定</text>
+              <text class="benefit-title">便捷访问</text>
+              <text class="benefit-desc">下次打开自动加载您的数据</text>
             </view>
           </view>
         </view>
         
-        <!-- 重要提示 -->
+        <!-- 重要提示
         <view class="important-notice">
           <view class="notice-header">
-            <text class="notice-title">重要提示</text>
+            <text class="notice-title">温馨提示</text>
           </view>
-          <text class="notice-text">请确保输入的手机号已在系统中注册，如未注册请联系管理员添加</text>
-        </view>
+          <text class="notice-text">请输入您在系统中注册的账号，我们将为您导入相关的历史数据</text>
+        </view>-->
       </view>
-      
+       
       <!-- 操作按钮 -->
       <view class="guide-actions">
         <button class="guide-btn cancel-btn" @click="handleCancel">
-          <text>稍后绑定</text>
+          <text>稍后导入</text>
         </button>
         <button class="guide-btn confirm-btn" @click="handleConfirm">
-          <text>开始绑定</text>
+          <text>开始导入</text>
         </button>
       </view>
       

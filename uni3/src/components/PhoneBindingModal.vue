@@ -4,22 +4,19 @@
       
       <!-- 头部 -->
       <view class="modal-header">
-        <text class="modal-title">绑定手机号</text>
-        <text class="modal-subtitle">请输入您在系统中注册的手机号</text>
+        <text class="modal-title">输入账号</text>
+        <text class="modal-subtitle">请输入您在系统中注册的账号</text>
       </view>
       
       <!-- 输入区域 -->
       <view class="input-section">
         <view class="input-wrapper" :class="{ 'input-error': hasError, 'input-focus': isFocused }">
-          <view class="input-prefix">
-            <text class="country-code">+86</text>
-          </view>
           <input 
             class="phone-input"
             v-model="phoneNumber"
             type="tel"
-            placeholder="请输入手机号"
-            maxlength="11"
+            placeholder="请输入账号"
+            maxlength="20"
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleInput"
@@ -43,12 +40,12 @@
       <!-- 安全提示 -->
       <view class="security-tip">
         <view class="tip-header">
-          <text class="tip-title">安全提示</text>
+          <text class="tip-title">温馨提示</text>
         </view>
         <view class="tip-list">
-          <text class="tip-item">• 仅限系统中已注册的手机号可以绑定</text>
-          <text class="tip-item">• 如您的手机号未注册，请联系管理员添加</text>
-          <text class="tip-item">• 绑定后可享受微信快速登录服务</text>
+          <text class="tip-item">• 仅限系统中已注册的账号可以导入数据</text>
+          <text class="tip-item">• 如您的账号未注册，请联系管理员添加</text>
+          <text class="tip-item">• 导入后可查看完整的历史项目信息</text>
         </view>
       </view>
       
@@ -63,7 +60,7 @@
           :disabled="!isValidPhone"
           @click="handleConfirm"
         >
-          <text>确认绑定</text>
+          <text>确认导入</text>
         </button>
       </view>
       
@@ -101,15 +98,14 @@ const isValidPhone = computed(() => {
 const formatTip = computed(() => {
   const len = phoneNumber.value.length
   if (len === 0) return ''
-  if (len < 11) return `还需输入 ${11 - len} 位数字`
-  if (isValidPhone.value) return '手机号格式正确'
-  return '手机号格式不正确'
+  if (isValidPhone.value) return '账号格式正确'
+  return '账号格式不正确'
 })
 
 // 监听重试次数变化
 watch(() => props.retryCount, (newCount) => {
   if (newCount > 0) {
-    errorMessage.value = '手机号格式不正确，请重新输入'
+    errorMessage.value = '账号格式不正确，请重新输入'
     // 清空输入框并聚焦
     phoneNumber.value = ''
     setTimeout(() => {
@@ -159,7 +155,7 @@ const handleCancel = () => {
 
 const handleConfirm = () => {
   if (!isValidPhone.value) {
-    errorMessage.value = '请输入正确的手机号格式'
+    errorMessage.value = '请输入正确的账号格式'
     return
   }
   

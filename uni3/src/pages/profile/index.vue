@@ -5,85 +5,83 @@
       title="个人中心"
       :show-back="false"
     />
-    <!-- 头部占位 -->
-    <view class="header-placeholder" :style="{ height: headerHeight + 'px' }"></view>
-    <!-- 项目概况卡片 -->
-        <view class="project-brief-section" v-if="projects.length > 0">
-          <ProjectCardSwiper
-            :projects="projects"
-            :user-info="userInfo"
-            :current="currentProjectIndex"
-            @update:current="index => currentProjectIndex = index"
-            @change="handleSwiperChange"
-            @click="handleCardClick"
-          />
-        </view>
-    <!-- 可滚动内容区域 -->
-    <scroll-view class="scroll-content" scroll-y>
-      <view class="content-wrapper">
-        
+    
+    <!-- 页面内容区域 - 使用原生滚动 -->
+    <view class="page-content">
+      <!-- 项目概况卡片 -->
+      <view class="project-brief-section" v-if="projects.length > 0">
+        <ProjectCardSwiper
+          :projects="projects"
+          :user-info="userInfo"
+          :current="currentProjectIndex"
+          @update:current="index => currentProjectIndex = index"
+          @change="handleSwiperChange"
+          @click="handleCardClick"
+        />
+      </view>
 
-        <!-- 费用统计四宫格（仅客户可见） -->
-        <view class="expense-section" v-if="isCustomer">
-          <view class="expense-grid">
-            <view 
-              v-for="(item, index) in expenseList" 
-              :key="index"
-              class="expense-item glass-card"
-              @click="handleExpenseClick(item)"
-            >
-              <text class="expense-label">{{ item.label }}</text>
-              <view class="expense-value">
-                <text class="value-number">{{ formatAmount(item.value).number }}</text>
-                <text class="value-unit">{{ formatAmount(item.value).unit }}</text>
-              </view>
-            </view>
-          </view>
-          
-          <!-- 总金额汇总卡片 -->
-          <view class="total-amount-card">
-            <text class="total-label">合同总金额</text>
-            <view class="total-value">
-              <text class="total-number">{{ formatTotalAmount(totalAmount).number }}</text>
-              <text class="total-unit">{{ formatTotalAmount(totalAmount).unit }}</text>
+      <!-- 费用统计四宫格（仅客户可见） -->
+      <view class="expense-section" v-if="isCustomer && projects.length > 0">
+        <view class="expense-grid">
+          <view 
+            v-for="(item, index) in expenseList" 
+            :key="index"
+            class="expense-item glass-card"
+            @click="handleExpenseClick(item)"
+          >
+            <text class="expense-label">{{ item.label }}</text>
+            <view class="expense-value">
+              <text class="value-number">{{ formatAmount(item.value).number }}</text>
+              <text class="value-unit">{{ formatAmount(item.value).unit }}</text>
             </view>
           </view>
         </view>
         
-        <!-- 底部按钮区域 -->
-        <view class="bottom-buttons">
-        <!--
-          <view class="action-btn" @click="handleContact">
-            <text>联系客服</text>
-          </view>
-           -->
-          <view class="action-btn" @click="handleAbout">
-            <text>关于我们</text>
-          </view>
-          
-          <!-- 品牌突出按钮 
-          <view class="brand-btn" @click="handleBrand">
-            <view class="brand-btn-bg">
-              <view class="brand-bubble bubble-1"></view>
-              <view class="brand-bubble bubble-2"></view>
-            </view>
-            <image class="brand-logo" src="@/styles/logo.png" mode="aspectFit" />
-            <view class="brand-btn-text">
-              <text class="brand-title">了解品牌</text>
-              <text class="brand-subtitle">探索我们的故事</text>
-            </view>
-            <view class="brand-arrow">›</view>
-          </view>
-          -->
-          <view class="action-btn" @click="handleLogout">
-            <text>退出登录</text>
+        <!-- 总金额汇总卡片 -->
+        <view class="total-amount-card">
+          <text class="total-label">合同总金额</text>
+          <view class="total-value">
+            <text class="total-number">{{ formatTotalAmount(totalAmount).number }}</text>
+            <text class="total-unit">{{ formatTotalAmount(totalAmount).unit }}</text>
           </view>
         </view>
       </view>
-    </scroll-view>
+      
+      <!-- 底部按钮区域 -->
+      <view class="bottom-buttons">
+        <view class="action-btn" @click="handleAbout">
+          <text>关于我们</text>
+        </view>
+        
+        <!-- 导入历史数据按钮（游客模式显示） -->
+        <view v-if="isGuestMode" class="action-btn" @click="handleImportData">
+          <text>导入历史数据</text>
+        </view>
+        
+        <view class="action-btn" @click="handleLogout">
+          <text>退出登录</text>
+        </view>
+      </view>
+    </view>
     
     <!-- Custom TabBar -->
     <CustomTabBar :current="3" />
+    
+    <!-- 导入数据相关组件 -->
+    <WechatBindingGuide 
+      :visible="showBindingGuide"
+      @confirm="handleBindingGuideConfirm"
+      @cancel="handleBindingGuideCancel"
+      @close="handleBindingGuideClose"
+    />
+    
+    <PhoneBindingModal 
+      :visible="showPhoneModal"
+      :retryCount="phoneRetryCount"
+      @confirm="handlePhoneConfirm"
+      @cancel="handlePhoneCancel"
+      @close="handlePhoneClose"
+    />
   </view>
 </template>
 
@@ -92,15 +90,17 @@ import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue'
 import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
 import { getCustomerDashboard, getProjectContractAmounts } from '@/api/dashboard.js'
+import { bindPhoneToOpenid, checkOpenidBinding, openidLogin } from '@/api/auth.js'
 import UserAvatar from '@/components/UserAvatar.vue'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ProjectCardSwiper from '@/components/ProjectCardSwiper.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import PhoneBindingModal from '@/components/PhoneBindingModal.vue'
+import WechatBindingGuide from '@/components/WechatBindingGuide.vue'
 
 const userStore = useUserStore()
 
 // 状态
-const headerHeight = ref(0)
 const projects = ref([])
 const currentProjectIndex = ref(0)
 const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
@@ -110,6 +110,15 @@ const userInfo = computed(() => userStore.userInfo)
 
 // 用户类型判断
 const isCustomer = computed(() => userStore.isCustomer)
+
+// 游客模式判断
+const isGuestMode = computed(() => uni.getStorageSync('guestMode') === true)
+
+console.log(uni.getStorageSync('guestMode'),'isGuestMode')
+// 导入数据相关状态
+const showBindingGuide = ref(false)
+const showPhoneModal = ref(false)
+const phoneRetryCount = ref(0)
 
 // 费用统计数据（直接使用API返回的数据）
 const expenseList = ref([])
@@ -252,30 +261,235 @@ const formatTotalAmount = (amount) => {
   }
 }
 
-// 更新header高度
-const updateHeaderHeight = () => {
-  const query = uni.createSelectorQuery().in(getCurrentInstance())
-  query.select('.page-header').boundingClientRect(rect => {
-    if (rect && rect.height > 0) {
-      // 头部高度 + 间距，确保内容不被遮挡
-      headerHeight.value = rect.height
-    } else {
-       // 如果获取失败，使用默认高度
-    if (!headerHeight.value) {
-      headerHeight.value = (uni.getSystemInfoSync().statusBarHeight || 20) + 56
-    }
-    }
-  }).exec()
-}
-
-// 联系客服
-const handleContact = () => {
+// 关于我们
+const handleAbout = () => {
   uni.navigateTo({
-    url: '/pages/contact/index'
+    url: '/pages/brand/index'
   })
 }
 
-// 关于我们
+// 退出登录
+const handleLogout = () => {
+  uni.showModal({
+    title: '提示',
+    content: '确定要退出登录吗？',
+    success: (res) => {
+      if (res.confirm) {
+        // 清除游客模式标记和微信信息
+        uni.removeStorageSync('guestMode')
+        uni.removeStorageSync('wechatOpenid')
+        userStore.logout()
+      }
+    }
+  })
+}
+
+// 导入历史数据
+const handleImportData = () => {
+  console.log('[导入数据] 开始导入历史数据流程')
+  showBindingGuide.value = true
+}
+
+// 绑定引导确认
+const handleBindingGuideConfirm = () => {
+  showBindingGuide.value = false
+  showPhoneModal.value = true
+  phoneRetryCount.value = 0
+}
+
+// 绑定引导取消
+const handleBindingGuideCancel = () => {
+  showBindingGuide.value = false
+  console.log('[导入数据] 用户取消导入')
+}
+
+// 绑定引导关闭
+const handleBindingGuideClose = () => {
+  showBindingGuide.value = false
+}
+
+// 手机号确认
+const handlePhoneConfirm = async (phone) => {
+  try {
+    showPhoneModal.value = false
+    await performPhoneBinding(phone)
+  } catch (error) {
+    console.error('[导入数据] 绑定失败:', error)
+    
+    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
+      await showPhoneNotFoundDialog(phone)
+    } else if (error.message.includes('账号格式')) {
+      phoneRetryCount.value++
+      if (phoneRetryCount.value < 3) {
+        showPhoneModal.value = true
+      } else {
+        uni.showToast({ title: '账号格式错误次数过多', icon: 'none' })
+      }
+    } else {
+      uni.showToast({ title: error.message || '导入失败，请重试', icon: 'none' })
+    }
+  }
+}
+
+// 手机号取消
+const handlePhoneCancel = () => {
+  showPhoneModal.value = false
+  console.log('[导入数据] 用户取消输入账号')
+}
+
+// 手机号关闭
+const handlePhoneClose = () => {
+  showPhoneModal.value = false
+}
+
+// 执行手机号绑定
+const performPhoneBinding = async (phone) => {
+  try {
+    console.log('[导入数据] 开始绑定账号:', phone)
+    
+    uni.showLoading({ title: '正在导入数据...', mask: true })
+    
+    // 获取保存的微信openid（不再使用code，因为code只能用一次）
+    const wechatOpenid = uni.getStorageSync('wechatOpenid')
+    if (!wechatOpenid) {
+      throw new Error('微信登录信息已过期，请重新登录')
+    }
+    
+    console.log('[导入数据] 使用保存的openid进行绑定')
+    
+    // 直接使用openid执行绑定操作
+    const result = await bindPhoneToOpenid({
+      openid: wechatOpenid,
+      phone: phone,
+      deviceId: getDeviceId()
+    })
+    
+    console.log('[导入数据] 绑定成功:', result.userInfo)
+    
+    // 清除游客模式标记
+    uni.removeStorageSync('guestMode')
+    
+    // 保存登录信息
+    userStore.setLoginInfo(result)
+    
+    // 显示成功提示
+    uni.showToast({ 
+      title: '历史数据导入成功', 
+      icon: 'success',
+      duration: 1500
+    })
+    
+    // 延迟后重新启动小程序，刷新所有页面
+    setTimeout(() => {
+      console.log('[导入数据] 重新启动小程序以刷新所有数据')
+      uni.reLaunch({ 
+        url: '/pages/dashboard/index',
+        success: () => {
+          console.log('[导入数据] 小程序已刷新')
+        }
+      })
+    }, 1500)
+    
+  } catch (error) {
+    console.error('[导入数据] 绑定失败:', error)
+    
+    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
+      await showPhoneNotFoundDialog(phone)
+    } else if (error.message.includes('已绑定其他')) {
+      uni.showModal({
+        title: '导入失败',
+        content: '该账号已绑定其他微信账号，一个账号只能绑定一个微信账号。',
+        showCancel: false,
+        confirmText: '我知道了'
+      })
+    } else if (error.message.includes('微信账号已绑定其他')) {
+      uni.showModal({
+        title: '导入失败',
+        content: '该微信账号已绑定其他账号，请使用已绑定的账号登录。',
+        showCancel: false,
+        confirmText: '我知道了'
+      })
+    } else if (error.message.includes('登录信息已过期')) {
+      // 微信信息过期，需要重新登录
+      uni.showModal({
+        title: '登录信息已过期',
+        content: '请重新登录后再试',
+        showCancel: false,
+        confirmText: '重新登录',
+        success: () => {
+          uni.removeStorageSync('guestMode')
+          uni.removeStorageSync('wechatOpenid')
+          uni.reLaunch({ url: '/pages/login/index-new' })
+        }
+      })
+    } else {
+      throw error
+    }
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 显示手机号未找到对话框
+const showPhoneNotFoundDialog = async (phone) => {
+  return new Promise((resolve) => {
+    uni.showModal({
+      title: '账号未注册',
+      content: `账号 ${phone} 未在系统中注册。\n\n请联系管理员将您的账号添加到系统中，或使用其他已注册的账号。`,
+      confirmText: '重新输入',
+      cancelText: '取消',
+      success: async (res) => {
+        if (res.confirm) {
+          // 重新输入手机号
+          showPhoneModal.value = true
+          phoneRetryCount.value = 0
+          resolve()
+        } else {
+          resolve()
+        }
+      }
+    })
+  })
+}
+
+// 获取设备ID
+const getDeviceId = () => {
+  let deviceId = uni.getStorageSync('deviceId')
+  if (!deviceId) {
+    deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    uni.setStorageSync('deviceId', deviceId)
+  }
+  return deviceId
+}
+
+// 刷新所有数据
+const refreshData = async () => {
+  // 检查是否是游客模式
+  const isGuest = uni.getStorageSync('guestMode') === true
+  
+  if (isGuest) {
+    // 游客模式，不刷新数据
+    console.log('[Profile] 游客模式，不刷新数据')
+    return
+  }
+  
+  await loadProjectData()
+  // 项目数据加载后，watch会自动触发loadContractAmounts
+}
+
+onMounted(() => {
+  // 检查是否是游客模式
+  const isGuest = uni.getStorageSync('guestMode') === true
+  
+  if (isGuest) {
+    // 游客模式，不加载项目数据
+    console.log('[Profile] 游客模式，不加载项目数据')
+    return
+  }
+  
+  // 正式用户，加载项目数据
+  loadProjectData()
+})
 const handleAbout = () => {
   uni.navigateTo({
     url: '/pages/brand/index'
@@ -296,14 +510,204 @@ const handleLogout = () => {
     content: '确定要退出登录吗？',
     success: (res) => {
       if (res.confirm) {
+        // 清除游客模式标记和微信信息
+        uni.removeStorageSync('guestMode')
+        uni.removeStorageSync('wechatOpenid')
         userStore.logout()
       }
     }
   })
 }
 
+// 导入历史数据
+const handleImportData = () => {
+  console.log('[导入数据] 开始导入历史数据流程')
+  showBindingGuide.value = true
+}
+
+// 绑定引导确认
+const handleBindingGuideConfirm = () => {
+  showBindingGuide.value = false
+  showPhoneModal.value = true
+  phoneRetryCount.value = 0
+}
+
+// 绑定引导取消
+const handleBindingGuideCancel = () => {
+  showBindingGuide.value = false
+  console.log('[导入数据] 用户取消导入')
+}
+
+// 绑定引导关闭
+const handleBindingGuideClose = () => {
+  showBindingGuide.value = false
+}
+
+// 手机号确认
+const handlePhoneConfirm = async (phone) => {
+  try {
+    showPhoneModal.value = false
+    await performPhoneBinding(phone)
+  } catch (error) {
+    console.error('[导入数据] 绑定失败:', error)
+    
+    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
+      await showPhoneNotFoundDialog(phone)
+    } else if (error.message.includes('账号格式')) {
+      phoneRetryCount.value++
+      if (phoneRetryCount.value < 3) {
+        showPhoneModal.value = true
+      } else {
+        uni.showToast({ title: '账号格式错误次数过多', icon: 'none' })
+      }
+    } else {
+      uni.showToast({ title: error.message || '导入失败，请重试', icon: 'none' })
+    }
+  }
+}
+
+// 手机号取消
+const handlePhoneCancel = () => {
+  showPhoneModal.value = false
+  console.log('[导入数据] 用户取消输入账号')
+}
+
+// 手机号关闭
+const handlePhoneClose = () => {
+  showPhoneModal.value = false
+}
+
+// 执行手机号绑定
+const performPhoneBinding = async (phone) => {
+  try {
+    console.log('[导入数据] 开始绑定账号:', phone)
+    
+    uni.showLoading({ title: '正在导入数据...', mask: true })
+    
+    // 获取保存的微信openid（不再使用code，因为code只能用一次）
+    const wechatOpenid = uni.getStorageSync('wechatOpenid')
+    if (!wechatOpenid) {
+      throw new Error('微信登录信息已过期，请重新登录')
+    }
+    
+    console.log('[导入数据] 使用保存的openid进行绑定')
+    
+    // 直接使用openid执行绑定操作
+    const result = await bindPhoneToOpenid({
+      openid: wechatOpenid,
+      phone: phone,
+      deviceId: getDeviceId()
+    })
+    
+    console.log('[导入数据] 绑定成功:', result.userInfo)
+    
+    // 清除游客模式标记
+    uni.removeStorageSync('guestMode')
+    
+    // 保存登录信息
+    userStore.setLoginInfo(result)
+    
+    // 显示成功提示
+    uni.showToast({ 
+      title: '历史数据导入成功', 
+      icon: 'success',
+      duration: 1500
+    })
+    
+    // 延迟后重新启动小程序，刷新所有页面
+    setTimeout(() => {
+      console.log('[导入数据] 重新启动小程序以刷新所有数据')
+      uni.reLaunch({ 
+        url: '/pages/dashboard/index',
+        success: () => {
+          console.log('[导入数据] 小程序已刷新')
+        }
+      })
+    }, 1500)
+    
+  } catch (error) {
+    console.error('[导入数据] 绑定失败:', error)
+    
+    if (error.message.includes('未在系统中注册') || error.message.includes('用户不存在')) {
+      await showPhoneNotFoundDialog(phone)
+    } else if (error.message.includes('已绑定其他')) {
+      uni.showModal({
+        title: '导入失败',
+        content: '该账号已绑定其他微信账号，一个账号只能绑定一个微信账号。',
+        showCancel: false,
+        confirmText: '我知道了'
+      })
+    } else if (error.message.includes('微信账号已绑定其他')) {
+      uni.showModal({
+        title: '导入失败',
+        content: '该微信账号已绑定其他账号，请使用已绑定的账号登录。',
+        showCancel: false,
+        confirmText: '我知道了'
+      })
+    } else if (error.message.includes('登录信息已过期')) {
+      // 微信信息过期，需要重新登录
+      uni.showModal({
+        title: '登录信息已过期',
+        content: '请重新登录后再试',
+        showCancel: false,
+        confirmText: '重新登录',
+        success: () => {
+          uni.removeStorageSync('guestMode')
+          uni.removeStorageSync('wechatOpenid')
+          uni.reLaunch({ url: '/pages/login/index-new' })
+        }
+      })
+    } else {
+      throw error
+    }
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 显示手机号未找到对话框
+const showPhoneNotFoundDialog = async (phone) => {
+  return new Promise((resolve) => {
+    uni.showModal({
+      title: '账号未注册',
+      content: `账号 ${phone} 未在系统中注册。\n\n请联系管理员将您的账号添加到系统中，或使用其他已注册的账号。`,
+      confirmText: '重新输入',
+      cancelText: '取消',
+      success: async (res) => {
+        if (res.confirm) {
+          // 重新输入手机号
+          showPhoneModal.value = true
+          phoneRetryCount.value = 0
+          resolve()
+        } else {
+          resolve()
+        }
+      }
+    })
+  })
+}
+
+// 获取设备ID
+const getDeviceId = () => {
+  let deviceId = uni.getStorageSync('deviceId')
+  if (!deviceId) {
+    deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    uni.setStorageSync('deviceId', deviceId)
+  }
+  return deviceId
+}
+
 // 刷新所有数据
 const refreshData = async () => {
+  // 检查是否是游客模式
+  const isGuest = uni.getStorageSync('guestMode') === true
+  
+  if (isGuest) {
+    // 游客模式，不刷新数据
+    console.log('[Profile] 游客模式，不刷新数据')
+    return
+  }
+  
   await loadProjectData()
   // 项目数据加载后，watch会自动触发loadContractAmounts
 }
@@ -318,7 +722,16 @@ onMounted(() => {
   // 获取精确高度
   setTimeout(updateHeaderHeight, 200)
   
-  // 加载项目数据
+  // 检查是否是游客模式
+  const isGuest = uni.getStorageSync('guestMode') === true
+  
+  if (isGuest) {
+    // 游客模式，不加载项目数据
+    console.log('[Profile] 游客模式，不加载项目数据')
+    return
+  }
+  
+  // 正式用户，加载项目数据
   loadProjectData()
 })
 
@@ -331,56 +744,14 @@ onPullDownRefresh(async () => {
 
 <style lang="scss" scoped>
 .profile-page {
-  height: 100vh;
+  min-height: 100vh;
   background: $color-white;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  padding-bottom: 120rpx; // 为TabBar留出空间
 }
 
-// 固定头部样式已移入PageHeader
-// 自定义头部用户信息样式
-.header-user-info {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-}
-
-.user-text-info {
-  display: flex;
-  flex-direction: column;
-  
-  .user-name {
-    font-size: 32rpx;
-    font-weight: 700;
-    color: $glass-text-main;
-    line-height: 1.2;
-  }
-  
-  .user-phone {
-    font-size: 24rpx;
-    color: $glass-text-muted;
-    margin-top: 4rpx;
-  }
-}
-
-// 头部占位
-.header-placeholder {
-  width: 100%;
-  flex-shrink: 0;
-}
-
-// 可滚动内容
-.scroll-content {
-  flex: 1;
-  height: 0; // 关键：让scroll-view在flex容器中正确滚动
-  width: 100%;
-}
-
-.content-wrapper {
-  padding: 16rpx 32rpx 140rpx; // 底部padding移到这里，防止被TabBar遮挡
-  width: 100%;
-  box-sizing: border-box;
+// 页面内容区域
+.page-content {
+  padding: 16rpx 32rpx 32rpx;
 }
 
 // 项目概况区域
@@ -391,7 +762,6 @@ onPullDownRefresh(async () => {
 // 费用统计区域
 .expense-section {
   margin-bottom: 48rpx;
-  padding: 0 16rpx;
 }
 
 .expense-grid {
@@ -544,7 +914,6 @@ onPullDownRefresh(async () => {
   display: flex;
   flex-direction: column;
   gap: 20rpx;
-  padding: 0 16rpx;
 }
 
 .action-btn {
@@ -616,6 +985,32 @@ onPullDownRefresh(async () => {
       }
     }
   }
+  
+  // 导入历史数据按钮特殊样式
+  &.import-data-btn {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border: none;
+    color: $color-white;
+    font-weight: 600;
+    position: relative;
+    
+    &::before {
+      display: none;
+    }
+    
+    // 添加闪烁动画提示
+    &::after {
+      content: '✨';
+      position: absolute;
+      right: 24rpx;
+      font-size: 32rpx;
+      animation: sparkle 2s ease-in-out infinite;
+    }
+    
+    &:active {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+  }
 }
 
 // 品牌突出按钮
@@ -676,6 +1071,11 @@ onPullDownRefresh(async () => {
 @keyframes brandFloat2 {
   0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
   50% { transform: translate(15rpx, -10rpx) scale(1.15); opacity: 0.7; }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
 }
 
 .brand-logo {

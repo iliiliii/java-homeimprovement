@@ -71,6 +71,20 @@ const currentProject = computed(() => projects.value[currentProjectIndex.value] 
 onMounted(async () => {
   // 先从本地存储恢复用户状态
   userStore.initFromStorage()
+  
+  // 检查是否是游客模式
+  const isGuest = uni.getStorageSync('guestMode') === true
+  
+  if (isGuest) {
+    // 游客模式，设置为客户类型
+    userType.value = 'customer'
+    console.log('[Dashboard] 游客模式，显示客户视图')
+    // 游客模式下也显示资讯和banner，但不显示项目数据
+    projects.value = [] // 空项目列表
+    loading.value = false
+    return
+  }
+  
   userType.value = userStore.userType
   
   console.log('[Dashboard] 用户类型:', userType.value)
@@ -162,7 +176,7 @@ const loadMoreData = async () => {
 
 // 跳转登录
 const goLogin = () => {
-  uni.reLaunch({ url: '/pages/login/index' })
+  uni.reLaunch({ url: '/pages/login/index-new' })
 }
 
 // 切换项目
