@@ -61,15 +61,24 @@
         <el-card class="customer-card" shadow="hover">
           <template #header>
             <div class="card-header">
-              <div class="customer-name-section">
-                <div class="customer-name">{{ customer.name }}</div>
-                <div class="customer-join-date" v-if="customer.createdAt">
-                  加入于 {{ formatDate(customer.createdAt) }}
+              <div class="customer-avatar-section">
+                <el-avatar 
+                  :size="50" 
+                  :src="getWechatBinding(customer.id)?.avatar || ''"
+                  :style="{ backgroundColor: getWechatBinding(customer.id)?.avatar ? 'transparent' : '#909399' }"
+                >
+                  {{ customer.name ? customer.name.substring(0, 1) : 'C' }}
+                </el-avatar>
+                <div class="customer-name-section">
+                  <div class="customer-name">{{ customer.name }}</div>
+                  <div class="customer-join-date" v-if="customer.createdAt">
+                    加入于 {{ formatDate(customer.createdAt) }}
+                  </div>
                 </div>
               </div>
-              <div class="customer-status" v-if="customer.isActive !== null && customer.isActive !== undefined">
-                <span class="status-dot" :class="{ 'status-active': customer.isActive }"></span>
-                <span class="status-text">{{ customer.isActive ? '活跃' : '非活跃' }}</span>
+              <div class="customer-status">
+                <span class="status-dot" :class="{ 'status-active': getWechatBinding(customer.id) }"></span>
+                <span class="status-text">{{ getWechatBinding(customer.id) ? '已绑定' : '未绑定' }}</span>
               </div>
             </div>
           </template>
@@ -89,7 +98,6 @@
               <el-icon class="detail-icon"><FolderOpened /></el-icon>
               <span class="detail-label">关联项目</span>
               <span class="project-count">{{ customer.projectCount || 0 }}</span>
-             
             </div>
           </div>
 
@@ -100,6 +108,16 @@
               </el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(customer)" v-hasPermi="['evs:customers:edit']">
                 编辑
+              </el-button>
+              <el-button 
+                v-if="getWechatBinding(customer.id)" 
+                link 
+                type="warning" 
+                icon="Close" 
+                @click="handleUnbindWechat(customer)"
+                v-hasPermi="['evs:appWechatBindings:remove']"
+              >
+                解绑
               </el-button>
             </div>
           </template>
@@ -155,6 +173,54 @@
             >
               删除客户
             </el-button>
+            <el-button 
+              v-if="getWechatBinding(currentCustomer.id)"
+              plain 
+              type="warning" 
+              icon="Close" 
+              @click="handleUnbindWechatFromDetail"
+              v-hasPermi="['evs:appWechatBindings:remove']"
+            >
+              解除微信绑定
+            </el-button>
+          </div>
+        </el-card>
+
+        <!-- 微信绑定信息部分 -->
+        <el-card v-if="getWechatBinding(currentCustomer.id)" class="detail-card" shadow="never">
+          <template #header>
+            <div class="section-header">
+              <el-icon class="info-icon" style="color: #07c160;"><ChatDotRound /></el-icon>
+              <span class="section-title">微信绑定信息</span>
+            </div>
+          </template>
+          <div class="wechat-binding-info">
+            <div class="wechat-avatar-section">
+              <el-avatar 
+                :size="60" 
+                :src="getWechatBinding(currentCustomer.id)?.avatar || ''"
+              >
+                {{ getWechatBinding(currentCustomer.id)?.nickname?.substring(0, 1) || 'W' }}
+              </el-avatar>
+              <div class="wechat-info">
+                <div class="wechat-nickname">{{ getWechatBinding(currentCustomer.id)?.nickname || '-' }}</div>
+                <el-tag type="success" size="small">已绑定</el-tag>
+              </div>
+            </div>
+            <div class="info-list">
+              <div class="info-item">
+                <span class="info-label">绑定手机：</span>
+                <span class="info-value">{{ getWechatBinding(currentCustomer.id)?.phone || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">绑定时间：</span>
+                <span class="info-value">{{ formatDate(getWechatBinding(currentCustomer.id)?.bindTime) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">最后登录：</span>
+                <span class="info-value">{{ formatDate(getWechatBinding(currentCustomer.id)?.lastLoginTime) }}</span>
+              </div>
+            </div>
           </div>
         </el-card>
 
@@ -247,12 +313,16 @@
 
 <script setup name="Customers">
 import { listCustomers, getCustomers, delCustomers, addCustomers, updateCustomers } from "@/api/evs/customers"
-import { UserFilled, Phone, Message, Location, Calendar, FolderOpened, CopyDocument, InfoFilled } from '@element-plus/icons-vue'
+import { listWechatBindings, unbindWechatByOpenId } from "@/api/evs/wechatBindings"
+import { UserFilled, Phone, Message, Location, Calendar, FolderOpened, CopyDocument, InfoFilled, ChatDotRound } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const { proxy } = getCurrentInstance()
 const { decoration_customer_level } = proxy.useDict('decoration_customer_level')
+
+// 微信绑定数据
+const wechatBindingsMap = ref({})
 
 const customersList = ref([])
 const open = ref(false)
@@ -309,7 +379,46 @@ function getList() {
     customersList.value = response.rows
     total.value = response.total
     loading.value = false
+    // 获取微信绑定信息
+    getWechatBindings()
   })
+}
+
+/** 获取微信绑定信息 */
+async function getWechatBindings() {
+  try {
+    const response = await listWechatBindings({ userType: 'customer' })
+    const bindingsMap = {}
+    if (response.rows) {
+      response.rows.forEach(binding => {
+        bindingsMap[binding.userId] = binding
+      })
+    }
+    wechatBindingsMap.value = bindingsMap
+  } catch (error) {
+    console.error('获取微信绑定信息失败:', error)
+  }
+}
+
+/** 获取客户的微信绑定信息 */
+function getWechatBinding(customerId) {
+  return wechatBindingsMap.value[customerId] || null
+}
+
+/** 解除微信绑定 */
+function handleUnbindWechat(customer) {
+  const binding = getWechatBinding(customer.id)
+  if (!binding) {
+    proxy.$modal.msgWarning('该客户未绑定微信')
+    return
+  }
+
+  proxy.$modal.confirm(`是否确认解除客户 ${customer.name} 的微信绑定？`).then(() => {
+    return unbindWechatByOpenId(binding.openId)
+  }).then(() => {
+    proxy.$modal.msgSuccess('解除绑定成功')
+    getWechatBindings()
+  }).catch(() => {})
 }
 
 // 取消按钮
@@ -410,6 +519,11 @@ function handleDeleteFromDetail() {
     phone: currentCustomer.value.phone,
     projectCount: currentCustomer.value.projectCount || customersList.value.find(c => c.id === currentCustomer.value.id)?.projectCount || 0
   })
+}
+
+/** 从详情对话框解绑微信 */
+function handleUnbindWechatFromDetail() {
+  handleUnbindWechat(currentCustomer.value)
 }
 
 /** 新增按钮操作 */
@@ -591,6 +705,14 @@ watch(() => route.query, (newQuery) => {
   gap: 12px;
 }
 
+.customer-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
 .customer-name-section {
   flex: 1;
   min-width: 0;
@@ -627,7 +749,7 @@ watch(() => route.query, (newQuery) => {
 }
 
 .status-dot.status-active {
-  background-color: #409eff;
+  background-color: #07c160;
 }
 
 .status-text {
@@ -831,6 +953,29 @@ watch(() => route.query, (newQuery) => {
 
       &:hover {
         color: #66b1ff;
+      }
+    }
+  }
+
+  .wechat-binding-info {
+    .wechat-avatar-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #ebeef5;
+
+      .wechat-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .wechat-nickname {
+          font-size: 16px;
+          font-weight: 600;
+          color: #303133;
+        }
       }
     }
   }

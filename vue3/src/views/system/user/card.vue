@@ -30,7 +30,11 @@
       <el-table v-loading="loading" :data="userList" style="width: 100%">
         <el-table-column label="头像" align="center" width="80">
           <template #default="{ row }">
-            <el-avatar v-if="row.avatar" :size="40" :src="getAvatarUrl(row.avatar)">
+            <el-avatar 
+              v-if="getWechatBinding(row.userId)?.avatar || row.avatar" 
+              :size="40" 
+              :src="getAvatarUrl(getWechatBinding(row.userId)?.avatar || row.avatar)"
+            >
               {{ getAvatarText(row.nickName || row.userName) }}
             </el-avatar>
             <el-avatar v-else :size="40" :style="{ backgroundColor: '#909399' }">
@@ -71,7 +75,18 @@
             {{ getProjectCount(row.userId) }}个项目
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" class-name="small-padding fixed-width" min-width="180">
+        <el-table-column label="微信绑定" align="center" min-width="100">
+          <template #default="{ row }">
+            <el-tag 
+              :type="getWechatBinding(row.userId) ? 'success' : 'info'" 
+              size="small"
+            >
+              <el-icon style="margin-right: 4px; vertical-align: middle;"><ChatDotRound /></el-icon>
+              {{ getWechatBinding(row.userId) ? '已绑定' : '未绑定' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" class-name="small-padding fixed-width" min-width="240">
           <template #default="scope">
             <el-tooltip content="修改" placement="top">
               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:user:edit']">
@@ -86,6 +101,11 @@
             <el-tooltip content="重置密码" placement="top">
               <el-button link type="warning" icon="Key" @click="handleResetPwd(scope.row)" v-hasPermi="['system:user:resetPwd']">
                 重置密码
+              </el-button>
+            </el-tooltip>
+            <el-tooltip v-if="getWechatBinding(scope.row.userId)" content="解除微信绑定" placement="top">
+              <el-button link type="warning" icon="Close" @click="handleUnbindWechat(scope.row)" v-hasPermi="['evs:appWechatBindings:remove']">
+                解绑
               </el-button>
             </el-tooltip>
           </template>
@@ -201,7 +221,8 @@ import { listUser, delUser, getUser, updateUser, addUser, deptTreeSelect, resetU
 import { listPost } from "@/api/system/post"
 import { listProjectMembers } from "@/api/evs/projectMembers"
 import { getAllUserPost } from "@/api/evs/userPost"
-import { User, Phone, Folder, Key } from "@element-plus/icons-vue"
+import { listWechatBindings, unbindWechatByOpenId } from "@/api/evs/wechatBindings"
+import { User, Phone, Folder, Key, ChatDotRound } from "@element-plus/icons-vue"
 import AvatarUpload from '@/components/AvatarUpload/index.vue'
 
 const { proxy } = getCurrentInstance()
@@ -221,6 +242,7 @@ const roleOptions = ref([])
 const projectCountMap = ref({})      // 存储每个用户参与的项目数量
 const userPostNamesMap = ref({})     // 存储每个用户的岗位名称列表
 const allPostsMap = ref({})          // 岗位ID -> 岗位信息 的映射
+const wechatBindingsMap = ref({})    // 存储每个用户的微信绑定信息
 
 // 标签类型循环
 const tagTypes = ['primary', 'success', 'warning', 'danger', 'info']
@@ -287,7 +309,46 @@ function getList() {
     getUserProjectCounts()
     // 获取每个用户的岗位名称
     getUserPostNames()
+    // 获取微信绑定信息
+    getWechatBindings()
   })
+}
+
+/** 获取微信绑定信息 */
+async function getWechatBindings() {
+  try {
+    const response = await listWechatBindings({ userType: 'staff' })
+    const bindingsMap = {}
+    if (response.rows) {
+      response.rows.forEach(binding => {
+        bindingsMap[binding.userId] = binding
+      })
+    }
+    wechatBindingsMap.value = bindingsMap
+  } catch (error) {
+    console.error('获取微信绑定信息失败:', error)
+  }
+}
+
+/** 获取用户的微信绑定信息 */
+function getWechatBinding(userId) {
+  return wechatBindingsMap.value[userId] || null
+}
+
+/** 解除微信绑定 */
+function handleUnbindWechat(user) {
+  const binding = getWechatBinding(user.userId)
+  if (!binding) {
+    proxy.$modal.msgWarning('该用户未绑定微信')
+    return
+  }
+
+  proxy.$modal.confirm(`是否确认解除用户 ${user.nickName || user.userName} 的微信绑定？`).then(() => {
+    return unbindWechatByOpenId(binding.openId)
+  }).then(() => {
+    proxy.$modal.msgSuccess('解除绑定成功')
+    getWechatBindings()
+  }).catch(() => {})
 }
 
 /** 搜索按钮操作 */
