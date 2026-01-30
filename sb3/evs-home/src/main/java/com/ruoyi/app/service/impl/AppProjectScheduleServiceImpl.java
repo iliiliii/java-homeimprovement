@@ -129,8 +129,13 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
             List<ProjectScheduleRecordVO> records = projectScheduleMapper.selectProjectScheduleRecordList(
                     projectId, scheduleId, offset, pageSize);
             
+            log.info("查询到 {} 条验收记录", records.size());
+            
             // 为每条记录设置类型文本和验收状态文本
             for (ProjectScheduleRecordVO record : records) {
+                // 调试日志：检查 acceptanceTime 字段
+                log.info("记录 {} 的 acceptanceTime: {}", record.getId(), record.getAcceptanceTime());
+                
                 // 设置阶段名称文本
                 record.setStageName(getStageText(record.getStage()));
                 

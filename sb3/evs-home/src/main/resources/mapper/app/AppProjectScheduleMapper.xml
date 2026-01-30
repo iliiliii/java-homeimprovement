@@ -31,11 +31,12 @@
         <result property="title" column="title"/>
         <result property="description" column="description"/>
         <result property="type" column="type"/>
-        <result property="createTime" column="create_time"/>
+        <result property="createTime" column="create_time" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
         <result property="createBy" column="create_by"/>
         <result property="createByName" column="create_by_name"/>
         <result property="createByRole" column="create_by_role"/>
         <result property="inspectionStatus" column="inspection_status"/>
+        <result property="acceptanceTime" column="acceptance_time" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
         <!-- 图片和附件通过单独查询获取 -->
     </resultMap>
 
@@ -75,7 +76,8 @@
             psr.created_by as create_by,
             psr.acceptor as create_by_name,
             'staff' as create_by_role,
-            psr.acceptance_result as inspection_status
+            psr.acceptance_result as inspection_status,
+            psr.acceptance_time
         FROM project_schedule_records psr
         LEFT JOIN project_schedules ps ON psr.schedule_id = ps.id
         WHERE psr.schedule_id = #{scheduleId}
@@ -105,7 +107,8 @@
             psr.created_by as create_by,
             psr.acceptor as create_by_name,
             'staff' as create_by_role,
-            psr.acceptance_result as inspection_status
+            psr.acceptance_result as inspection_status,
+            psr.acceptance_time
         FROM project_schedule_records psr
         LEFT JOIN project_schedules ps ON psr.schedule_id = ps.id
         WHERE psr.project_id = #{projectId}
@@ -141,7 +144,8 @@
             psr.created_by as create_by,
             psr.acceptor as create_by_name,
             'staff' as create_by_role,
-            psr.acceptance_result as inspection_status
+            psr.acceptance_result as inspection_status,
+            psr.acceptance_time
         FROM project_schedule_records psr
         LEFT JOIN project_schedules ps ON psr.schedule_id = ps.id
         WHERE psr.id = #{recordId}

@@ -53,6 +53,9 @@ public class ProjectScheduleRecordVO {
     /** 验收状态显示文本 */
     private String inspectionStatusText;
 
+    /** 验收时间（实际验收发生时间） */
+    private Date acceptanceTime;
+
     /** 附件图片列表 */
     private List<String> images;
 
@@ -181,6 +184,14 @@ public class ProjectScheduleRecordVO {
 
     public void setInspectionStatusText(String inspectionStatusText) {
         this.inspectionStatusText = inspectionStatusText;
+    }
+
+    public Date getAcceptanceTime() {
+        return acceptanceTime;
+    }
+
+    public void setAcceptanceTime(Date acceptanceTime) {
+        this.acceptanceTime = acceptanceTime;
     }
 
     public List<String> getImages() {
