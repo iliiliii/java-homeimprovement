@@ -216,17 +216,32 @@
           <view class="date-picker-columns">
             <picker-view class="picker-column" :value="[yearIndex]" @change="onYearChange">
               <picker-view-column>
-                <view v-for="year in years" :key="year" class="picker-date-item">{{ year }}年</view>
+                <view 
+                  v-for="(year, index) in years" 
+                  :key="year" 
+                  class="picker-date-item"
+                  :class="{ 'picker-item-selected': index === yearIndex }"
+                >{{ year }}年</view>
               </picker-view-column>
             </picker-view>
             <picker-view class="picker-column" :value="[monthIndex]" @change="onMonthChange">
               <picker-view-column>
-                <view v-for="month in months" :key="month" class="picker-date-item">{{ month }}月</view>
+                <view 
+                  v-for="(month, index) in months" 
+                  :key="month" 
+                  class="picker-date-item"
+                  :class="{ 'picker-item-selected': index === monthIndex }"
+                >{{ month }}月</view>
               </picker-view-column>
             </picker-view>
             <picker-view class="picker-column" :value="[dayIndex]" @change="onDayChange">
               <picker-view-column>
-                <view v-for="day in days" :key="day" class="picker-date-item">{{ day }}日</view>
+                <view 
+                  v-for="(day, index) in days" 
+                  :key="day" 
+                  class="picker-date-item"
+                  :class="{ 'picker-item-selected': index === dayIndex }"
+                >{{ day }}日</view>
               </picker-view-column>
             </picker-view>
           </view>
@@ -244,17 +259,32 @@
           <view class="date-picker-columns">
             <picker-view class="picker-column" :value="[dueYearIndex]" @change="onDueYearChange">
               <picker-view-column>
-                <view v-for="year in dueYears" :key="year" class="picker-date-item">{{ year }}年</view>
+                <view 
+                  v-for="(year, index) in dueYears" 
+                  :key="year" 
+                  class="picker-date-item"
+                  :class="{ 'picker-item-selected': index === dueYearIndex }"
+                >{{ year }}年</view>
               </picker-view-column>
             </picker-view>
             <picker-view class="picker-column" :value="[dueMonthIndex]" @change="onDueMonthChange">
               <picker-view-column>
-                <view v-for="month in months" :key="month" class="picker-date-item">{{ month }}月</view>
+                <view 
+                  v-for="(month, index) in months" 
+                  :key="month" 
+                  class="picker-date-item"
+                  :class="{ 'picker-item-selected': index === dueMonthIndex }"
+                >{{ month }}月</view>
               </picker-view-column>
             </picker-view>
             <picker-view class="picker-column" :value="[dueDayIndex]" @change="onDueDayChange">
               <picker-view-column>
-                <view v-for="day in dueDays" :key="day" class="picker-date-item">{{ day }}日</view>
+                <view 
+                  v-for="(day, index) in dueDays" 
+                  :key="day" 
+                  class="picker-date-item"
+                  :class="{ 'picker-item-selected': index === dueDayIndex }"
+                >{{ day }}日</view>
               </picker-view-column>
             </picker-view>
           </view>
@@ -363,6 +393,9 @@ const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedDay = ref(new Date().getDate())
 
+// 添加防抖定时器
+const dateChangeTimer = ref(null)
+
 const years = computed(() => {
   const currentYear = new Date().getFullYear()
   return Array.from({ length: 7 }, (_, i) => currentYear - 5 + i)
@@ -373,26 +406,71 @@ const days = computed(() => {
   return Array.from({ length: daysInMonth }, (_, i) => i + 1)
 })
 
-const yearIndex = computed(() => years.value.indexOf(selectedYear.value))
-const monthIndex = computed(() => selectedMonth.value - 1)
-const dayIndex = computed(() => selectedDay.value - 1)
+const yearIndex = computed(() => {
+  const index = years.value.indexOf(selectedYear.value)
+  return index >= 0 ? index : 0
+})
+const monthIndex = computed(() => {
+  const index = selectedMonth.value - 1
+  return index >= 0 && index < 12 ? index : 0
+})
+const dayIndex = computed(() => {
+  const index = selectedDay.value - 1
+  const maxDays = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+  return index >= 0 && index < maxDays ? index : 0
+})
+
+// 防抖处理日期变更
+const debounceDateChange = (callback) => {
+  if (dateChangeTimer.value) {
+    clearTimeout(dateChangeTimer.value)
+  }
+  dateChangeTimer.value = setTimeout(callback, 150) // 150ms 防抖延迟
+}
 
 const onYearChange = (e) => {
-  selectedYear.value = years.value[e.detail.value[0]]
-  const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
-  if (selectedDay.value > maxDay) selectedDay.value = maxDay
+  debounceDateChange(() => {
+    const newYear = years.value[e.detail.value[0]]
+    if (newYear) {
+      selectedYear.value = newYear
+      // 检查当前选择的天数是否在新年份的当前月份中有效
+      const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+      if (selectedDay.value > maxDay) {
+        selectedDay.value = maxDay
+      }
+    }
+  })
 }
 const onMonthChange = (e) => {
-  selectedMonth.value = e.detail.value[0] + 1
-  const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
-  if (selectedDay.value > maxDay) selectedDay.value = maxDay
+  debounceDateChange(() => {
+    const newMonth = e.detail.value[0] + 1
+    if (newMonth >= 1 && newMonth <= 12) {
+      selectedMonth.value = newMonth
+      // 检查当前选择的天数是否在新月份中有效
+      const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+      if (selectedDay.value > maxDay) {
+        selectedDay.value = maxDay
+      }
+    }
+  })
 }
-const onDayChange = (e) => { selectedDay.value = e.detail.value[0] + 1 }
+const onDayChange = (e) => { 
+  debounceDateChange(() => {
+    const newDay = e.detail.value[0] + 1
+    const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+    if (newDay >= 1 && newDay <= maxDay) {
+      selectedDay.value = newDay
+    }
+  })
+}
 
 // 整改期限选择器
 const selectedDueYear = ref(new Date().getFullYear())
 const selectedDueMonth = ref(new Date().getMonth() + 1)
 const selectedDueDay = ref(new Date().getDate() + 7 > 28 ? 28 : new Date().getDate() + 7)
+
+// 添加整改期限防抖定时器
+const dueDateChangeTimer = ref(null)
 
 const dueYears = computed(() => {
   const currentYear = new Date().getFullYear()
@@ -403,21 +481,63 @@ const dueDays = computed(() => {
   return Array.from({ length: daysInMonth }, (_, i) => i + 1)
 })
 
-const dueYearIndex = computed(() => dueYears.value.indexOf(selectedDueYear.value))
-const dueMonthIndex = computed(() => selectedDueMonth.value - 1)
-const dueDayIndex = computed(() => selectedDueDay.value - 1)
+const dueYearIndex = computed(() => {
+  const index = dueYears.value.indexOf(selectedDueYear.value)
+  return index >= 0 ? index : 0
+})
+const dueMonthIndex = computed(() => {
+  const index = selectedDueMonth.value - 1
+  return index >= 0 && index < 12 ? index : 0
+})
+const dueDayIndex = computed(() => {
+  const index = selectedDueDay.value - 1
+  const maxDays = new Date(selectedDueYear.value, selectedDueMonth.value, 0).getDate()
+  return index >= 0 && index < maxDays ? index : 0
+})
+
+// 防抖处理整改期限变更
+const debounceDueDateChange = (callback) => {
+  if (dueDateChangeTimer.value) {
+    clearTimeout(dueDateChangeTimer.value)
+  }
+  dueDateChangeTimer.value = setTimeout(callback, 150) // 150ms 防抖延迟
+}
 
 const onDueYearChange = (e) => {
-  selectedDueYear.value = dueYears.value[e.detail.value[0]]
-  const maxDay = new Date(selectedDueYear.value, selectedDueMonth.value, 0).getDate()
-  if (selectedDueDay.value > maxDay) selectedDueDay.value = maxDay
+  debounceDueDateChange(() => {
+    const newYear = dueYears.value[e.detail.value[0]]
+    if (newYear) {
+      selectedDueYear.value = newYear
+      // 检查当前选择的天数是否在新年份的当前月份中有效
+      const maxDay = new Date(selectedDueYear.value, selectedDueMonth.value, 0).getDate()
+      if (selectedDueDay.value > maxDay) {
+        selectedDueDay.value = maxDay
+      }
+    }
+  })
 }
 const onDueMonthChange = (e) => {
-  selectedDueMonth.value = e.detail.value[0] + 1
-  const maxDay = new Date(selectedDueYear.value, selectedDueMonth.value, 0).getDate()
-  if (selectedDueDay.value > maxDay) selectedDueDay.value = maxDay
+  debounceDueDateChange(() => {
+    const newMonth = e.detail.value[0] + 1
+    if (newMonth >= 1 && newMonth <= 12) {
+      selectedDueMonth.value = newMonth
+      // 检查当前选择的天数是否在新月份中有效
+      const maxDay = new Date(selectedDueYear.value, selectedDueMonth.value, 0).getDate()
+      if (selectedDueDay.value > maxDay) {
+        selectedDueDay.value = maxDay
+      }
+    }
+  })
 }
-const onDueDayChange = (e) => { selectedDueDay.value = e.detail.value[0] + 1 }
+const onDueDayChange = (e) => { 
+  debounceDueDateChange(() => {
+    const newDay = e.detail.value[0] + 1
+    const maxDay = new Date(selectedDueYear.value, selectedDueMonth.value, 0).getDate()
+    if (newDay >= 1 && newDay <= maxDay) {
+      selectedDueDay.value = newDay
+    }
+  })
+}
 
 // 表单数据
 const form = ref({
@@ -887,6 +1007,17 @@ const handleSubmit = async () => {
   justify-content: center;
   height: 80rpx;
   font-size: 30rpx;
-  color: #333;
+  color: #666;
+  font-weight: normal;
+  transition: all 0.2s ease;
+  
+  &.picker-item-selected {
+    font-size: 36rpx;
+    color: #AD9B4B;
+    font-weight: 600;
+    background: rgba(173, 155, 75, 0.1);
+    border-radius: 8rpx;
+    margin: 0 20rpx;
+  }
 }
 </style>

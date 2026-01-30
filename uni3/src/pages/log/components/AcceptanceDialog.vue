@@ -140,17 +140,32 @@
           <view class="date-picker-columns">
             <picker-view class="picker-column" :value="[yearIndex]" @change="onYearChange">
               <picker-view-column>
-                <view v-for="year in years" :key="year" class="picker-item">{{ year }}年</view>
+                <view 
+                  v-for="(year, index) in years" 
+                  :key="year" 
+                  class="picker-item"
+                  :class="{ 'picker-item-selected': index === yearIndex }"
+                >{{ year }}年</view>
               </picker-view-column>
             </picker-view>
             <picker-view class="picker-column" :value="[monthIndex]" @change="onMonthChange">
               <picker-view-column>
-                <view v-for="month in months" :key="month" class="picker-item">{{ month }}月</view>
+                <view 
+                  v-for="(month, index) in months" 
+                  :key="month" 
+                  class="picker-item"
+                  :class="{ 'picker-item-selected': index === monthIndex }"
+                >{{ month }}月</view>
               </picker-view-column>
             </picker-view>
             <picker-view class="picker-column" :value="[dayIndex]" @change="onDayChange">
               <picker-view-column>
-                <view v-for="day in days" :key="day" class="picker-item">{{ day }}日</view>
+                <view 
+                  v-for="(day, index) in days" 
+                  :key="day" 
+                  class="picker-item"
+                  :class="{ 'picker-item-selected': index === dayIndex }"
+                >{{ day }}日</view>
               </picker-view-column>
             </picker-view>
           </view>
@@ -188,6 +203,9 @@ const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
 const selectedDay = ref(new Date().getDate())
 
+// 添加防抖定时器
+const dateChangeTimer = ref(null)
+
 const years = computed(() => {
   const currentYear = new Date().getFullYear()
   return Array.from({ length: 7 }, (_, i) => currentYear - 5 + i)
@@ -198,21 +216,63 @@ const days = computed(() => {
   return Array.from({ length: daysInMonth }, (_, i) => i + 1)
 })
 
-const yearIndex = computed(() => years.value.indexOf(selectedYear.value))
-const monthIndex = computed(() => selectedMonth.value - 1)
-const dayIndex = computed(() => selectedDay.value - 1)
+const yearIndex = computed(() => {
+  const index = years.value.indexOf(selectedYear.value)
+  return index >= 0 ? index : 0
+})
+const monthIndex = computed(() => {
+  const index = selectedMonth.value - 1
+  return index >= 0 && index < 12 ? index : 0
+})
+const dayIndex = computed(() => {
+  const index = selectedDay.value - 1
+  const maxDays = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+  return index >= 0 && index < maxDays ? index : 0
+})
+
+// 防抖处理日期变更
+const debounceDateChange = (callback) => {
+  if (dateChangeTimer.value) {
+    clearTimeout(dateChangeTimer.value)
+  }
+  dateChangeTimer.value = setTimeout(callback, 150) // 150ms 防抖延迟
+}
 
 const onYearChange = (e) => {
-  selectedYear.value = years.value[e.detail.value[0]]
-  const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
-  if (selectedDay.value > maxDay) selectedDay.value = maxDay
+  debounceDateChange(() => {
+    const newYear = years.value[e.detail.value[0]]
+    if (newYear) {
+      selectedYear.value = newYear
+      // 检查当前选择的天数是否在新年份的当前月份中有效
+      const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+      if (selectedDay.value > maxDay) {
+        selectedDay.value = maxDay
+      }
+    }
+  })
 }
 const onMonthChange = (e) => {
-  selectedMonth.value = e.detail.value[0] + 1
-  const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
-  if (selectedDay.value > maxDay) selectedDay.value = maxDay
+  debounceDateChange(() => {
+    const newMonth = e.detail.value[0] + 1
+    if (newMonth >= 1 && newMonth <= 12) {
+      selectedMonth.value = newMonth
+      // 检查当前选择的天数是否在新月份中有效
+      const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+      if (selectedDay.value > maxDay) {
+        selectedDay.value = maxDay
+      }
+    }
+  })
 }
-const onDayChange = (e) => { selectedDay.value = e.detail.value[0] + 1 }
+const onDayChange = (e) => { 
+  debounceDateChange(() => {
+    const newDay = e.detail.value[0] + 1
+    const maxDay = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+    if (newDay >= 1 && newDay <= maxDay) {
+      selectedDay.value = newDay
+    }
+  })
+}
 
 // 表单数据
 const form = ref({
@@ -244,19 +304,26 @@ const initForm = () => {
 const initEditForm = () => {
   const record = props.editRecord
   let dateStr = ''
-  if (record.createTime) {
-    const date = new Date(record.createTime)
-    dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    selectedYear.value = date.getFullYear()
-    selectedMonth.value = date.getMonth() + 1
-    selectedDay.value = date.getDate()
+  let dateToUse = null
+  
+  // 优先使用 acceptanceTime，其次使用 createTime
+  if (record.acceptanceTime) {
+    dateToUse = new Date(record.acceptanceTime)
+  } else if (record.createTime) {
+    dateToUse = new Date(record.createTime)
   } else {
-    const now = new Date()
-    dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    selectedYear.value = now.getFullYear()
-    selectedMonth.value = now.getMonth() + 1
-    selectedDay.value = now.getDate()
+    dateToUse = new Date()
   }
+  
+  // 确保日期有效
+  if (isNaN(dateToUse.getTime())) {
+    dateToUse = new Date()
+  }
+  
+  dateStr = `${dateToUse.getFullYear()}-${String(dateToUse.getMonth() + 1).padStart(2, '0')}-${String(dateToUse.getDate()).padStart(2, '0')}`
+  selectedYear.value = dateToUse.getFullYear()
+  selectedMonth.value = dateToUse.getMonth() + 1
+  selectedDay.value = dateToUse.getDate()
   
   form.value = {
     title: record.title || '',
@@ -669,6 +736,17 @@ const handleSubmit = async () => {
   justify-content: center;
   height: 80rpx;
   font-size: 30rpx;
-  color: #333;
+  color: #666;
+  font-weight: normal;
+  transition: all 0.2s ease;
+  
+  &.picker-item-selected {
+    font-size: 36rpx;
+    color: #AD9B4B;
+    font-weight: 600;
+    background: rgba(173, 155, 75, 0.1);
+    border-radius: 8rpx;
+    margin: 0 20rpx;
+  }
 }
 </style>

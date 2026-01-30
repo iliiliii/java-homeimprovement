@@ -49,6 +49,7 @@
       :images="viewerImages"
       :start-index="viewerIndex"
       :show-thumbnail="true"
+      :use-native-preview="true"
     />
     
     <!-- 验收上报对话框（仅员工可见） -->

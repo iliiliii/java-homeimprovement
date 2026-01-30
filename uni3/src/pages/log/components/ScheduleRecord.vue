@@ -10,7 +10,7 @@
             {{ record.typeText }}
           </text>
           -->
-          <text class="record-time">{{ formatTime(record.createTime) }}</text>
+          <text class="record-time">{{ record.createByName }} · {{ formatTime(record.acceptanceTime) }}</text>
         </view>
       </view>
       
@@ -34,7 +34,7 @@
         {{ getRoleText(record.createByRole) }}
       </text>
     </view>
-    
+     -->
     <!-- 图片列表 -->
     <view v-if="record.images && record.images.length > 0" class="record-images">
       <image 
@@ -118,18 +118,12 @@ const previewImage = (images, index) => {
 const formatTime = (time) => {
   if (!time) return ''
   const date = new Date(time)
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
-  const recordDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   
-  if (recordDate.getTime() === today.getTime()) {
-    return `今天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-  } else if (recordDate.getTime() === yesterday.getTime()) {
-    return `昨天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-  } else {
-    return `${date.getMonth() + 1}.${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-  }
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
 }
 
 // 获取角色文本
