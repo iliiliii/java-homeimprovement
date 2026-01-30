@@ -152,7 +152,7 @@
       url-key="url"
       name-key="name"
       :show-thumbnail="true"
-      :use-native-preview="false"
+      :use-native-preview="true"
     />
   </view>
 </template>
