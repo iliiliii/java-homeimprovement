@@ -240,8 +240,8 @@ export const useUserStore = defineStore('user', () => {
     // 重新设置退出标记（因为clearStorageSync会清除所有）
     uni.setStorageSync('manualLogout', manualLogout)
     
-    // 跳转登录页（注意：登录页是index-new）
-    uni.reLaunch({ url: '/pages/login/index-new' })
+    // 不自动跳转，由调用方决定跳转逻辑
+    // 这样可以避免在profile页面退出时跳转到登录页的问题
   }
   
   return {

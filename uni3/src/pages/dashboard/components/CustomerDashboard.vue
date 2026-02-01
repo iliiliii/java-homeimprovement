@@ -24,9 +24,9 @@
         @click="handleBannerClick"
       />
       
-      <!-- 项目卡片滑动区域（仅在有项目时显示） -->
+      <!-- 项目卡片滑动区域（仅在有项目且非游客用户时显示） -->
       <ProjectCardSwiper
-        v-if="projects.length > 0"
+        v-if="projects.length > 0 && !isGuestMode"
         :projects="projects"
         :user-info="userInfo"
         :current="currentIndex"
@@ -35,13 +35,28 @@
         @click="handleCardClick"
       />
       
-      <!-- 无项目提示（游客模式或无项目时显示）
-      <view v-else class="no-project-tip">
-        <view class="tip-icon">📋</view>
-        <text class="tip-text">{{ isGuestMode ? '导入历史数据后可查看您的项目' : '暂无关联项目' }}</text>
-        <view v-if="isGuestMode" class="tip-action" @click="goToProfile">
+      <!-- 项目数据加载中（已登录客户但项目数据还在加载） -->
+      <view v-else-if="!isGuestMode && props.loading" class="project-loading">
+        <view class="loading-spinner"></view>
+        <text>加载项目数据中...</text>
+      </view>
+      
+      <!-- 游客用户提示（已登录游客或未登录游客）
+      <view v-else-if="isGuestMode" class="no-project-tip">
+        <view class="tip-icon">🏠</view>
+        <text class="tip-text">{{ userStore.isLoggedIn ? '导入历史数据后可查看您的项目' : '登录后可查看您的项目进度' }}</text>
+        <view v-if="!userStore.isLoggedIn" class="tip-action" @click="goToLogin">
+          <text>立即登录</text>
+        </view>
+        <view v-else class="tip-action" @click="goToProfile">
           <text>去导入数据</text>
         </view>
+      </view>
+       -->
+      <!-- 已登录客户但无项目的提示
+      <view v-else-if="!isGuestMode && projects.length === 0" class="no-project-tip">
+        <view class="tip-icon">📋</view>
+        <text class="tip-text">暂无关联项目，请联系管理员</text>
       </view>
        -->
       <!-- 资讯 Tab -->
@@ -128,8 +143,26 @@ const newsPageSize = 20
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
 
-// 游客模式判断
-const isGuestMode = computed(() => uni.getStorageSync('guestMode') === true)
+// 游客模式判断（包括未登录游客和已登录游客用户）
+const isGuestMode = computed(() => {
+  // 未登录的游客模式
+  const guestMode = uni.getStorageSync('guestMode') === true
+  // 已登录的游客用户
+  const isGuestUser = userStore.userType === 'guest'
+  
+  const result = guestMode || isGuestUser
+  
+  // 调试日志
+  console.log('[CustomerDashboard] 游客模式判断:')
+  console.log('[CustomerDashboard] guestMode:', guestMode)
+  console.log('[CustomerDashboard] userType:', userStore.userType)
+  console.log('[CustomerDashboard] isGuestUser:', isGuestUser)
+  console.log('[CustomerDashboard] isGuestMode:', result)
+  console.log('[CustomerDashboard] projects.length:', props.projects.length)
+  console.log('[CustomerDashboard] 项目卡片显示条件:', props.projects.length > 0 && !result)
+  
+  return result
+})
 
 // 监听 currentProject 变化，同步更新 currentIndex
 watch(() => props.currentProject, (newProject) => {
@@ -141,10 +174,24 @@ watch(() => props.currentProject, (newProject) => {
   }
 }, { immediate: true })
 
+// 监听 projects 变化
+watch(() => props.projects, (newProjects) => {
+  console.log('[CustomerDashboard] projects 数据变化:', newProjects)
+  console.log('[CustomerDashboard] 新项目数量:', newProjects.length)
+  console.log('[CustomerDashboard] isGuestMode:', isGuestMode.value)
+  console.log('[CustomerDashboard] 项目卡片显示条件:', newProjects.length > 0 && !isGuestMode.value)
+}, { immediate: true, deep: true })
+
 // 生命周期
 onMounted(async () => {
   // 获取系统状态栏高度
   statusBarHeight.value = getStatusBarHeight()
+  
+  // 调试日志
+  console.log('[CustomerDashboard] onMounted 开始')
+  console.log('[CustomerDashboard] 接收到的项目数据:', props.projects)
+  console.log('[CustomerDashboard] 项目数量:', props.projects.length)
+  console.log('[CustomerDashboard] 当前项目:', props.currentProject)
   
   // 并行加载数据
   await Promise.all([
@@ -256,6 +303,11 @@ const handleNewsClick = (item) => {
   // #endif
 }
 
+// 跳转到登录页面
+const goToLogin = () => {
+  uni.navigateTo({ url: '/pages/login/index-new' })
+}
+
 // 跳转到个人中心导入数据
 const goToProfile = () => {
   uni.switchTab({ url: '/pages/profile/index' })
@@ -273,6 +325,39 @@ const goToProfile = () => {
 .scroll-content {
   box-sizing: border-box;
   background: $color-white;
+}
+
+// 项目加载状态
+.project-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 32rpx;
+  margin: $spacing-l;
+  background: $color-gray-50;
+  border-radius: $radius-xl;
+  border: 2rpx dashed $color-border;
+  
+  .loading-spinner {
+    width: 60rpx;
+    height: 60rpx;
+    border: 4rpx solid #f3f3f3;
+    border-top: 4rpx solid $color-brand;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 24rpx;
+  }
+  
+  text {
+    font-size: 26rpx;
+    color: $color-text-tertiary;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 // 资讯区域

@@ -8,9 +8,27 @@
     
     <!-- 页面内容区域 - 使用原生滚动 -->
     <view class="page-content">
-      <!-- 项目概况卡片 -->
-      <view class="project-brief-section" v-if="projects.length > 0">
+      <!-- 未登录用户引导登录 -->
+      <view v-if="shouldShowLoginGuide" class="login-guide-section">
+        <view class="login-guide-card">
+          <view class="guide-icon">🔐</view>
+          <text class="guide-desc">欢迎登录后管家</text>
+          <view class="guide-btn" @click="handleGoLogin">
+            <text>立即登录</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 项目概况卡片（已登录用户） -->
+      <view class="project-brief-section" v-if="shouldShowProjects">
+        <!-- 数据加载中 -->
+        <view v-if="dataLoading" class="loading-placeholder">
+          <view class="loading-spinner"></view>
+          <text>加载项目数据中...</text>
+        </view>
+        <!-- 项目数据 -->
         <ProjectCardSwiper
+          v-else-if="projects.length > 0"
           :projects="projects"
           :user-info="userInfo"
           :current="currentProjectIndex"
@@ -18,47 +36,66 @@
           @change="handleSwiperChange"
           @click="handleCardClick"
         />
+        <!-- 无项目提示
+        <view v-else class="no-projects-tip">
+          <text>暂无关联项目</text>
+        </view>
+         -->
       </view>
 
-      <!-- 费用统计四宫格（仅客户可见） -->
-      <view class="expense-section" v-if="isCustomer && projects.length > 0">
-        <view class="expense-grid">
-          <view 
-            v-for="(item, index) in expenseList" 
-            :key="index"
-            class="expense-item glass-card"
-            @click="handleExpenseClick(item)"
-          >
-            <text class="expense-label">{{ item.label }}</text>
-            <view class="expense-value">
-              <text class="value-number">{{ formatAmount(item.value).number }}</text>
-              <text class="value-unit">{{ formatAmount(item.value).unit }}</text>
+      <!-- 费用统计四宫格（仅客户可见且有项目） -->
+      <view class="expense-section" v-if="shouldShowExpenses">
+        <!-- 数据加载中 -->
+        <view v-if="dataLoading" class="loading-placeholder">
+          <view class="loading-spinner"></view>
+          <text>加载费用数据中...</text>
+        </view>
+        <!-- 费用数据 -->
+        <template v-else-if="projects.length > 0">
+          <view class="expense-grid">
+            <view 
+              v-for="(item, index) in expenseList" 
+              :key="index"
+              class="expense-item glass-card"
+              @click="handleExpenseClick(item)"
+            >
+              <text class="expense-label">{{ item.label }}</text>
+              <view class="expense-value">
+                <text class="value-number">{{ formatAmount(item.value).number }}</text>
+                <text class="value-unit">{{ formatAmount(item.value).unit }}</text>
+              </view>
             </view>
           </view>
-        </view>
-        
-        <!-- 总金额汇总卡片 -->
-        <view class="total-amount-card">
-          <text class="total-label">合同总金额</text>
-          <view class="total-value">
-            <text class="total-number">{{ formatTotalAmount(totalAmount).number }}</text>
-            <text class="total-unit">{{ formatTotalAmount(totalAmount).unit }}</text>
+          
+          <!-- 总金额汇总卡片 -->
+          <view class="total-amount-card">
+            <text class="total-label">合同总金额</text>
+            <view class="total-value">
+              <text class="total-number">{{ formatTotalAmount(totalAmount).number }}</text>
+              <text class="total-unit">{{ formatTotalAmount(totalAmount).unit }}</text>
+            </view>
           </view>
+        </template>
+        <!-- 无项目提示 -->
+        <view v-else class="no-projects-tip">
+          <text>暂无项目费用信息</text>
         </view>
       </view>
       
       <!-- 底部按钮区域 -->
       <view class="bottom-buttons">
+        <!-- 关于我们按钮 - 一直显示 -->
         <view class="action-btn" @click="handleAbout">
           <text>关于我们</text>
         </view>
         
-        <!-- 导入历史数据按钮（游客模式显示） -->
-        <view v-if="isGuestMode" class="action-btn" @click="handleImportData">
+        <!-- 导入历史数据按钮 - 只有登录成功的游客且未关联后台账户的才显示 -->
+        <view v-if="shouldShowImportButton" class="action-btn import-data-btn" @click="handleImportData">
           <text>导入历史数据</text>
         </view>
         
-        <view class="action-btn" @click="handleLogout">
+        <!-- 退出登录按钮 - 登录后一定会有，不论什么角色 -->
+        <view v-if="isLoggedIn" class="action-btn" @click="handleLogout">
           <text>退出登录</text>
         </view>
       </view>
@@ -104,17 +141,69 @@ const userStore = useUserStore()
 const projects = ref([])
 const currentProjectIndex = ref(0)
 const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
+const dataLoading = ref(false) // 添加数据加载状态
 
-// 用户信息
+// 用户信息和状态
 const userInfo = computed(() => userStore.userInfo)
-
-// 用户类型判断
+const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isCustomer = computed(() => userStore.isCustomer)
+const isStaff = computed(() => userStore.isStaff)
 
 // 游客模式判断
 const isGuestMode = computed(() => uni.getStorageSync('guestMode') === true)
 
+// 页面显示逻辑
+const shouldShowLoginGuide = computed(() => {
+  // 未登录时显示登录引导（包括游客模式）
+  return !isLoggedIn.value
+})
+
+const shouldShowProjects = computed(() => {
+  // 已登录用户显示项目
+  return isLoggedIn.value
+})
+
+const shouldShowExpenses = computed(() => {
+  // 已登录的客户显示费用统计
+  return isLoggedIn.value && isCustomer.value
+})
+
+const shouldShowImportButton = computed(() => {
+  // 只有登录成功的游客并且未关联后台账户的才显示导入按钮
+  if (!isLoggedIn.value) {
+    return false
+  }
+  
+  // 检查是否是游客用户或从游客模式登录成功的用户
+  const wasGuestMode = uni.getStorageSync('wasGuestMode') === true
+  const hasWechatOpenid = !!uni.getStorageSync('wechatOpenid')
+  const isGuestUser = userStore.userType === 'guest'
+  
+  // 检查是否已关联后台账户
+  const isBackendLinked = userStore.userInfo.isBackendLinked !== undefined 
+    ? userStore.userInfo.isBackendLinked 
+    : !!(userStore.userInfo.phone && userStore.userInfo.name && userStore.userInfo.id && !userStore.userInfo.id.startsWith('guest_'))
+  
+  // 只有满足以下条件才显示导入按钮：
+  // 1. 已登录
+  // 2. 是游客用户或曾经是游客模式或有微信openid（说明是通过微信登录的）
+  // 3. 未关联后台账户
+  return isLoggedIn.value && (isGuestUser || wasGuestMode || hasWechatOpenid) && !isBackendLinked
+})
+
 console.log(uni.getStorageSync('guestMode'),'isGuestMode')
+
+// 调试日志 - 帮助验证按钮显示逻辑
+console.log('[Profile] 按钮显示状态调试:')
+console.log('[Profile] isLoggedIn:', isLoggedIn.value)
+console.log('[Profile] userType:', userStore.userType)
+console.log('[Profile] wasGuestMode:', uni.getStorageSync('wasGuestMode'))
+console.log('[Profile] hasWechatOpenid:', !!uni.getStorageSync('wechatOpenid'))
+console.log('[Profile] userInfo:', userStore.userInfo)
+console.log('[Profile] isBackendLinked:', userStore.userInfo.isBackendLinked)
+console.log('[Profile] shouldShowImportButton:', shouldShowImportButton.value)
+console.log('[Profile] shouldShowLoginGuide:', shouldShowLoginGuide.value)
+console.log('[Profile] isGuestMode:', isGuestMode.value)
 // 导入数据相关状态
 const showBindingGuide = ref(false)
 const showPhoneModal = ref(false)
@@ -145,14 +234,21 @@ const parseUrl = (url) => {
 
 // 加载合同金额数据（仅客户角色）
 const loadContractAmounts = async (projectId) => {
-  // 员工角色不调用此API
-  if (!isCustomer.value || !projectId) {
+  // 员工角色或未登录不调用此API
+  if (!isCustomer.value || !projectId || !isLoggedIn.value) {
+    console.log('[Profile] 不需要加载合同金额数据，客户角色:', isCustomer.value, '项目ID:', projectId, '已登录:', isLoggedIn.value)
     expenseList.value = []
     return
   }
   
   try {
-    const data = await getProjectContractAmounts(projectId)
+    console.log('[Profile] ===开始加载合同金额数据===')
+    console.log('[Profile] 项目ID:', projectId)
+    
+    // 禁用网络请求的默认loading
+    const data = await getProjectContractAmounts(projectId, { loading: false })
+    console.log('[Profile] 合同金额API响应:', data)
+    
     // 直接使用API返回的数据，API已保证返回六项
     if (data && Array.isArray(data)) {
       expenseList.value = data.map(item => ({
@@ -161,9 +257,17 @@ const loadContractAmounts = async (projectId) => {
         value: parseFloat(item.amount) || 0,
         url: parseUrl(item.url)
       }))
+      console.log('[Profile] 合同金额数据加载完成:', expenseList.value.length, '项')
+      console.log('[Profile] 费用列表:', expenseList.value)
+    } else {
+      console.warn('[Profile] 合同金额数据格式异常:', data)
+      expenseList.value = []
     }
+    
+    console.log('[Profile] ===合同金额数据加载完成===')
+    
   } catch (error) {
-    console.error('获取合同金额失败:', error)
+    console.error('[Profile] 获取合同金额失败:', error)
     expenseList.value = []
   }
 }
@@ -195,10 +299,26 @@ const handleExpenseClick = (item) => {
 
 // 加载项目数据
 const loadProjectData = async () => {
+  // 只有已登录用户才加载项目数据
+  if (!isLoggedIn.value) {
+    console.log('[Profile] 未登录用户，不加载项目数据')
+    projects.value = []
+    return
+  }
+  
+  console.log('[Profile] ===开始加载项目数据===')
+  dataLoading.value = true
+  
   try {
-    const data = await getCustomerDashboard()
+    // 禁用网络请求的默认loading，使用页面自己的loading
+    const data = await getCustomerDashboard({ loading: false })
+    console.log('[Profile] 项目API响应:', data)
+    
     const list = data?.projects || []
     projects.value = list
+    
+    console.log('[Profile] 项目数据加载完成:', list.length, '个项目')
+    console.log('[Profile] 项目列表:', list)
     
     if (list.length > 0) {
       // 优先使用本地存储的选中项目
@@ -209,9 +329,16 @@ const loadProjectData = async () => {
          if (index === -1) index = 0
       }
       currentProjectIndex.value = index
+      console.log('[Profile] 设置当前项目索引:', index, '项目ID:', list[index]?.id)
     }
+    
+    console.log('[Profile] ===项目数据加载完成===')
+    
   } catch (error) {
-    console.error('获取项目数据失败:', error)
+    console.error('[Profile] 获取项目数据失败:', error)
+    projects.value = []
+  } finally {
+    dataLoading.value = false
   }
 }
 
@@ -262,6 +389,14 @@ const handleAbout = () => {
   })
 }
 
+// 跳转登录页面
+const handleGoLogin = () => {
+  console.log('[Profile] 跳转登录页面')
+  uni.navigateTo({
+    url: '/pages/login/index-new'
+  })
+}
+
 // 退出登录
 const handleLogout = () => {
   uni.showModal({
@@ -269,10 +404,23 @@ const handleLogout = () => {
     content: '确定要退出登录吗？',
     success: (res) => {
       if (res.confirm) {
+        console.log('[Profile] 用户确认退出登录')
+        
         // 清除游客模式标记和微信信息
         uni.removeStorageSync('guestMode')
         uni.removeStorageSync('wechatOpenid')
+        uni.removeStorageSync('wasGuestMode')
+        
+        // 执行登出
         userStore.logout()
+        
+        // 注意：userStore.logout() 会跳转到登录页，但我们需要跳转到首页
+        // 所以在这里重新跳转到首页
+        setTimeout(() => {
+          uni.reLaunch({
+            url: '/pages/dashboard/index'
+          })
+        }, 100)
       }
     }
   })
@@ -281,6 +429,16 @@ const handleLogout = () => {
 // 导入历史数据
 const handleImportData = () => {
   console.log('[导入数据] 开始导入历史数据流程')
+  
+  // 检查是否已登录
+  if (!isLoggedIn.value) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none'
+    })
+    return
+  }
+  
   showBindingGuide.value = true
 }
 
@@ -360,8 +518,10 @@ const performPhoneBinding = async (phone) => {
     
     console.log('[导入数据] 绑定成功:', result.userInfo)
     
-    // 清除游客模式标记
+    // 清除所有游客相关标记，因为用户已经关联后台账户
     uni.removeStorageSync('guestMode')
+    uni.removeStorageSync('wechatOpenid')
+    uni.removeStorageSync('wasGuestMode') // 清除游客标记，因为已经关联后台账户
     
     // 保存登录信息
     userStore.setLoginInfo(result)
@@ -373,15 +533,26 @@ const performPhoneBinding = async (phone) => {
       duration: 1500
     })
     
-    // 延迟后重新启动小程序，刷新所有页面
+    // 根据用户类型跳转到相应页面
     setTimeout(() => {
-      console.log('[导入数据] 重新启动小程序以刷新所有数据')
-      uni.reLaunch({ 
-        url: '/pages/dashboard/index',
-        success: () => {
-          console.log('[导入数据] 小程序已刷新')
-        }
-      })
+      console.log('[导入数据] 根据用户类型跳转页面')
+      if (result.userType === 'staff') {
+        // 员工跳转到员工首页
+        uni.reLaunch({ 
+          url: '/pages/dashboard/index',
+          success: () => {
+            console.log('[导入数据] 员工用户已跳转到首页')
+          }
+        })
+      } else {
+        // 客户跳转到客户首页
+        uni.reLaunch({ 
+          url: '/pages/dashboard/index',
+          success: () => {
+            console.log('[导入数据] 客户用户已跳转到首页')
+          }
+        })
+      }
     }, 1500)
     
   } catch (error) {
@@ -458,12 +629,9 @@ const getDeviceId = () => {
 
 // 刷新所有数据
 const refreshData = async () => {
-  // 检查是否是游客模式
-  const isGuest = uni.getStorageSync('guestMode') === true
-  
-  if (isGuest) {
-    // 游客模式，不刷新数据
-    console.log('[Profile] 游客模式，不刷新数据')
+  // 只有已登录用户才刷新数据
+  if (!isLoggedIn.value) {
+    console.log('[Profile] 未登录用户，不刷新数据')
     return
   }
   
@@ -471,26 +639,29 @@ const refreshData = async () => {
   // 项目数据加载后，watch会自动触发loadContractAmounts
 }
 
-onMounted(() => {
-  // 检查是否是游客模式
-  const isGuest = uni.getStorageSync('guestMode') === true
-  
-  console.log('[Profile] onMounted 开始')
-  console.log('[Profile] 游客模式:', isGuest)
+onMounted(async () => {
+  console.log('[Profile] =====页面初始化开始=====')
+  console.log('[Profile] 游客模式:', isGuestMode.value)
+  console.log('[Profile] 已登录:', isLoggedIn.value)
   console.log('[Profile] isCustomer:', isCustomer.value)
   console.log('[Profile] userType:', userStore.userType)
   console.log('[Profile] token:', userStore.token ? '存在' : '不存在')
   console.log('[Profile] userInfo:', userStore.userInfo)
   
-  if (isGuest) {
-    // 游客模式，不加载项目数据
-    console.log('[Profile] 游客模式，不加载项目数据')
-    return
+  // 只有已登录用户才加载项目数据
+  if (isLoggedIn.value) {
+    console.log('[Profile] 已登录用户，开始加载项目数据')
+    try {
+      await loadProjectData()
+      console.log('[Profile] 项目数据加载完成')
+    } catch (error) {
+      console.error('[Profile] 项目数据加载失败:', error)
+    }
+  } else {
+    console.log('[Profile] 未登录用户，不加载项目数据')
   }
   
-  // 正式用户，加载项目数据
-  console.log('[Profile] 正式用户，开始加载项目数据')
-  loadProjectData()
+  console.log('[Profile] =====页面初始化完成=====')
 })
 
 // 下拉刷新
@@ -515,10 +686,138 @@ onPullDownRefresh(async () => {
   // padding-top: 100px;
 }
 
+// 登录引导区域
+.login-guide-section {
+  margin-bottom: 32rpx;
+}
+
+.login-guide-card {
+  padding: 48rpx 32rpx;
+  background: linear-gradient(135deg, $color-brand-50 0%, $color-white 100%);
+  border: 2rpx solid $color-brand-100;
+  border-radius: $radius-2xl;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  
+  // 装饰背景
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, $color-brand-100 0%, transparent 70%);
+    opacity: 0.3;
+    z-index: 0;
+  }
+}
+
+.guide-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.guide-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $color-text-primary;
+  margin-bottom: 16rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.guide-desc {
+  display: block;
+  font-size: 26rpx;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: 32rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.guide-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 48rpx;
+  background: linear-gradient(135deg, $color-brand 0%, $color-brand-600 100%);
+  border-radius: $radius-full;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+  
+  text {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: $color-white;
+  }
+  
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 4rpx 12rpx rgba(196, 0, 22, 0.3);
+  }
+}
+
 // 项目概况区域
 .project-brief-section {
   margin-bottom: 32rpx;
   margin-left: -20rpx;
+}
+
+// 加载状态
+.loading-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 32rpx;
+  margin: 0 20rpx;
+  background: $color-gray-50;
+  border-radius: $radius-xl;
+  border: 2rpx dashed $color-border;
+  
+  .loading-spinner {
+    width: 60rpx;
+    height: 60rpx;
+    border: 4rpx solid #f3f3f3;
+    border-top: 4rpx solid $color-brand;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 24rpx;
+  }
+  
+  text {
+    font-size: 26rpx;
+    color: $color-text-tertiary;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// 无项目提示
+.no-projects-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 32rpx;
+  margin: 0 20rpx;
+  background: $color-gray-50;
+  border-radius: $radius-xl;
+  border: 2rpx dashed $color-border;
+  
+  text {
+    font-size: 28rpx;
+    color: $color-text-tertiary;
+  }
 }
 
 // 费用统计区域

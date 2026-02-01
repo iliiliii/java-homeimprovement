@@ -24,12 +24,22 @@ export function createApp() {
 
 // ==================== 路由守卫 ====================
 
-// 不需要登录的页面
+// 不需要登录的页面（现在所有页面都允许游客访问）
 const whiteList = [
   '/pages/login/index-new',
   '/pages/protocol/index',
   '/pages/privacy/index',
-  '/pages/test/wechat-binding'
+  '/pages/test/wechat-binding',
+  '/pages/dashboard/index',
+  '/pages/design/index',
+  '/pages/log/index',
+  '/pages/profile/index',
+  '/pages/schedule/index',
+  '/pages/brand/index',
+  '/pages/contact/index',
+  '/pages/budget/index',
+  '/pages/shopping/index',
+  '/pages/webview/index'
 ]
 
 // 检查是否在白名单中
@@ -47,14 +57,7 @@ uni.addInterceptor('navigateTo', {
       return true
     }
     
-    // 检查登录状态
-    if (!isLoggedIn()) {
-      uni.showToast({ title: '请先登录', icon: 'none' })
-      uni.reLaunch({ url: '/pages/login/index-new' })
-      return false
-    }
-    
-    // 检查页面权限
+    // 检查页面权限（只检查员工专属功能）
     if (!hasPagePermission(url)) {
       uni.showToast({ title: '该功能仅员工可用', icon: 'none' })
       return false
@@ -71,12 +74,6 @@ uni.addInterceptor('redirectTo', {
     
     if (isInWhiteList(url)) {
       return true
-    }
-    
-    if (!isLoggedIn()) {
-      uni.showToast({ title: '请先登录', icon: 'none' })
-      uni.reLaunch({ url: '/pages/login/index-new' })
-      return false
     }
     
     if (!hasPagePermission(url)) {
@@ -97,16 +94,6 @@ uni.addInterceptor('reLaunch', {
       return true
     }
     
-    if (!isLoggedIn()) {
-      // reLaunch到登录页，不拦截
-      if (url === '/pages/login/index-new') {
-        return true
-      }
-      uni.showToast({ title: '请先登录', icon: 'none' })
-      args.url = '/pages/login/index-new'
-      return true
-    }
-    
     if (!hasPagePermission(url)) {
       uni.showToast({ title: '该功能仅员工可用', icon: 'none' })
       return false
@@ -121,12 +108,7 @@ uni.addInterceptor('switchTab', {
   invoke(args) {
     const url = args.url.split('?')[0]
     
-    if (!isLoggedIn()) {
-      uni.showToast({ title: '请先登录', icon: 'none' })
-      uni.reLaunch({ url: '/pages/login/index-new' })
-      return false
-    }
-    
+    // Tab页面都允许访问，游客模式会显示相应的引导
     if (!hasPagePermission(url)) {
       uni.showToast({ title: '该功能仅员工可用', icon: 'none' })
       return false

@@ -207,9 +207,17 @@ const handleLogin = async () => {
       uni.removeStorageSync('savedLoginInfo')
     }
     
-    // 跳转到首页
-    uni.switchTab({
-      url: '/pages/dashboard/index'
+    // 跳转到首页 - 使用 reLaunch 确保页面重新初始化
+    uni.reLaunch({
+      url: '/pages/dashboard/index',
+      success: () => {
+        console.log('[自动登录] 页面跳转成功，将重新初始化')
+      },
+      fail: (error) => {
+        console.error('[自动登录] 页面跳转失败:', error)
+        // 降级使用 switchTab
+        uni.switchTab({ url: '/pages/dashboard/index' })
+      }
     })
   } catch (error) {
     uni.showToast({ title: '登录失败，请重试', icon: 'none' })
@@ -266,9 +274,19 @@ const handleWechatLogin = async (e) => {
     uni.hideLoading()
     uni.showToast({ title: '登录成功', icon: 'success' })
     
-    // 5. 跳转到首页
+    // 5. 跳转到首页 - 使用 reLaunch 确保页面重新初始化
     setTimeout(() => {
-      uni.switchTab({ url: '/pages/dashboard/index' })
+      uni.reLaunch({ 
+        url: '/pages/dashboard/index',
+        success: () => {
+          console.log('[登录] 页面跳转成功，将重新初始化')
+        },
+        fail: (error) => {
+          console.error('[登录] 页面跳转失败:', error)
+          // 降级使用 switchTab
+          uni.switchTab({ url: '/pages/dashboard/index' })
+        }
+      })
     }, 500)
     
   } catch (error) {
@@ -321,7 +339,16 @@ const devLoginAsCustomer = () => {
   uni.showToast({ title: '已模拟客户登录', icon: 'success' })
   
   setTimeout(() => {
-    uni.switchTab({ url: '/pages/dashboard/index' })
+    uni.reLaunch({ 
+      url: '/pages/dashboard/index',
+      success: () => {
+        console.log('[模拟客户登录] 页面跳转成功')
+      },
+      fail: (error) => {
+        console.error('[模拟客户登录] 页面跳转失败:', error)
+        uni.switchTab({ url: '/pages/dashboard/index' })
+      }
+    })
   }, 500)
 }
 
@@ -360,7 +387,16 @@ const devLoginAsStaff = () => {
   uni.showToast({ title: '已模拟员工登录', icon: 'success' })
   
   setTimeout(() => {
-    uni.switchTab({ url: '/pages/dashboard/index' })
+    uni.reLaunch({ 
+      url: '/pages/dashboard/index',
+      success: () => {
+        console.log('[模拟员工登录] 页面跳转成功')
+      },
+      fail: (error) => {
+        console.error('[模拟员工登录] 页面跳转失败:', error)
+        uni.switchTab({ url: '/pages/dashboard/index' })
+      }
+    })
   }, 500)
 }
 
@@ -393,7 +429,16 @@ const devSkipToHome = () => {
   uni.showToast({ title: '已跳过登录', icon: 'success' })
   
   setTimeout(() => {
-    uni.switchTab({ url: '/pages/dashboard/index' })
+    uni.reLaunch({ 
+      url: '/pages/dashboard/index',
+      success: () => {
+        console.log('[跳过登录] 页面跳转成功')
+      },
+      fail: (error) => {
+        console.error('[跳过登录] 页面跳转失败:', error)
+        uni.switchTab({ url: '/pages/dashboard/index' })
+      }
+    })
   }, 500)
 }
 </script>

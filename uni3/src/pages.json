@@ -9,19 +9,19 @@
   },
   "pages": [
     {
-      "path": "pages/login/index-new",
-      "style": {
-        "navigationBarTitleText": "登录",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/dashboard/index",
       "style": {
         "navigationBarTitleText": "项目概况",
         "navigationStyle": "custom",
         "enablePullDownRefresh": true,
         "backgroundTextStyle": "dark"
+      }
+    },
+    {
+      "path": "pages/login/index-new",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
       }
     },
     {

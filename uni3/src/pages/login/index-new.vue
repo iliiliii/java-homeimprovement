@@ -278,9 +278,9 @@ onMounted(() => {
   // 检查是否是游客模式
   const isGuest = uni.getStorageSync('guestMode')
   if (isGuest) {
-    // 游客模式，直接跳转首页
-    console.log('[登录页面] 检测到游客模式，跳转首页')
-    uni.reLaunch({ url: '/pages/dashboard/index' })
+    // 游客模式用户可以进行登录，显示登录界面
+    console.log('[登录页面] 检测到游客模式，显示登录界面供用户登录')
+    bindingStep.value = 'normal'
     return
   }
   
@@ -479,18 +479,35 @@ const handleWechatLogin = async () => {
       console.log('[微信登录] 检测到已绑定，执行直接登录')
       await performOpenidLogin(checkResult.openid)
     } else {
-      // 未绑定，进入游客模式
-      console.log('[微信登录] 检测到未绑定，进入游客模式')
+      // 未绑定，游客登录成功
+      console.log('[微信登录] 检测到未绑定，游客登录成功')
       
       // 保存openid用于后续导入数据（重要：保存openid而不是code）
       userOpenid.value = checkResult.openid
       uni.setStorageSync('wechatOpenid', checkResult.openid)
       
-      // 不再保存code，因为code只能使用一次
-      // uni.setStorageSync('wechatCode', loginRes.code)
+      // 清除游客模式标记，设置已登录游客标记
+      uni.removeStorageSync('guestMode')
+      uni.setStorageSync('wasGuestMode', true)
       
-      // 设置游客模式标记
-      uni.setStorageSync('guestMode', true)
+      // 设置基本的登录状态（游客登录成功，但未关联后台账户）
+      const guestLoginInfo = {
+        accessToken: 'guest_token_' + Date.now(),
+        refreshToken: 'guest_refresh_token_' + Date.now(),
+        expiresIn: 7200,
+        userType: 'guest', // 设置为游客类型
+        userInfo: {
+          id: 'guest_' + Date.now(),
+          name: '游客用户',
+          phone: '',
+          avatar: '',
+          isBackendLinked: false // 明确标记未关联后台账户
+        },
+        projects: [] // 游客没有项目数据
+      }
+      
+      // 保存登录信息到store
+      userStore.setLoginInfo(guestLoginInfo)
       
       // 显示成功提示
       uni.showToast({ 
@@ -499,7 +516,7 @@ const handleWechatLogin = async () => {
         duration: 1500
       })
       
-      // 跳转到首页（游客模式）
+      // 跳转到首页（已登录游客模式）
       setTimeout(() => {
         uni.reLaunch({ url: '/pages/dashboard/index' })
       }, 1000)
@@ -525,6 +542,18 @@ const performOpenidLogin = async (openid) => {
     })
     
     console.log('[直接登录] 登录成功:', result.userInfo)
+    
+    // 检查是否是从游客模式登录的
+    const wasGuest = uni.getStorageSync('guestMode') === true
+    
+    // 清除游客模式标记
+    uni.removeStorageSync('guestMode')
+    
+    // 如果是从游客模式登录的，设置标记用于后续显示导入按钮
+    if (wasGuest) {
+      uni.setStorageSync('wasGuestMode', true)
+      console.log('[直接登录] 检测到从游客模式登录，设置wasGuestMode标记')
+    }
     
     // 保存登录信息
     userStore.setLoginInfo(result)
@@ -933,7 +962,21 @@ const handlePasswordLogin = async () => {
 
 // 跳转首页
 const navigateToHome = () => {
-  uni.switchTab({ url: '/pages/dashboard/index' })
+  console.log('[登录页面] 跳转首页，用户类型:', userStore.userType)
+  
+  // 使用 reLaunch 而不是 switchTab，确保页面重新初始化
+  // 这样可以保证 onMounted 重新执行，数据能正常加载
+  uni.reLaunch({ 
+    url: '/pages/dashboard/index',
+    success: () => {
+      console.log('[登录页面] 页面跳转成功，将重新初始化')
+    },
+    fail: (error) => {
+      console.error('[登录页面] 页面跳转失败:', error)
+      // 降级使用 switchTab
+      uni.switchTab({ url: '/pages/dashboard/index' })
+    }
+  })
 }
 
 const navigateToTest = () => {

@@ -6,16 +6,16 @@ import { get } from '@/utils/request'
 /**
  * 获取客户首页数据
  */
-export const getCustomerDashboard = () => {
-  return get('/app/dashboard/customer')
+export const getCustomerDashboard = (options = {}) => {
+  return get('/app/dashboard/customer', {}, options)
 }
 
 /**
  * 获取员工首页数据
  * @param {Number} pageNum - 页码（可选，默认1）
  */
-export const getStaffDashboard = (pageNum = 1) => {
-  return get('/app/dashboard/staff', { pageNum })
+export const getStaffDashboard = (pageNum = 1, options = {}) => {
+  return get('/app/dashboard/staff', { pageNum }, options)
 }
 
 /**
@@ -63,6 +63,6 @@ export const getProjectRooms = (projectId) => {
  * @param {String} projectId - 项目ID
  * @returns {Promise} 返回六个固定分类的合同金额
  */
-export const getProjectContractAmounts = (projectId) => {
-  return get(`/app/dashboard/project/${projectId}/contracts`)
+export const getProjectContractAmounts = (projectId, options = {}) => {
+  return get(`/app/dashboard/project/${projectId}/contracts`, {}, options)
 }
