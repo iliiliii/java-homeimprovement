@@ -172,8 +172,8 @@ export default {
 }
 
 .login-form {
+  background-color: rgba(255, 255, 255, 0.55);
   border-radius: 6px;
-  background: #ffffff;
   width: 400px;
   padding: 25px 25px 5px 25px;
   z-index: 1;

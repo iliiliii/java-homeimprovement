@@ -77,8 +77,8 @@ const router = useRouter()
 const { proxy } = getCurrentInstance()
 
 const loginForm = ref({
-  username: "admin",
-  password: "admin123",
+  username: "",
+  password: "",
   rememberMe: false,
   code: "",
   uuid: ""
@@ -180,7 +180,8 @@ getCookie()
 
 .login-form {
   border-radius: 6px;
-  background: #ffffff;
+  background-color: rgba(255, 255, 255, 0.85);
+  // 透明
   width: 400px;
   padding: 25px 25px 5px 25px;
   z-index: 1;
