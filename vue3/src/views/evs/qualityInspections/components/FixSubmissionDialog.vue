@@ -260,10 +260,17 @@ watch(() => props.visible, (newVal) => {
           const baseUrl = import.meta.env.VITE_APP_BASE_API
           imagesFileList.value = images.map((url, index) => {
             let fullUrl = url
-            if (!url.startsWith('http') && !url.startsWith(baseUrl)) {
-              const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
-              const imagePath = url.startsWith('/') ? url : '/' + url
-              fullUrl = cleanBaseUrl + imagePath
+            // 如果不是完整URL，需要拼接baseUrl用于显示
+            if (!url.startsWith('http')) {
+              // 检查是否已经包含baseUrl前缀，避免重复拼接
+              if (!url.startsWith(baseUrl)) {
+                const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+                const imagePath = url.startsWith('/') ? url : '/' + url
+                fullUrl = cleanBaseUrl + imagePath
+              } else {
+                // 已经包含baseUrl前缀，直接使用
+                fullUrl = url
+              }
             }
             return {
               uid: `existing-${index}`,

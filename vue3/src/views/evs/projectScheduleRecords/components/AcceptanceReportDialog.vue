@@ -347,15 +347,21 @@ watch(() => [props.visible, props.isEdit, props.editRecord], async ([visible, is
 
       // 处理编辑模式下的图片回显
       if (images.length > 0) {
-        // 需要拼接 VITE_APP_BASE_API 前缀，否则图片无法正确显示
+        // 处理图片URL显示 - 修复重复前缀问题
         const baseUrl = import.meta.env.VITE_APP_BASE_API
         imagesFileList.value = images.map((url, index) => {
           let fullUrl = url
-          // 如果不是完整URL且不以baseUrl开头，则拼接baseUrl
-          if (!url.startsWith('http') && !url.startsWith(baseUrl)) {
-            const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
-            const imagePath = url.startsWith('/') ? url : '/' + url
-            fullUrl = cleanBaseUrl + imagePath
+          // 如果不是完整URL，需要拼接baseUrl用于显示
+          if (!url.startsWith('http')) {
+            // 检查是否已经包含baseUrl前缀，避免重复拼接
+            if (!url.startsWith(baseUrl)) {
+              const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+              const imagePath = url.startsWith('/') ? url : '/' + url
+              fullUrl = cleanBaseUrl + imagePath
+            } else {
+              // 已经包含baseUrl前缀，直接使用
+              fullUrl = url
+            }
           }
           return {
             uid: `existing-${index}`,

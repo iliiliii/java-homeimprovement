@@ -902,9 +902,18 @@ function extractImageUrls(fileList) {
           // 处理相对路径
           let path = file.url
 
-          // 兼容处理：如果路径包含 /dev-api 前缀，移除它
-          if (path.startsWith('/dev-api/')) {
+          // 兼容处理：移除环境相关的API前缀，避免重复拼接
+          const baseUrl = import.meta.env.VITE_APP_BASE_API
+          if (baseUrl && path.startsWith(baseUrl + '/')) {
+            path = path.substring(baseUrl.length)  // 移除环境API前缀
+          }
+          // 兼容旧版本：移除 /dev-api 前缀
+          else if (path.startsWith('/dev-api/')) {
             path = path.substring(9)  // 移除 /dev-api 前缀
+          }
+          // 兼容旧版本：移除 /prod-api 前缀
+          else if (path.startsWith('/prod-api/')) {
+            path = path.substring(10)  // 移除 /prod-api 前缀
           }
 
           // 确保以 / 开头
