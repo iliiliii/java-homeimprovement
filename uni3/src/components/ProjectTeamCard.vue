@@ -1,5 +1,5 @@
 <template>
-  <view class="team-card">
+  <view  v-if="members.length > 0" class="team-card">
     <!-- 卡片头部 -->
     <view class="card-header">
       <view class="header-icon-wrapper">
@@ -98,7 +98,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .team-card {
-  margin: 0 $spacing-l $spacing-l;
+  margin: 0 $spacing-xl;
   padding: $spacing-l;
   background: $color-white;
   border-radius: $radius-2xl;
