@@ -66,3 +66,12 @@ export const getProjectRooms = (projectId) => {
 export const getProjectContractAmounts = (projectId, options = {}) => {
   return get(`/app/dashboard/project/${projectId}/contracts`, {}, options)
 }
+
+/**
+ * 获取项目成员列表
+ * @param {String} projectId - 项目ID
+ * @returns {Promise} 返回项目成员列表
+ */
+export const getProjectMembers = (projectId, options = {}) => {
+  return get(`/app/dashboard/project/${projectId}/members`, {}, options)
+}

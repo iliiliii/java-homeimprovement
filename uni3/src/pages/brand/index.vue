@@ -95,7 +95,7 @@
             <image class="team-avatar" :src="member.avatar" mode="aspectFill" />
           </view>
           <text class="team-name">{{ member.name }}</text>
-          <text class="team-role">{{ member.role }}</text>
+          <text class="team-role">{{ member.post }}</text>
         </view>
       </view>
     </view>
@@ -117,10 +117,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { APP_CONFIG } from '@/config/app.js'
+import { getTeamMembers } from '@/api/team.js'
 
 // 核心数据
 const stats = ref([
@@ -129,34 +130,76 @@ const stats = ref([
   { value: '98', unit: '%', label: '客户满意度' }
 ])
 
-const teamMembers = ref([
-  {
-    name: '张泽宇',
-    role: '首席设计师',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-  },
-  {
-    name: '李晓琳',
-    role: '软装搭配师',
-    avatar: 'https://images.unsplash.com/photo-1573496359-7973131e9b71?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-  },
-  {
-    name: '王建国',
-    role: '工程总监',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-  },
-  {
-    name: '陈思思',
-    role: '客户管家',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-  }
-])
+const teamMembers = ref([])
 
 const promises = ref([
   '0增项 · 预算即决算',
   '严选材 · 环保不达标全额退款',
   '保交付 · 延期赔付'
 ])
+
+// 加载团队成员数据
+const loadTeamMembers = async () => {
+  try {
+    const response = await getTeamMembers()
+    if (response && response.length > 0) {
+      teamMembers.value = response
+    } else {
+      // 如果后端没有数据，使用默认数据
+      teamMembers.value = [
+        {
+          name: '张泽宇',
+          post: '首席设计师',
+          avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          name: '李晓琳',
+          post: '软装搭配师',
+          avatar: 'https://images.unsplash.com/photo-1573496359-7973131e9b71?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          name: '王建国',
+          post: '工程总监',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          name: '陈思思',
+          post: '客户管家',
+          avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+        }
+      ]
+    }
+  } catch (error) {
+    console.error('加载团队成员失败:', error)
+    // 出错时使用默认数据
+    teamMembers.value = [
+      {
+        name: '张泽宇',
+        post: '首席设计师',
+        avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+      },
+      {
+        name: '李晓琳',
+        post: '软装搭配师',
+        avatar: 'https://images.unsplash.com/photo-1573496359-7973131e9b71?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+      },
+      {
+        name: '王建国',
+        post: '工程总监',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+      },
+      {
+        name: '陈思思',
+        post: '客户管家',
+        avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+      }
+    ]
+  }
+}
+
+onMounted(() => {
+  loadTeamMembers()
+})
 </script>
 
 

@@ -282,9 +282,18 @@ watch(currentProject, (newProject) => {
 // 费用卡片点击事件（预留跳转到http页面）
 const handleExpenseClick = (item) => {
   if (item.url) {
+    console.log(item.url,typeof item.url)
     // #ifdef MP-WEIXIN
-    uni.navigateTo({
-      url: `/pages/webview/index?url=${encodeURIComponent(item.url)}&title=${encodeURIComponent(item.label)}`
+    wx.openEmbeddedMiniProgram({
+      appId: 'wxd45c635d754dbf59',
+      envVersion: 'release',
+      success(res) {
+        // 打开成功
+      },
+      fail: function (e) {
+        console.log(e)
+      },
+      path: `pages/detail/detail?url=${encodeURIComponent(item.url)}`
     })
     // #endif
     

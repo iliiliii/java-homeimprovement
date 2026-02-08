@@ -1,6 +1,7 @@
 package com.ruoyi.app.controller;
 
 import com.ruoyi.app.service.IAppDashboardService;
+import com.ruoyi.app.service.IAppProjectMemberService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.exception.ServiceException;
 import org.slf4j.Logger;
@@ -19,6 +20,9 @@ public class AppDashboardController {
 
     @Autowired
     private IAppDashboardService dashboardService;
+    
+    @Autowired
+    private IAppProjectMemberService projectMemberService;
 
     /**
      * 获取客户首页数据
@@ -187,6 +191,23 @@ public class AppDashboardController {
             return AjaxResult.error(e.getCode() != null ? e.getCode() : 500, e.getMessage());
         } catch (Exception e) {
             log.error("获取项目合同金额异常", e);
+            return AjaxResult.error(500, "获取数据失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取项目成员列表
+     * 无需认证，公开访问
+     * 
+     * @param projectId 项目ID
+     * @return 项目成员列表
+     */
+    @GetMapping("/project/{projectId}/members")
+    public AjaxResult getProjectMembers(@PathVariable String projectId) {
+        try {
+            return AjaxResult.success(projectMemberService.getProjectMembers(projectId));
+        } catch (Exception e) {
+            log.error("获取项目成员列表异常: projectId={}", projectId, e);
             return AjaxResult.error(500, "获取数据失败: " + e.getMessage());
         }
     }

@@ -35,6 +35,13 @@
         @click="handleCardClick"
       />
       
+      <!-- 项目团队成员卡片（仅在有当前项目时显示） -->
+      <ProjectTeamCard
+        v-if="currentProject && !isGuestMode"
+        ref="teamCardRef"
+        :project-id="currentProject.id"
+      />
+      
       <!-- 项目数据加载中（已登录客户但项目数据还在加载） -->
       <view v-else-if="!isGuestMode && props.loading" class="project-loading">
         <view class="loading-spinner"></view>
@@ -101,6 +108,7 @@ import { getBannerNews, getNewsList } from '@/api/news.js'
 import UserAvatar from '@/components/UserAvatar.vue'
 import BannerSwiper from '@/components/BannerSwiper.vue'
 import ProjectCardSwiper from '@/components/ProjectCardSwiper.vue'
+import ProjectTeamCard from '@/components/ProjectTeamCard.vue'
 import NewsTab from '@/components/NewsTab.vue'
 import NewsItem from '@/components/NewsItem.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -121,7 +129,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['switch-project', 'navigate'])
+const emit = defineEmits(['switch-project', 'navigate', 'refresh'])
 
 const userStore = useUserStore()
 
@@ -139,6 +147,9 @@ const newsLoading = ref(false)
 const hasMoreNews = ref(true)
 const newsPageNum = ref(1)
 const newsPageSize = 20
+
+// 团队卡片引用
+const teamCardRef = ref(null)
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
@@ -171,6 +182,13 @@ watch(() => props.currentProject, (newProject) => {
     if (index >= 0 && index !== currentIndex.value) {
       currentIndex.value = index
     }
+  }
+  
+  // 当项目切换时，刷新团队成员数据
+  if (newProject && teamCardRef.value) {
+    nextTick(() => {
+      teamCardRef.value.refresh()
+    })
   }
 }, { immediate: true })
 
@@ -312,6 +330,15 @@ const goToLogin = () => {
 const goToProfile = () => {
   uni.switchTab({ url: '/pages/profile/index' })
 }
+
+// 暴露刷新方法给父组件
+defineExpose({
+  refreshTeamCard: () => {
+    if (teamCardRef.value) {
+      teamCardRef.value.refresh()
+    }
+  }
+})
 </script>
 
 <style lang="scss" scoped>

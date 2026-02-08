@@ -20,6 +20,7 @@
     <!-- 客户视图（已登录的客户） -->
     <CustomerDashboard 
       v-else-if="isLoggedIn && userType === 'customer'"
+      ref="customerDashboardRef"
       :projects="projects"
       :current-project="currentProject"
       :loading="loading"
@@ -77,6 +78,9 @@ const selectedStaffProjectId = ref('')
 const pageNum = ref(1)
 const hasMore = ref(true)
 const loadingMore = ref(false)
+
+// 组件引用
+const customerDashboardRef = ref(null)
 
 // 计算属性
 const currentProject = computed(() => projects.value[currentProjectIndex.value] || null)
@@ -337,6 +341,12 @@ onPullDownRefresh(async () => {
   try {
     console.log('[Dashboard] 开始刷新数据')
     await loadDashboardData(true)
+    
+    // 如果是客户，刷新团队成员数据
+    if (userType.value === 'customer' && customerDashboardRef.value) {
+      customerDashboardRef.value.refreshTeamCard()
+    }
+    
     console.log('[Dashboard] 刷新完成')
   } catch (error) {
     console.error('[Dashboard] 刷新失败:', error)
