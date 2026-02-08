@@ -15,7 +15,7 @@ export const useProjectAuth = () => {
    */
   const isAdmin = computed(() => {
     const roles = userStore.roles || []
-    return roles.includes('admin') || roles.includes('admin')
+    return roles.includes('admin') || roles.includes('gly')
   })
 
   /**

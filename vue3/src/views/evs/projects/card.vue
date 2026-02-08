@@ -288,7 +288,7 @@ const { decoration_project_status } = proxy.useDict('decoration_project_status')
 // 判断是否为管理员
 const isAdmin = computed(() => {
   console.log('当前用户角色:', userStore.roles)
-  return userStore.roles && userStore.roles.includes('admin')
+  return userStore.roles && (userStore.roles.includes('admin') || roles.includes('gly'))
 })
 
 // 组件引用
