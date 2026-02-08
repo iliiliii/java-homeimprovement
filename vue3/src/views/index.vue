@@ -304,7 +304,7 @@ const userStore = useUserStore()
 
 // 判断是否为管理员
 const isAdmin = computed(() => {
-  return userStore.roles && (userStore.roles.includes('admin') || roles.includes('gly'))
+  return userStore.roles && (userStore.roles.includes('admin') || userStore.roles.includes('gly'))
 })
 
 // ========== 管理员视图数据 ==========

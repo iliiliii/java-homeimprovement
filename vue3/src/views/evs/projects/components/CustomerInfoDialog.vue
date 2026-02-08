@@ -78,7 +78,7 @@ const userStore = useUserStore()
 // 判断是否为管理员 - 使用响应式计算属性
 const isAdmin = computed(() => {
   console.log('当前用户角色:', userStore.roles)  // 添加调试日志
-  return userStore.roles && (userStore.roles.includes('admin') || roles.includes('gly'))
+  return userStore.roles && (userStore.roles.includes('admin') || userStore.roles.includes('gly'))
 })
 
 // 是否显示对话框
