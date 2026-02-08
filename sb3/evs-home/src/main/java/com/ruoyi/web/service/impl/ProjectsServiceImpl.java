@@ -31,7 +31,7 @@ public class ProjectsServiceImpl implements IProjectsService
      */
     private Projects setCurrentUser(Projects projects) {
         Long currentUserId = SecurityUtils.getUserId();
-        Boolean isAdmin = SecurityUtils.hasRole("admin");
+        Boolean isAdmin = SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly");
 
         System.out.println("=== 权限设置调试 ===");
         System.out.println("SecurityUtils.getUserId(): " + currentUserId);

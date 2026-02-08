@@ -76,7 +76,7 @@ public class ProjectsController extends BaseController
         } else if (includeRelations.length() > 0) {
             // 有关联查询参数，使用 selectProjectsWithRelations
             Long currentUserId = SecurityUtils.getUserId();
-            Boolean isAdmin = SecurityUtils.hasRole("admin");
+            Boolean isAdmin = SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly");
             list = projectsService.selectProjectsWithRelations(
                 projects,
                 includeRelations.toString(),
