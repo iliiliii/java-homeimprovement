@@ -92,7 +92,8 @@ public interface IProjectsService
      * 查询项目列表及进度统计信息（带权限控制）
      *
      * @param projects 项目查询条件
+     * @param includeCustomer 是否包含客户信息
      * @return 项目列表（包含进度统计字段，仅返回当前用户有权限的项目）
      */
-    public List<Projects> selectProjectsListWithScheduleInfo(Projects projects);
+    public List<Projects> selectProjectsListWithScheduleInfo(Projects projects, boolean includeCustomer);
 }

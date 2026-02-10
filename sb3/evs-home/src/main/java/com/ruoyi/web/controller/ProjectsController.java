@@ -72,7 +72,9 @@ public class ProjectsController extends BaseController
         List<Projects> list;
         if ("true".equals(includeScheduleInfo)) {
             // 进度统计查询（带权限控制）
-            list = projectsService.selectProjectsListWithScheduleInfo(projects);
+            // 支持同时查询客户信息
+            boolean needCustomer = "true".equals(includeCustomer);
+            list = projectsService.selectProjectsListWithScheduleInfo(projects, needCustomer);
         } else if (includeRelations.length() > 0) {
             // 有关联查询参数，使用 selectProjectsWithRelations
             Long currentUserId = SecurityUtils.getUserId();

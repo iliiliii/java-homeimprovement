@@ -251,11 +251,12 @@ public class ProjectsServiceImpl implements IProjectsService
     }
 
     @Override
-    public List<Projects> selectProjectsListWithScheduleInfo(Projects projects)
+    public List<Projects> selectProjectsListWithScheduleInfo(Projects projects, boolean includeCustomer)
     {
         System.out.println("\n=== selectProjectsListWithScheduleInfo 调试 ===");
         System.out.println("接收到的参数 projects: " + projects);
         System.out.println("projects.getStatus(): " + projects.getStatus());
+        System.out.println("includeCustomer: " + includeCustomer);
 
         // 设置权限信息（自动应用权限控制）
         Projects query = setCurrentUser(projects);
@@ -266,7 +267,14 @@ public class ProjectsServiceImpl implements IProjectsService
         System.out.println("query.getIsAdmin(): " + query.getIsAdmin());
 
         // 1. 查询项目列表（带权限过滤）
-        List<Projects> projectsList = projectsMapper.selectProjectsList(query);
+        List<Projects> projectsList;
+        if (includeCustomer) {
+            // 查询项目列表（包含客户信息）
+            projectsList = projectsMapper.selectProjectsWithCustomer(query);
+        } else {
+            // 查询项目列表（不包含客户信息）
+            projectsList = projectsMapper.selectProjectsList(query);
+        }
 
         // 2. 如果无项目，直接返回
         if (projectsList.isEmpty()) {
@@ -281,7 +289,7 @@ public class ProjectsServiceImpl implements IProjectsService
         // 4. 批量查询进度统计
         Map<String, Map<String, Object>> statsMap = projectsMapper.selectScheduleStatsMap(projectIds);
 
-        // 5. 为每��项目设置统计信息
+        // 5. 为每个项目设置统计信息
         for (Projects project : projectsList) {
             Map<String, Object> stats = statsMap.get(project.getId());
             if (stats != null) {
