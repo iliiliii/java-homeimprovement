@@ -35,10 +35,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 				AND post_name like concat('%', #{postName}, '%')
 			</if>
 		</where>
+		order by post_sort asc
 	</select>
 	
 	<select id="selectPostAll" resultMap="SysPostResult">
 		<include refid="selectPostVo"/>
+		order by post_sort asc
 	</select>
 	
 	<select id="selectPostById" parameterType="Long" resultMap="SysPostResult">
