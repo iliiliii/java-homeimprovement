@@ -92,7 +92,7 @@
         <view class="info-card team-card" v-for="member in teamMembers" :key="member.name">
           <view class="card-accent"></view>
           <view class="team-avatar-wrapper">
-            <image class="team-avatar" :src="member.avatar" mode="aspectFill" />
+            <image class="team-avatar" :src="getFullUrl(member.avatar)" mode="aspectFill" />
           </view>
           <text class="team-name">{{ member.name }}</text>
           <text class="team-role">{{ member.post }}</text>
@@ -122,6 +122,7 @@ import NavBar from '@/components/NavBar.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { APP_CONFIG } from '@/config/app.js'
 import { getTeamMembers } from '@/api/team.js'
+import { BASE_URL } from '@/utils/request'
 
 // 核心数据
 const stats = ref([
@@ -137,6 +138,19 @@ const promises = ref([
   '严选材 · 环保不达标全额退款',
   '保交付 · 延期赔付'
 ])
+
+// 获取完整URL
+const getFullUrl = (path) => {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
+  }
+  // 拼接基础URL（使用request.js中的BASE_URL）
+  if (path.startsWith('/')) {
+    return BASE_URL + path
+  }
+  return BASE_URL + '/' + path
+}
 
 // 加载团队成员数据
 const loadTeamMembers = async () => {
