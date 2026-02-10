@@ -814,6 +814,7 @@ onUnmounted(() => {
       color: #303133;
       line-height: 1.4;
       margin-bottom: 6px;
+      white-space: break-spaces;
     }
 
     .acceptance-score {
