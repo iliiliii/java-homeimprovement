@@ -74,6 +74,7 @@
       v-model:file-list="fileList"
       :action="uploadUrl"
       list-type="picture-card"
+      :drag="enableDrag"
       :auto-upload="autoUpload"
       :multiple="multiple"
       :limit="maxCount"
@@ -87,9 +88,17 @@
       :before-remove="beforeRemove"
       :http-request="handleHttpRequest"
       :disabled="disabled"
-      class="upload-component"
+      :class="['upload-component', { 'upload-drag-enabled': enableDrag }]"
     >
-      <el-icon><Plus /></el-icon>
+      <template v-if="enableDrag">
+        <div class="drag-upload-content">
+          <div class="drag-hint">拖拽图片到此处或点击上传</div>
+          <el-icon class="drag-icon"><Plus /></el-icon>
+        </div>
+      </template>
+      <template v-else>
+        <el-icon><Plus /></el-icon>
+      </template>
       <template #tip v-if="showTip">
         <div class="el-upload__tip">
           {{ computedTipText }}
@@ -263,6 +272,11 @@ const props = defineProps({
       showRetry: false,
       progress: 0
     })
+  },
+  // 新增：是否启用拖拽上传
+  enableDrag: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -976,8 +990,6 @@ defineExpose({
     margin-bottom: 16px;
     padding: 16px;
     background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
 
     // 失败状态样式
     &.progress-failed {
@@ -1130,6 +1142,74 @@ defineExpose({
       width: 120px;
       height: 120px;
       line-height: 120px;
+    }
+
+    // 拖拽上传样式
+    &.upload-drag-enabled {
+      :deep(.el-upload-dragger) {
+        border:none;
+        padding:15px;
+      }
+      :deep(.el-upload--picture-card) {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+
+        &:hover {
+          border-color: #409eff;
+          background-color: #f5f7fa;
+        }
+
+        // 拖拽时的样式
+        &.is-drag-over {
+          border-color: #409eff;
+          background-color: #ecf5ff;
+          
+          .drag-upload-content {
+            .drag-icon {
+              color: #409eff;
+              transform: scale(1.1);
+            }
+            
+            .drag-text {
+              color: #409eff;
+            }
+          }
+        }
+      }
+
+      .drag-upload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 10px;
+
+        .drag-icon {
+          font-size: 32px;
+          color: #8c939d;
+          margin-bottom: 8px;
+          transition: all 0.3s ease;
+        }
+
+        .drag-text {
+          font-size: 13px;
+          color: #606266;
+          margin-bottom: 4px;
+          font-weight: 500;
+          text-align: center;
+          line-height: 1.2;
+        }
+
+        .drag-hint {
+          font-size: 11px;
+          color: #909399;
+          text-align: center;
+          line-height: 1.2;
+        }
+      }
     }
 
     // 预览图片列表尺寸 - 与上传按钮保持一致
