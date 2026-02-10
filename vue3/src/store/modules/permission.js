@@ -4,6 +4,7 @@ import { getRouters } from '@/api/menu'
 import Layout from '@/layout/index'
 import ParentView from '@/components/ParentView'
 import InnerLink from '@/layout/components/InnerLink'
+import useUserStore from './user'
 
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue')
@@ -32,7 +33,7 @@ const usePermissionStore = defineStore(
       setSidebarRouters(routes) {
         this.sidebarRouters = routes
       },
-      generateRoutes(roles) {
+      generateRoutes() {
         return new Promise(resolve => {
           // 向后端请求路由数据
           getRouters().then(res => {
@@ -45,7 +46,9 @@ const usePermissionStore = defineStore(
             const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
             asyncRoutes.forEach(route => { router.addRoute(route) })
             this.setRoutes(rewriteRoutes)
-            this.setSidebarRouters(constantRoutes.concat(sidebarRoutes))
+            // 过滤非admin用户的系统菜单
+            const filteredSidebarRoutes = filterSystemMenus(sidebarRoutes)
+            this.setSidebarRouters(constantRoutes.concat(filteredSidebarRoutes))
             this.setDefaultRoutes(sidebarRoutes)
             this.setTopbarRoutes(defaultRoutes)
             resolve(rewriteRoutes)
@@ -111,6 +114,28 @@ export function filterDynamicRoutes(routes) {
     }
   })
   return res
+}
+
+// 过滤非admin用户的系统菜单（系统监控、系统工具、系统管理）
+function filterSystemMenus(routes) {
+  const userStore = useUserStore()
+  const roles = userStore.roles || []
+  
+  // 如果是admin角色，不过滤
+  if (roles.includes('admin')) {
+    return routes
+  }
+  
+  // 需要隐藏的菜单路径
+  const hiddenPaths = ['/monitor', '/tool', '/system','/evs/projects/card']
+  
+  return routes.filter(route => {
+    // 检查路由路径是否在隐藏列表中
+    if (hiddenPaths.includes(route.path)) {
+      return false
+    }
+    return true
+  })
 }
 
 export const loadView = (view) => {
