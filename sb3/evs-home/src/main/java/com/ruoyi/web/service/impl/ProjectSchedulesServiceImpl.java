@@ -43,7 +43,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         Long currentUserId = SecurityUtils.getUserId();
         if (currentUserId != null) {
             query.setCurrentUserId(String.valueOf(currentUserId));
-            query.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
+            query.setIsAdmin(SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly"));
         }
 
         List<ProjectSchedules> existing = projectSchedulesMapper.selectProjectSchedulesList(query);
@@ -73,7 +73,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         Long currentUserId = SecurityUtils.getUserId();
         if (currentUserId != null) {
             query.setCurrentUserId(String.valueOf(currentUserId));
-            query.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
+            query.setIsAdmin(SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly"));
         }
 
         List<ProjectSchedules> existing = projectSchedulesMapper.selectProjectSchedulesList(query);
@@ -105,7 +105,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         ProjectSchedules query = new ProjectSchedules();
         query.setId(id);
         query.setCurrentUserId(String.valueOf(currentUserId));
-        query.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
+        query.setIsAdmin(SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly"));
 
         return projectSchedulesMapper.selectProjectSchedulesById(query);
     }
@@ -123,7 +123,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
         Long currentUserId = SecurityUtils.getUserId();
         if (currentUserId != null) {
             projectSchedules.setCurrentUserId(String.valueOf(currentUserId));
-            projectSchedules.setIsAdmin(SecurityUtils.isAdmin(currentUserId));
+            projectSchedules.setIsAdmin(SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly"));
         }
 
         return projectSchedulesMapper.selectProjectSchedulesList(projectSchedules);
@@ -202,7 +202,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
             throw new ServiceException("用户未登录");
         }
 
-        boolean isAdmin = SecurityUtils.isAdmin(currentUserId);
+        boolean isAdmin = SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly");
 
         // 非管理员需要逐个验证每个ID的删除权限
         if (!isAdmin) {
@@ -238,7 +238,7 @@ public class ProjectSchedulesServiceImpl implements IProjectSchedulesService
             throw new ServiceException("用户未登录");
         }
 
-        boolean isAdmin = SecurityUtils.isAdmin(currentUserId);
+        boolean isAdmin = SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("gly");
 
         // 非管理员需要验证要删除的项目进度是否存在且用户有权限
         if (!isAdmin) {
