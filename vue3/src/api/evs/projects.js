@@ -33,14 +33,15 @@ export function listProjectsWithScheduleInfo(query) {
   })
 }
 
-// 通过项目成员关联查询项目列表（支持管理员权限筛选，包含进度统计）
+// 通过项目成员关联查询项目列表（支持管理员权限筛选，包含进度统计和客户信息）
 export function listProjectsWithMembers(query) {
   return request({
     url: '/evs/projects/list',
     method: 'get',
     params: {
       ...query,
-      includeScheduleInfo: true  // 获取进度统计信息（已包含权限过滤）
+      includeScheduleInfo: true,  // 获取进度统计信息（已包含权限过滤）
+      includeCustomer: true        // 同时获取客户信息
     }
   })
 }

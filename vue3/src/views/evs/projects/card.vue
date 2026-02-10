@@ -347,6 +347,15 @@ function getList() {
     projectsList.value = response.rows
     total.value = response.total
     loading.value = false
+    
+    // 调试：检查客户信息是否正确返回
+    console.log('[项目列表] 获取到的项目数据:', projectsList.value.length, '条')
+    if (projectsList.value.length > 0) {
+      console.log('[项目列表] 第一个项目的客户信息:', {
+        customerId: projectsList.value[0].customerId,
+        customer: projectsList.value[0].customer
+      })
+    }
   })
 }
 
@@ -394,12 +403,24 @@ function handleExport() {
 
 /** 获取客户名称 */
 function getCustomerName(project) {
-  // 直接从关联的客户信息中获取名称
+  // 优先从关联的客户对象中获取名称
   if (project.customer && project.customer.name) {
     return project.customer.name
   }
-  // 如果没有关联的客户信息，返回客户ID或默认值
-  return project.customerId || '未关联客户'
+  
+  // 如果有 customerId 但没有 customer 对象，显示提示信息
+  if (project.customerId) {
+    console.warn('[项目列表] 项目有 customerId 但缺少 customer 对象:', {
+      projectId: project.id,
+      projectName: project.name,
+      customerId: project.customerId,
+      customer: project.customer
+    })
+    return `客户ID: ${project.customerId}`
+  }
+  
+  // 完全没有客户信息
+  return '未关联客户'
 }
 
 /** 显示客户信息弹窗 */
