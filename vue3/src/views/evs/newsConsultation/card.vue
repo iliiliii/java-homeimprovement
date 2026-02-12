@@ -343,22 +343,6 @@ const data = reactive({
     ],
     jumpUrl: [
       { max: 500, message: "跳转地址长度不能超过500个字符", trigger: "blur" },
-      {
-        validator: (_rule, value, callback) => {
-          if (!value || value.trim() === '') {
-            callback()
-          } else {
-            // 简单的URL格式验证
-            const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
-            if (!urlPattern.test(value) && !value.startsWith('/') && !value.startsWith('#')) {
-              callback(new Error("请输入正确的URL地址格式"))
-            } else {
-              callback()
-            }
-          }
-        },
-        trigger: "blur"
-      }
     ],
     sortOrder: [
       { type: "number", min: 0, max: 999999, message: "排序值必须在0到999999之间", trigger: "blur" }
