@@ -168,6 +168,7 @@ import { useUserStore } from '@/store/user'
 import PageHeader from '@/components/PageHeader.vue'
 import { getProjectRooms } from '@/api/dashboard'
 import { BASE_URL } from '@/utils/request'
+import { getCurrentProjectId, isGuestUser, isUnloggedGuest } from '@/config/guest'
 
 const userStore = useUserStore()
 
@@ -186,11 +187,40 @@ const viewerIndex = ref(0)
 const viewerImages = ref([])
 const currentViewRoom = ref(null)
 
-// 当前项目ID（优先使用URL参数，否则使用store中的）
+// 当前项目ID（优先使用URL参数，否则使用store中的，游客用户使用演示项目ID）
 const urlProjectId = ref('')
-const currentProjectId = computed(() => urlProjectId.value || userStore.currentProjectId)
+const currentProjectId = ref('')
+
+// 初始化项目ID（异步）
+const initProjectId = async () => {
+  const projectId = await getCurrentProjectId(urlProjectId.value, userStore.currentProjectId)
+  
+  // 验证项目ID格式（防止注入）
+  if (projectId && !/^[a-fA-F0-9]{32}$/.test(projectId)) {
+    console.error('[安全] 无效的项目ID格式:', projectId)
+    currentProjectId.value = ''
+    return
+  }
+  
+  currentProjectId.value = projectId
+  
+  // 将项目ID保存到storage，供request.js的请求拦截器使用
+  if (projectId) {
+    uni.setStorageSync('currentProjectId', projectId)
+    console.log('[Design] 初始化项目ID:', projectId, '是否游客:', isGuestUser())
+  } else {
+    console.warn('[Design] 项目ID为空')
+  }
+}
+
 const currentProject = computed(() => {
   if (!currentProjectId.value) return null
+  
+  // 如果是游客用户（包括未登录），返回演示项目信息
+  if (isGuestUser()) {
+    return { id: currentProjectId.value, name: '演示项目' }
+  }
+  
   // 从store的项目列表中查找
   const project = userStore.projects.find(p => p.id === currentProjectId.value)
   if (project) {
@@ -263,19 +293,31 @@ const clearSearch = () => {
 
 // 加载房间列表
 const loadRooms = async () => {
+  // 游客用户：使用演示项目ID
+  // 正常用户：必须有项目ID才能加载
   if (!currentProjectId.value) {
+    console.log('[Design] 没有项目ID，无法加载房间列表')
     rooms.value = []
     return
   }
   
   loading.value = true
   try {
+    console.log('[Design] 加载房间列表，项目ID:', currentProjectId.value, '是否游客:', isGuestUser())
     // request.js 的响应拦截器会返回 data.data，所以这里直接是数组
     const data = await getProjectRooms(currentProjectId.value)
     rooms.value = data || []
+    console.log('[Design] 房间列表加载成功，数量:', rooms.value.length)
   } catch (error) {
-    console.error('加载房间列表失败:', error)
+    console.error('[Design] 加载房间列表失败:', error)
     rooms.value = []
+    // 游客用户加载失败时给出友好提示
+    if (isGuestUser()) {
+      uni.showToast({
+        title: '演示数据加载失败',
+        icon: 'none'
+      })
+    }
     // 错误提示已在request.js中处理
   } finally {
     loading.value = false
@@ -292,6 +334,26 @@ const openRoom = (room) => {
     return
   }
   
+  // 检查是否为未登录的游客
+  if (isUnloggedGuest()) {
+    uni.showModal({
+      title: '登录提示',
+      content: '请登录后查看大图',
+      confirmText: '去登录',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 跳转到登录页
+          uni.navigateTo({
+            url: '/pages/login/index-new'
+          })
+        }
+      }
+    })
+    return
+  }
+  
+  // 登录的游客或正常用户可以查看大图
   currentViewRoom.value = room
   // 转换为查看器需要的格式
   viewerImages.value = room.images.map((url, index) => ({
@@ -319,22 +381,29 @@ onLoad((options) => {
       userStore.switchProject(options.projectId)
     }
   }
+  // 未登录用户也需要初始化项目ID
+  initProjectId()
 })
 
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
   updateHeaderHeight()
+  // 初始化项目ID
+  initProjectId()
 })
 
 // 页面显示时加载数据
-onShow(() => {
+onShow(async () => {
+  // 确保项目ID已初始化
+  await initProjectId()
   loadRooms()
 })
 
 // 监听项目切换
-watch(currentProjectId, (newId, oldId) => {
+watch(() => userStore.currentProjectId, async (newId, oldId) => {
   if (newId !== oldId) {
     searchKeyword.value = '' // 清空筛选
+    await initProjectId()
     loadRooms()
   }
 })

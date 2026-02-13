@@ -80,14 +80,44 @@ import { getStatusBarHeight } from '@/utils/system.js'
 import PageHeader from '@/components/PageHeader.vue'
 import { useUserStore } from '@/store/user.js'
 import { getProjectScheduleList, getProjectScheduleRecordDetail, deleteAcceptanceRecord } from '@/api/projectSchedule'
+import { getCurrentProjectId, isGuestUser, isUnloggedGuest } from '@/config/guest'
 
 const userStore = useUserStore()
 
-// 当前项目ID（优先使用URL参数，否则使用store中的）
+// 当前项目ID（优先使用URL参数，否则使用store中的，游客用户使用演示项目ID）
 const urlProjectId = ref('')
-const currentProjectId = computed(() => urlProjectId.value || userStore.currentProjectId)
+const currentProjectId = ref('')
+
+// 初始化项目ID（异步）
+const initProjectId = async () => {
+  const projectId = await getCurrentProjectId(urlProjectId.value, userStore.currentProjectId)
+  
+  // 验证项目ID格式（防止注入）
+  if (projectId && !/^[a-fA-F0-9]{32}$/.test(projectId)) {
+    console.error('[安全] 无效的项目ID格式:', projectId)
+    currentProjectId.value = ''
+    return
+  }
+  
+  currentProjectId.value = projectId
+  
+  // 将项目ID保存到storage，供request.js的请求拦截器使用
+  if (projectId) {
+    uni.setStorageSync('currentProjectId', projectId)
+    console.log('[Log] 初始化项目ID:', projectId, '是否游客:', isGuestUser())
+  } else {
+    console.warn('[Log] 项目ID为空')
+  }
+}
+
 const currentProject = computed(() => {
   if (!currentProjectId.value) return null
+  
+  // 如果是游客用户（包括未登录），返回演示项目信息
+  if (isGuestUser()) {
+    return { id: currentProjectId.value, name: '演示项目' }
+  }
+  
   // 从store的项目列表中查找
   const project = userStore.projects.find(p => p.id === currentProjectId.value)
   if (project) {
@@ -126,13 +156,16 @@ onLoad((options) => {
       userStore.switchProject(options.projectId)
     }
   }
+  // 未登录用户也需要初始化项目ID
+  initProjectId()
 })
 
 onMounted(() => {
   statusBarHeight.value = getStatusBarHeight()
   headerHeight.value = statusBarHeight.value + 66
   // 延迟加载，确保项目ID已设置
-  setTimeout(() => {
+  setTimeout(async () => {
+    await initProjectId()
     loadSchedules()
   }, 100)
 })
@@ -141,9 +174,11 @@ onMounted(() => {
 const loadSchedules = async () => {
   if (loading.value) return
   
-  // 如果没有项目ID，提示用户先选择项目
+  // 游客用户：使用演示项目ID
+  // 正常用户：必须有项目ID才能加载
   if (!currentProjectId.value) {
-    if (userStore.isStaff) {
+    console.log('[Log] 没有项目ID，无法加载进度列表')
+    if (userStore.isStaff && !isGuestUser()) {
       uni.showToast({
         title: '请先选择项目',
         icon: 'none'
@@ -155,25 +190,33 @@ const loadSchedules = async () => {
   
   try {
     loading.value = true
-    console.log('开始调用真实API获取施工进度数据，项目ID:', currentProjectId.value)
+    console.log('[Log] 加载施工进度列表，项目ID:', currentProjectId.value, '是否游客:', isGuestUser())
     const data = await getProjectScheduleList()
-    console.log('API返回数据:', data)
+    console.log('[Log] API返回数据:', data)
     
     if (data && Array.isArray(data)) {
       schedules.value = data
-      console.log('成功设置进度数据，共', data.length, '项')
+      console.log('[Log] 成功设置进度数据，共', data.length, '项')
     } else {
-      console.warn('API返回数据格式异常:', data)
+      console.warn('[Log] API返回数据格式异常:', data)
       schedules.value = []
     }
   } catch (error) {
-    console.error('加载施工进度失败:', error)
+    console.error('[Log] 加载施工进度失败:', error)
     schedules.value = []
-    uni.showToast({
-      title: '加载失败: ' + error.message,
-      icon: 'none',
-      duration: 3000
-    })
+    // 游客用户加载失败时给出友好提示
+    if (isGuestUser()) {
+      uni.showToast({
+        title: '演示数据加载失败',
+        icon: 'none'
+      })
+    } else {
+      uni.showToast({
+        title: '加载失败: ' + error.message,
+        icon: 'none',
+        duration: 3000
+      })
+    }
   } finally {
     loading.value = false
   }
@@ -181,6 +224,26 @@ const loadSchedules = async () => {
 
 // 处理验收记录点击
 const handleRecordClick = async (record) => {
+  // 检查是否为未登录的游客
+  if (isUnloggedGuest()) {
+    uni.showModal({
+      title: '登录提示',
+      content: '请登录后查看大图',
+      confirmText: '去登录',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 跳转到登录页
+          uni.navigateTo({
+            url: '/pages/login/index-new'
+          })
+        }
+      }
+    })
+    return
+  }
+  
+  // 登录的游客或正常用户可以查看详情
   try {
     // 获取记录详情
     const detail = await getProjectScheduleRecordDetail(record.id)
@@ -210,6 +273,26 @@ const handleRecordClick = async (record) => {
 
 // 处理图片预览
 const handlePreviewImages = ({ images, index }) => {
+  // 检查是否为未登录的游客
+  if (isUnloggedGuest()) {
+    uni.showModal({
+      title: '登录提示',
+      content: '请登录后查看大图',
+      confirmText: '去登录',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 跳转到登录页
+          uni.navigateTo({
+            url: '/pages/login/index-new'
+          })
+        }
+      }
+    })
+    return
+  }
+  
+  // 登录的游客或正常用户可以查看大图
   viewerImages.value = images
   viewerIndex.value = index
   viewerVisible.value = true
