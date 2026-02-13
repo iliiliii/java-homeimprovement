@@ -1,5 +1,6 @@
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { preloadGuestConfig } from '@/config/guest'
 
 // 小程序更新管理器
 let updateManager = null
@@ -102,11 +103,21 @@ const checkForUpdate = () => {
   // #endif
 }
 
-onLaunch(() => {
+onLaunch(async () => {
   console.log('App Launch')
   
   // 初始化小程序更新检查
   initUpdateManager()
+  
+  // 预加载游客演示项目配置（无论是否登录都加载，提升后续页面加载速度）
+  try {
+    console.log('[App] 开始预加载游客演示项目配置')
+    await preloadGuestConfig()
+    console.log('[App] 游客演示项目配置预加载完成')
+  } catch (error) {
+    console.error('[App] 预加载游客配置失败:', error)
+    // 预加载失败不影响应用启动
+  }
 })
 
 onShow(() => {

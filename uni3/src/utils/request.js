@@ -16,8 +16,8 @@ const getBaseUrl = () => {
     
     // #ifdef MP-WEIXIN
     // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
-    return 'https://hsdlp.gzcelestial.com/prod-api'
-    // return 'http://192.168.5.102:8080'
+    // return 'https://hsdlp.gzcelestial.com/prod-api'
+    return 'http://192.168.5.102:8080'
     // #endif
   }
   
@@ -35,26 +35,45 @@ let isRefreshing = false
 let requestQueue = []
 
 /**
+ * 验证项目ID格式（UUID格式：32个十六进制字符）
+ */
+const isValidProjectId = (projectId) => {
+  if (!projectId || typeof projectId !== 'string') {
+    return false
+  }
+  return /^[a-fA-F0-9]{32}$/.test(projectId)
+}
+
+/**
  * 请求拦截器
  */
 const requestInterceptor = (config) => {
   // 获取 token
   const token = uni.getStorageSync('token')
-  if (token) {
+  if (token && token !== '' && token !== 'null') {
     config.header = {
       ...config.header,
       'Authorization': `Bearer ${token}`
     }
+  } else {
+    // 未登录时，不添加Authorization头，但仍然允许请求
+    console.log('[Request] 未登录用户，不添加Authorization头')
   }
   
   // 添加设备ID
   config.header['X-Device-Id'] = getDeviceId()
   
-  // 添加当前项目ID
+  // 添加当前项目ID（添加格式验证）
   const currentProjectId = uni.getStorageSync('currentProjectId')
   if (currentProjectId) {
-    config.header['X-Project-Id'] = currentProjectId
-    console.log('[Request] 添加项目ID到请求头:', currentProjectId)
+    if (isValidProjectId(currentProjectId)) {
+      config.header['X-Project-Id'] = currentProjectId
+      console.log('[Request] 添加项目ID到请求头:', currentProjectId)
+    } else {
+      console.error('[安全] 无效的项目ID格式，已忽略:', currentProjectId)
+      // 清除无效的项目ID
+      uni.removeStorageSync('currentProjectId')
+    }
   } else {
     console.warn('[Request] 当前项目ID为空')
   }
@@ -207,12 +226,14 @@ const refreshTokenRequest = (refreshToken) => {
  * 跳转登录页
  */
 const redirectToLogin = () => {
-  // 检查是否是游客模式
+  // 检查是否是游客模式或未登录
   const isGuest = uni.getStorageSync('guestMode') === true
+  const token = uni.getStorageSync('token')
+  const isLoggedIn = !!(token && token !== '' && token !== 'null')
   
-  if (isGuest) {
-    // 游客模式下，不跳转登录页，只是返回错误
-    console.log('[Request] 游客模式，API调用失败但不跳转登录页')
+  if (isGuest || !isLoggedIn) {
+    // 游客模式或未登录，不跳转登录页，只是返回错误
+    console.log('[Request] 游客/未登录模式，API调用失败但不跳转登录页')
     return
   }
   

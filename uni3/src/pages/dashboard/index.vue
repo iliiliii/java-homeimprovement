@@ -124,6 +124,15 @@ watch(() => staffProjects.value, (newProjects) => {
 onMounted(async () => {
   console.log('[Dashboard] =====页面初始化开始=====')
   
+  // 预加载游客配置（如果App.vue中已加载，这里会直接使用缓存）
+  try {
+    const { preloadGuestConfig } = await import('@/config/guest')
+    await preloadGuestConfig()
+    console.log('[Dashboard] 游客配置已就绪')
+  } catch (error) {
+    console.error('[Dashboard] 预加载游客配置失败:', error)
+  }
+  
   // 先从本地存储恢复用户状态
   userStore.initFromStorage()
   
