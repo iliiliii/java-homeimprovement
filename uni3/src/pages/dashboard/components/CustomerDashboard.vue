@@ -291,34 +291,14 @@ const loadMoreNews = () => {
   }
 }
 
-// Banner 点击跳转
+// Banner 点击跳转（组件内部已处理）
 const handleBannerClick = (item) => {
-  if (!item.jumpUrl) return
-  
-  // #ifdef MP-WEIXIN
-  uni.navigateTo({
-    url: `/pages/webview/index?url=${encodeURIComponent(item.jumpUrl)}&title=${encodeURIComponent(item.title || 'Banner')}`
-  })
-  // #endif
-  
-  // #ifdef H5
-  window.open(item.jumpUrl, '_blank')
-  // #endif
+  console.log('[CustomerDashboard] Banner 点击:', item)
 }
 
-// 资讯点击跳转
+// 资讯点击跳转（组件内部已处理）
 const handleNewsClick = (item) => {
-  if (!item.jumpUrl) return
-  
-  // #ifdef MP-WEIXIN
-  uni.navigateTo({
-    url: `/pages/webview/index?url=${encodeURIComponent(item.jumpUrl)}&title=${encodeURIComponent(item.title || '资讯详情')}`
-  })
-  // #endif
-  
-  // #ifdef H5
-  window.open(item.jumpUrl, '_blank')
-  // #endif
+  console.log('[CustomerDashboard] 资讯点击:', item)
 }
 
 // 跳转到登录页面
@@ -331,13 +311,28 @@ const goToProfile = () => {
   uni.switchTab({ url: '/pages/profile/index' })
 }
 
+// 刷新所有数据
+const refreshAll = async () => {
+  console.log('[CustomerDashboard] 刷新所有数据')
+  await Promise.all([
+    loadBannerNews(),
+    loadNewsList(true)
+  ])
+  
+  // 刷新团队成员数据
+  if (teamCardRef.value) {
+    teamCardRef.value.refresh()
+  }
+}
+
 // 暴露刷新方法给父组件
 defineExpose({
   refreshTeamCard: () => {
     if (teamCardRef.value) {
       teamCardRef.value.refresh()
     }
-  }
+  },
+  refreshAll
 })
 </script>
 

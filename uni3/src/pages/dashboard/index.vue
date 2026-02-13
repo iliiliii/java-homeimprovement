@@ -331,21 +331,27 @@ const handleSelectStaffProject = (projectId) => {
 onPullDownRefresh(async () => {
   console.log('[Dashboard] 用户下拉刷新')
   
-  // 游客页面和游客用户的刷新处理
-  if (!isLoggedIn.value || userType.value === 'guest') {
-    console.log('[Dashboard] 游客用户刷新，由CustomerDashboard组件处理')
-    uni.stopPullDownRefresh()
-    return
-  }
-  
   try {
-    console.log('[Dashboard] 开始刷新数据')
-    await loadDashboardData(true)
-    
-    // 如果是客户，刷新团队成员数据
-    if (userType.value === 'customer' && customerDashboardRef.value) {
-      customerDashboardRef.value.refreshTeamCard()
+    // 游客页面和游客用户的刷新处理
+    if (!isLoggedIn.value || userType.value === 'guest') {
+      console.log('[Dashboard] 游客用户刷新，刷新 Banner 和资讯数据')
+      if (customerDashboardRef.value) {
+        await customerDashboardRef.value.refreshAll()
+      }
+      return
     }
+    
+    console.log('[Dashboard] 开始刷新数据')
+    
+    // 并行刷新项目数据和 Banner/资讯数据
+    const promises = [loadDashboardData(true)]
+    
+    // 如果是客户，同时刷新 Banner、资讯和团队成员数据
+    if (userType.value === 'customer' && customerDashboardRef.value) {
+      promises.push(customerDashboardRef.value.refreshAll())
+    }
+    
+    await Promise.all(promises)
     
     console.log('[Dashboard] 刷新完成')
   } catch (error) {
