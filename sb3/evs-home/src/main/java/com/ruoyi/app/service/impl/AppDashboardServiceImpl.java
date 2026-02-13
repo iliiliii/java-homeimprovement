@@ -6,6 +6,7 @@ import com.ruoyi.app.mapper.AppProjectMapper;
 import com.ruoyi.app.mapper.AppDashboardMapper;
 import com.ruoyi.app.security.AppTokenManager;
 import com.ruoyi.app.service.IAppDashboardService;
+import com.ruoyi.app.service.IGuestConfigService;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.web.domain.*;
 import org.slf4j.Logger;
@@ -42,6 +43,9 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
 
     @Autowired
     private StaffDashboardConfig staffDashboardConfig;
+    
+    @Autowired
+    private IGuestConfigService guestConfigService;
 
     // 字典类型常量
     private static final String DICT_TYPE_PROJECT_STATUS = "decoration_project_status";
@@ -403,9 +407,55 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
     }
 
     private void validateTokenAndAccess(String token, String projectId) {
-        Map<String, Object> claims = tokenManager.validateToken(extractToken(token));
+        // 验证项目ID格式（防止注入攻击）
+        if (!isValidProjectId(projectId)) {
+            log.warn("[安全] 无效的项目ID格式: {}", projectId);
+            throw new ServiceException("无权访问该项目");
+        }
+        
+        // 如果没有token，检查是否为演示项目（允许未登录访问演示项目）
+        if (token == null || token.isEmpty() || "null".equals(token)) {
+            boolean isDemo = guestConfigService.isGuestDemoProject(projectId);
+            if (!isDemo) {
+                log.warn("[权限验证] 未登录用户尝试访问项目: {}", projectId);
+                throw new ServiceException("无权访问该项目");
+            }
+            log.info("[权限验证] 未登录用户访问演示项目: {}", projectId);
+            return;
+        }
+        
+        // 尝试验证token
+        Map<String, Object> claims = null;
+        try {
+            claims = tokenManager.validateToken(extractToken(token));
+        } catch (Exception e) {
+            // Token验证失败（可能是格式错误或过期）
+            log.warn("[权限验证] Token验证失败: {}, projectId: {}", e.getMessage(), projectId);
+            
+            // 如果是演示项目，允许访问（降级为未登录访问）
+            boolean isDemo = guestConfigService.isGuestDemoProject(projectId);
+            if (isDemo) {
+                log.info("[安全审计] 降级访问演示项目: projectId={}, tokenError={}", projectId, e.getMessage());
+                return;
+            }
+            
+            // 非演示项目，统一错误响应
+            throw new ServiceException("无权访问该项目");
+        }
+        
         String userType = (String) claims.get("userType");
         String userId = claims.get("userId").toString();
+
+        // 游客用户：只能访问演示项目
+        if ("guest".equals(userType)) {
+            boolean hasAccess = guestConfigService.validateGuestProjectAccess(projectId);
+            if (!hasAccess) {
+                log.warn("[权限验证] 游客用户 {} 尝试访问项目: {}", userId, projectId);
+                throw new ServiceException("无权访问该项目");
+            }
+            log.info("[权限验证] 游客用户 {} 访问演示项目: {}", userId, projectId);
+            return;
+        }
 
         // 验证用户是否有权限访问该项目
         if ("customer".equals(userType)) {
@@ -419,6 +469,17 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
                 throw new ServiceException("无权访问该项目");
             }
         }
+    }
+    
+    /**
+     * 验证项目ID格式（UUID格式：32个十六进制字符）
+     */
+    private boolean isValidProjectId(String projectId) {
+        if (projectId == null || projectId.isEmpty()) {
+            return false;
+        }
+        // UUID格式验证（去掉连字符后是32个十六进制字符）
+        return projectId.matches("^[a-fA-F0-9]{32}$");
     }
 
     private String maskPhone(String phone) {

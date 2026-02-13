@@ -6,7 +6,8 @@ package com.ruoyi.app.enums;
 public enum UserTypeEnum {
     
     CUSTOMER("customer", "客户"),
-    STAFF("staff", "员工");
+    STAFF("staff", "员工"),
+    GUEST("guest", "游客");
     
     private final String code;
     private final String desc;

@@ -95,6 +95,13 @@ public class AppContext {
     }
     
     /**
+     * 是否游客
+     */
+    public static boolean isGuest() {
+        return UserTypeEnum.GUEST.equals(getUserType());
+    }
+    
+    /**
      * 检查是否有项目权限
      */
     public static boolean hasProjectPermission(String projectId) {
