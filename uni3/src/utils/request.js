@@ -16,8 +16,8 @@ const getBaseUrl = () => {
     
     // #ifdef MP-WEIXIN
     // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
-    // return 'https://hsdlp.gzcelestial.com/prod-api'
-    return 'http://192.168.5.102:8080'
+    return 'https://hsdlp.gzcelestial.com/prod-api'
+    // return 'http://192.168.5.102:8080'
     // #endif
   }
   
