@@ -28,6 +28,7 @@ public class AppProjectScheduleController {
     /**
      * 获取项目进度列表
      * 返回项目的所有施工阶段进度信息
+     * 支持未登录访问演示项目
      */
     @GetMapping("/projectSchedules/list")
     public AjaxResult getProjectScheduleList(
@@ -37,10 +38,6 @@ public class AppProjectScheduleController {
             log.info("接收到获取项目进度列表请求 - projectId: {}, token存在: {}", 
                     projectId, token != null && !token.isEmpty());
             
-            if (token == null || token.isEmpty()) {
-                log.warn("未提供认证Token");
-                return AjaxResult.error(401, "未提供认证Token");
-            }
             if (projectId == null || projectId.isEmpty()) {
                 log.warn("未提供项目ID");
                 return AjaxResult.error(400, "未提供项目ID");
@@ -88,15 +85,13 @@ public class AppProjectScheduleController {
 
     /**
      * 获取进度验收记录详情
+     * 支持未登录访问演示项目
      */
     @GetMapping("/projectScheduleRecords/{recordId}")
     public AjaxResult getProjectScheduleRecordDetail(
             @RequestHeader(value = "Authorization", required = false) String token,
             @PathVariable String recordId) {
         try {
-            if (token == null || token.isEmpty()) {
-                return AjaxResult.error(401, "未提供认证Token");
-            }
             return AjaxResult.success(projectScheduleService.getProjectScheduleRecordDetail(token, recordId));
         } catch (ServiceException e) {
             log.warn("获取验收记录详情失败: {}", e.getMessage());

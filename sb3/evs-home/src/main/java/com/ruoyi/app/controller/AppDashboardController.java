@@ -156,15 +156,13 @@ public class AppDashboardController {
 
     /**
      * 获取项目房间列表（设计稿管理）
+     * 支持未登录访问演示项目
      */
     @GetMapping("/project/{projectId}/rooms")
     public AjaxResult getProjectRooms(
             @RequestHeader(value = "Authorization", required = false) String token,
             @PathVariable String projectId) {
         try {
-            if (token == null || token.isEmpty()) {
-                return AjaxResult.error(401, "未提供认证Token");
-            }
             return AjaxResult.success(dashboardService.getProjectRooms(token, projectId));
         } catch (ServiceException e) {
             return AjaxResult.error(e.getCode() != null ? e.getCode() : 500, e.getMessage());
