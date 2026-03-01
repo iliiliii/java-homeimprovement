@@ -224,26 +224,35 @@ onMounted(() => {
   padding: $spacing-s 0;
   position: relative;
   
-  // 添加渐变遮罩效果，增强视觉层次
+  // 优化渐变遮罩效果，更柔和且不遮挡内容
   &::before,
   &::after {
     content: '';
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 32rpx;
+    width: 48rpx;
     z-index: 2;
     pointer-events: none;
+    opacity: 0.6;
   }
   
   &::before {
     left: 0;
-    background: linear-gradient(to right, $color-white, transparent);
+    background: linear-gradient(to right, 
+      rgba(255, 255, 255, 1) 0%, 
+      rgba(255, 255, 255, 0.8) 30%,
+      rgba(255, 255, 255, 0) 100%
+    );
   }
   
   &::after {
     right: 0;
-    background: linear-gradient(to left, $color-white, transparent);
+    background: linear-gradient(to left, 
+      rgba(255, 255, 255, 1) 0%, 
+      rgba(255, 255, 255, 0.8) 30%,
+      rgba(255, 255, 255, 0) 100%
+    );
   }
 }
 
