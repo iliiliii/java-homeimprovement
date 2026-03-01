@@ -13,6 +13,7 @@ import com.ruoyi.web.domain.Projects;
 import com.ruoyi.web.domain.QualityFixes;
 import com.ruoyi.web.domain.QualityInspections;
 import com.ruoyi.web.domain.QualityIssues;
+import com.ruoyi.web.mapper.ProjectCustomersMapper;
 import com.ruoyi.web.mapper.QualityFixesMapper;
 import com.ruoyi.web.mapper.QualityInspectionsMapper;
 import com.ruoyi.web.mapper.QualityIssuesMapper;
@@ -47,6 +48,10 @@ public class AppQualityIssueServiceImpl implements IAppQualityIssueService {
 
     @Autowired
     private QualityIssuesMapper qualityIssuesMapper;
+    
+    @Autowired
+    private ProjectCustomersMapper projectCustomersMapper;
+
 
     @Autowired
     private QualityFixesMapper qualityFixesMapper;
@@ -234,15 +239,20 @@ public class AppQualityIssueServiceImpl implements IAppQualityIssueService {
 
         // 验证用户是否有权限访问该项目
         if ("customer".equals(userType)) {
-            Projects project = projectMapper.selectProjectById(projectId);
-            if (project == null || !userId.equals(project.getCustomerId())) {
+            // 检查客户是否关联到项目（支持多客户）
+            boolean hasAccess = projectCustomersMapper.checkCustomerInProject(projectId, userId);
+            if (!hasAccess) {
+                log.warn("[权限验证] 客户 {} 无权访问项目: {}", userId, projectId);
                 throw new ServiceException("无权访问该项目");
             }
+            log.info("[权限验证] 客户 {} 访问项目: {}", userId, projectId);
         } else if ("staff".equals(userType)) {
             boolean hasAccess = dashboardMapper.checkStaffProjectAccess(userId, projectId);
             if (!hasAccess) {
+                log.warn("[权限验证] 员工 {} 无权访问项目: {}", userId, projectId);
                 throw new ServiceException("无权访问该项目");
             }
+            log.info("[权限验证] 员工 {} 访问项目: {}", userId, projectId);
         }
 
         return claims;

@@ -766,8 +766,8 @@ public class AppAuthServiceImpl implements IAppAuthService {
         List<Projects> projects;
         
         if (userType == UserTypeEnum.CUSTOMER) {
-            // 客户：直接查询customer_id = userId的项目
-            projects = appProjectMapper.selectProjectsByCustomerId(userId);
+            // 客户：通过 project_customers 表查询关联的项目
+            projects = appProjectMapper.selectProjectsByCustomerIdFromRelation(userId);
         } else {
             // 员工：查询project_members中user_id = userId的项目
             projects = projectMembersService.selectProjectsByUserId(Long.parseLong(userId));

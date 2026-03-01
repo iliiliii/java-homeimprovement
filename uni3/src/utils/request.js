@@ -11,13 +11,13 @@ const getBaseUrl = () => {
   // 开发环境使用本地地址
   if (isDev) {
     // #ifdef H5
-    return 'http://192.168.5.102:8080'
+    return 'http://192.168.5.92:8080'
     // #endif
     
     // #ifdef MP-WEIXIN
     // 小程序开发环境：需要在微信开发者工具中勾选"不校验合法域名"
-    return 'https://hsdlp.gzcelestial.com/prod-api'
-    // return 'http://192.168.5.102:8080'
+    // return 'https://hsdlp.gzcelestial.com/prod-api'
+    return 'http://192.168.5.92:8080'
     // #endif
   }
   

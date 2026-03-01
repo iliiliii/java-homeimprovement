@@ -9,6 +9,7 @@ import com.ruoyi.app.service.IAppDashboardService;
 import com.ruoyi.app.service.IGuestConfigService;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.web.domain.*;
+import com.ruoyi.web.mapper.ProjectCustomersMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
     
     @Autowired
     private IGuestConfigService guestConfigService;
+    
+    @Autowired
+    private ProjectCustomersMapper projectCustomersMapper;
 
     // 字典类型常量
     private static final String DICT_TYPE_PROJECT_STATUS = "decoration_project_status";
@@ -459,16 +463,22 @@ public class AppDashboardServiceImpl implements IAppDashboardService {
 
         // 验证用户是否有权限访问该项目
         if ("customer".equals(userType)) {
-            Projects project = projectMapper.selectProjectById(projectId);
-            if (project == null || !userId.equals(project.getCustomerId())) {
+            // 检查客户是否关联到项目（支持多客户）
+            boolean hasAccess = projectCustomersMapper.checkCustomerInProject(projectId, userId);
+            if (!hasAccess) {
+                log.warn("[权限验证] 客户 {} 无权访问项目: {}", userId, projectId);
                 throw new ServiceException("无权访问该项目");
             }
+            log.info("[权限验证] 客户 {} 访问项目: {}", userId, projectId);
         } else if ("staff".equals(userType)) {
             boolean hasAccess = dashboardMapper.checkStaffProjectAccess(userId, projectId);
             if (!hasAccess) {
+                log.warn("[权限验证] 员工 {} 无权访问项目: {}", userId, projectId);
                 throw new ServiceException("无权访问该项目");
             }
+            log.info("[权限验证] 员工 {} 访问项目: {}", userId, projectId);
         }
+
     }
     
     /**

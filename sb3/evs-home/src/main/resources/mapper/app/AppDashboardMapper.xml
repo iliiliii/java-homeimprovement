@@ -186,8 +186,9 @@
             p.end_date as endDate,
             p.progress as progressPercent
         FROM projects p
-        WHERE p.customer_id = #{customerId} AND p.deleted_at IS NULL
-        ORDER BY p.created_at DESC
+        INNER JOIN project_customers pc ON p.id = pc.project_id
+        WHERE pc.customer_id = #{customerId} AND pc.deleted_at IS NULL AND p.deleted_at IS NULL
+        ORDER BY pc.is_primary DESC, p.created_at DESC
     </select>
 
     <!-- 查询员工项目列表（不联表查字典，在Java代码中处理状态文本） -->
