@@ -43,6 +43,7 @@ public class ProjectsController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Projects projects,
                              @RequestParam(required = false) String includeCustomer,
+                             @RequestParam(required = false) String includeCustomers,
                              @RequestParam(required = false) String includeBudgetItems,
                              @RequestParam(required = false) String includeSchedules,
                              @RequestParam(required = false) String includeProjectMembers,
@@ -54,6 +55,10 @@ public class ProjectsController extends BaseController
         StringBuilder includeRelations = new StringBuilder();
         if ("true".equals(includeCustomer)) {
             includeRelations.append("customer");
+        }
+        if ("true".equals(includeCustomers)) {
+            if (includeRelations.length() > 0) includeRelations.append(",");
+            includeRelations.append("customers");
         }
         if ("true".equals(includeBudgetItems)) {
             if (includeRelations.length() > 0) includeRelations.append(",");
@@ -113,12 +118,17 @@ public class ProjectsController extends BaseController
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") String id,
                              @RequestParam(required = false) String includeCustomer,
+                             @RequestParam(required = false) String includeCustomers,
                              @RequestParam(required = false) String includeBudgetItems,
                              @RequestParam(required = false) String includeSchedules)
     {
         // 构建关联查询参数
         StringBuilder includeRelations = new StringBuilder();
         if (includeCustomer != null) includeRelations.append("customer");
+        if (includeCustomers != null) {
+            if (includeRelations.length() > 0) includeRelations.append(",");
+            includeRelations.append("customers");
+        }
         if (includeBudgetItems != null) {
             if (includeRelations.length() > 0) includeRelations.append(",");
             includeRelations.append("budgetItems");
@@ -148,7 +158,12 @@ public class ProjectsController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody Projects projects)
     {
-        return toAjax(projectsService.insertProjects(projects));
+        int result = projectsService.insertProjects(projects);
+        if (result > 0) {
+            // 返回创建的项目对象（包含生成的ID）
+            return AjaxResult.success(projects);
+        }
+        return AjaxResult.error("新增项目失败");
     }
 
     /**
