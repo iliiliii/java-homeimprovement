@@ -69,8 +69,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { onPullDownRefresh, onLoad } from '@dcloudio/uni-app'
+import { ref, onMounted, computed, watch } from 'vue'
+import { onPullDownRefresh, onLoad, onShow } from '@dcloudio/uni-app'
 import CustomTabBar from '@/components/CustomTabBar.vue'
 import ImageViewer from '@/components/ImageViewer/index.vue'
 import TimelineNode from './components/TimelineNode.vue'
@@ -168,6 +168,22 @@ onMounted(() => {
     await initProjectId()
     loadSchedules()
   }, 100)
+})
+
+// 页面显示时加载数据
+onShow(async () => {
+  // 确保项目ID已初始化
+  await initProjectId()
+  loadSchedules()
+})
+
+// 监听项目切换
+watch(() => userStore.currentProjectId, async (newId, oldId) => {
+  if (newId !== oldId) {
+    console.log('[Log] 检测到项目切换:', oldId, '->', newId)
+    await initProjectId()
+    loadSchedules()
+  }
 })
 
 // 加载施工进度列表
