@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.web.mapper.ProjectCustomersMapper">
+    
+    <resultMap type="ProjectCustomers" id="ProjectCustomersResult">
+        <result property="id"    column="id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="customerId"    column="customer_id"    />
+        <result property="role"    column="role"    />
+        <result property="isPrimary"    column="is_primary"    />
+        <result property="deletedAt"    column="deleted_at"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+        <result property="createdBy"    column="created_by"    />
+        <result property="updatedBy"    column="updated_by"    />
+    </resultMap>
+    
+    <!-- 包含客户信息的结果映射 -->
+    <resultMap type="ProjectCustomers" id="ProjectCustomersWithCustomerResult" 
+               extends="ProjectCustomersResult">
+        <association property="customer" javaType="Customers">
+            <id property="id" column="customer_id"/>
+            <result property="name" column="customer_name"/>
+            <result property="phone" column="customer_phone"/>
+            <result property="email" column="customer_email"/>
+            <result property="avatar" column="customer_avatar"/>
+        </association>
+    </resultMap>
+
+    <sql id="selectProjectCustomersVo">
+        select id, project_id, customer_id, role, is_primary, deleted_at, created_at, updated_at, created_by, updated_by from project_customers
+    </sql>
+
+    <select id="selectProjectCustomersList" parameterType="ProjectCustomers" resultMap="ProjectCustomersResult">
+        <include refid="selectProjectCustomersVo"/>
+        <where>
+            deleted_at IS NULL
+            <if test="projectId != null  and projectId != ''"> and project_id = #{projectId}</if>
+            <if test="customerId != null  and customerId != ''"> and customer_id = #{customerId}</if>
+            <if test="role != null  and role != ''"> and role = #{role}</if>
+            <if test="isPrimary != null "> and is_primary = #{isPrimary}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+            <if test="updatedAt != null "> and updated_at = #{updatedAt}</if>
+            <if test="createdBy != null  and createdBy != ''"> and created_by = #{createdBy}</if>
+            <if test="updatedBy != null  and updatedBy != ''"> and updated_by = #{updatedBy}</if>
+        </where>
+    </select>
+    
+    <select id="selectProjectCustomersById" parameterType="String" resultMap="ProjectCustomersResult">
+        <include refid="selectProjectCustomersVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertProjectCustomers" parameterType="ProjectCustomers">
+        insert into project_customers
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="projectId != null and projectId != ''">project_id,</if>
+            <if test="customerId != null and customerId != ''">customer_id,</if>
+            <if test="role != null and role != ''">role,</if>
+            <if test="isPrimary != null">is_primary,</if>
+            <if test="deletedAt != null">deleted_at,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+            <if test="createdBy != null">created_by,</if>
+            <if test="updatedBy != null">updated_by,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="projectId != null and projectId != ''">#{projectId},</if>
+            <if test="customerId != null and customerId != ''">#{customerId},</if>
+            <if test="role != null and role != ''">#{role},</if>
+            <if test="isPrimary != null">#{isPrimary},</if>
+            <if test="deletedAt != null">#{deletedAt},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+            <if test="createdBy != null">#{createdBy},</if>
+            <if test="updatedBy != null">#{updatedBy},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProjectCustomers" parameterType="ProjectCustomers">
+        update project_customers
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectId != null and projectId != ''">project_id = #{projectId},</if>
+            <if test="customerId != null and customerId != ''">customer_id = #{customerId},</if>
+            <if test="role != null and role != ''">role = #{role},</if>
+            <if test="isPrimary != null">is_primary = #{isPrimary},</if>
+            <if test="deletedAt != null">deleted_at = #{deletedAt},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="createdBy != null">created_by = #{createdBy},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteProjectCustomersById" parameterType="String">
+        DELETE FROM project_customers WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteProjectCustomersByIds" parameterType="String">
+        DELETE FROM project_customers
+        WHERE id IN
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <!-- 查询项目的所有客户 -->
+    <select id="selectByProjectId" resultMap="ProjectCustomersWithCustomerResult">
+        SELECT 
+            pc.id, pc.project_id, pc.customer_id, pc.role, pc.is_primary,
+            pc.deleted_at, pc.created_at, pc.updated_at, pc.created_by, pc.updated_by,
+            c.name as customer_name, c.phone as customer_phone,
+            c.email as customer_email, c.avatar as customer_avatar
+        FROM project_customers pc
+        LEFT JOIN customers c ON pc.customer_id = c.id
+        WHERE pc.project_id = #{projectId} AND pc.deleted_at IS NULL
+        ORDER BY pc.is_primary DESC, pc.created_at ASC
+    </select>
+    
+    <!-- 查询客户的所有项目 -->
+    <select id="selectByCustomerId" resultMap="ProjectCustomersResult">
+        SELECT *
+        FROM project_customers
+        WHERE customer_id = #{customerId} AND deleted_at IS NULL
+        ORDER BY is_primary DESC, created_at DESC
+    </select>
+    
+    <!-- 查询项目的主客户 -->
+    <select id="selectPrimaryByProjectId" resultMap="ProjectCustomersWithCustomerResult">
+        SELECT 
+            pc.id, pc.project_id, pc.customer_id, pc.role, pc.is_primary,
+            pc.deleted_at, pc.created_at, pc.updated_at,
+            c.name as customer_name, c.phone as customer_phone,
+            c.email as customer_email, c.avatar as customer_avatar
+        FROM project_customers pc
+        LEFT JOIN customers c ON pc.customer_id = c.id
+        WHERE pc.project_id = #{projectId} 
+          AND pc.is_primary = 1 
+          AND pc.deleted_at IS NULL
+        LIMIT 1
+    </select>
+    
+    <!-- 检查客户是否关联到项目 -->
+    <select id="checkCustomerInProject" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM project_customers
+        WHERE project_id = #{projectId} 
+          AND customer_id = #{customerId}
+          AND deleted_at IS NULL
+    </select>
+    
+    <!-- 查询所有记录（包括软删除的） -->
+    <select id="selectAllRecords" resultMap="ProjectCustomersResult">
+        SELECT id, project_id, customer_id, role, is_primary, deleted_at, created_at, updated_at, created_by, updated_by
+        FROM project_customers
+        WHERE project_id = #{projectId} 
+          AND customer_id = #{customerId}
+    </select>
+    
+    <!-- 批量插入 -->
+    <insert id="batchInsert">
+        INSERT INTO project_customers (
+            id, project_id, customer_id, role, is_primary,
+            created_at, created_by
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.id}, #{item.projectId}, #{item.customerId}, 
+                #{item.role}, #{item.isPrimary},
+                #{item.createdAt}, #{item.createdBy}
+            )
+        </foreach>
+    </insert>
+    
+    <!-- 软删除 -->
+    <update id="softDelete">
+        UPDATE project_customers
+        SET deleted_at = NOW(), updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 清除项目的所有主客户标记 -->
+    <update id="clearPrimaryCustomers">
+        UPDATE project_customers 
+        SET is_primary = 0, updated_at = NOW()
+        WHERE project_id = #{projectId} AND deleted_at IS NULL
+    </update>
+    
+    <!-- 设置主客户 -->
+    <update id="setPrimaryCustomer">
+        UPDATE project_customers
+        SET is_primary = 1, updated_at = NOW()
+        WHERE project_id = #{projectId} AND customer_id = #{customerId} AND deleted_at IS NULL
+    </update>
+    
+    <!-- 统计项目客户数量 -->
+    <select id="countByProjectId" resultType="int">
+        SELECT COUNT(*)
+        FROM project_customers
+        WHERE project_id = #{projectId} AND deleted_at IS NULL
+    </select>
+    
+    <!-- 批量统计 -->
+    <select id="countByProjectIds" resultType="java.util.Map">
+        SELECT 
+            project_id as projectId,
+            COUNT(*) as customerCount
+        FROM project_customers
+        WHERE project_id IN
+        <foreach collection="projectIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND deleted_at IS NULL
+        GROUP BY project_id
+    </select>
+</mapper>
