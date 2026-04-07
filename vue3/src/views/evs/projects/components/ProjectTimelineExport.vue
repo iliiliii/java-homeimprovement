@@ -847,6 +847,8 @@ async function handlePreview() {
   color: #666;
   margin-bottom: 8px;
   line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .node-time {
@@ -930,6 +932,8 @@ async function handlePreview() {
   color: #666;
   line-height: 1.5;
   margin-bottom: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .record-meta {
