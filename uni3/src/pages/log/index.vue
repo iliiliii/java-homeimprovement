@@ -26,6 +26,7 @@
         v-for="(schedule, index) in schedules"
         :key="schedule.id"
         :schedule="schedule"
+        :project-id="currentProjectId"
         :is-last="index === schedules.length - 1"
         :is-latest="index === 0"
         @record-click="handleRecordClick"

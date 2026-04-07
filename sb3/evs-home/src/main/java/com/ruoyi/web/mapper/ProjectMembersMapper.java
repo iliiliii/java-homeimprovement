@@ -66,4 +66,14 @@ public interface ProjectMembersMapper
      * @return 结果
      */
     public int deleteProjectMembersByProjectId(String projectId);
+
+    /**
+     * 检查用户是否为项目成员
+     * 
+     * @param userId 用户ID
+     * @param projectId 项目ID
+     * @return true-是项目成员，false-不是
+     */
+    public boolean checkUserIsProjectMember(@org.apache.ibatis.annotations.Param("userId") String userId, 
+                                           @org.apache.ibatis.annotations.Param("projectId") String projectId);
 }

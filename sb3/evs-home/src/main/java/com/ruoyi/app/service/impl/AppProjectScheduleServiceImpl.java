@@ -585,10 +585,10 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
             throw new ServiceException("验收记录不存在", 404);
         }
 
-        // 验证是否为记录创建者
-        String createBy = projectScheduleMapper.selectRecordCreateBy(recordId);
-        if (!userId.equals(createBy)) {
-            throw new ServiceException("只能编辑自己创建的记录", 403);
+        // ✅ 修改：检查是否为项目成员（而非仅创建者）
+        boolean isMember = dashboardMapper.checkStaffProjectAccess(userId, projectId);
+        if (!isMember) {
+            throw new ServiceException("只有项目成员可以编辑验收记录", 403);
         }
 
         // 验证员工是否有权限访问该项目
@@ -664,10 +664,10 @@ public class AppProjectScheduleServiceImpl implements IAppProjectScheduleService
             throw new ServiceException("验收记录不存在", 404);
         }
 
-        // 验证是否为记录创建者
-        String createBy = projectScheduleMapper.selectRecordCreateBy(recordId);
-        if (!userId.equals(createBy)) {
-            throw new ServiceException("只能删除自己创建的记录", 403);
+        // ✅ 修改：检查是否为项目成员（而非仅创建者）
+        boolean isMember = dashboardMapper.checkStaffProjectAccess(userId, projectId);
+        if (!isMember) {
+            throw new ServiceException("只有项目成员可以删除验收记录", 403);
         }
 
         // 验证员工是否有权限访问该项目

@@ -82,6 +82,7 @@
             v-for="record in records"
             :key="record.id"
             :record="record"
+            :project-id="projectId"
             @click="handleRecordClick"
             @preview-images="handlePreviewImages"
             @edit="handleEditRecord"
@@ -107,6 +108,10 @@ import { useUserStore } from '@/store/user.js'
 const props = defineProps({
   schedule: {
     type: Object,
+    required: true
+  },
+  projectId: {  // ✅ 新增projectId prop
+    type: String,
     required: true
   },
   isLast: {

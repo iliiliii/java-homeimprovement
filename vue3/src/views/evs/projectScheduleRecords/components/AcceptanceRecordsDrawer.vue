@@ -113,7 +113,7 @@
                   <span class="acceptance-creator" v-if="record.acceptor">{{ record.acceptor }}</span>
                   <span class="acceptance-time">{{ proxy.parseTime(record.acceptanceTime, '{y}-{m}-{d}') }}</span>
                   <!-- 管理员操作按钮 -->
-                  <div v-if="isAdmin" class="timeline-actions">
+                  <div class="timeline-actions">
                     <el-button
                       type="primary"
                       size="small"

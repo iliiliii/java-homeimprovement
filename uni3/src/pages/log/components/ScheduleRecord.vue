@@ -51,7 +51,7 @@
     </view>
     
     <!-- 员工操作按钮 -->
-    <view v-if="isStaff && isOwnRecord" class="record-actions" @click.stop>
+    <view v-if="canOperate" class="record-actions" @click.stop>
       <view class="action-btn edit-btn" @click="handleEdit">
         <text>编辑</text>
       </view>
@@ -63,13 +63,18 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { getFullImageUrl } from '@/utils/request'
 import { useUserStore } from '@/store/user.js'
+import { getProjectMembers } from '@/api/dashboard.js'
 
 const props = defineProps({
   record: {
     type: Object,
+    required: true
+  },
+  projectId: {  // ✅ 新增projectId prop
+    type: String,
     required: true
   }
 })
@@ -78,15 +83,48 @@ const emit = defineEmits(['click', 'preview-images', 'edit', 'delete'])
 
 const userStore = useUserStore()
 
+// 项目成员列表
+const projectMembers = ref([])
+const membersLoading = ref(false)
+
+// 加载项目成员
+const loadProjectMembers = async () => {
+  if (!props.projectId) return
+  
+  membersLoading.value = true
+  try {
+    const data = await getProjectMembers(props.projectId, { loading: false })
+    projectMembers.value = data || []
+  } catch (error) {
+    console.error('[ScheduleRecord] 加载项目成员失败:', error)
+    projectMembers.value = []
+  } finally {
+    membersLoading.value = false
+  }
+}
+
 // 是否员工用户
 const isStaff = computed(() => userStore.isStaff)
 
-// 是否是自己创建的记录（通过createBy字段判断）
-const isOwnRecord = computed(() => {
-  // 如果没有createBy字段，默认允许操作（兼容旧数据）
-  if (!props.record.createBy) return true
-  return props.record.createBy === userStore.userId
+// 是否是项目成员
+const isProjectMember = computed(() => {
+  if (projectMembers.value.length === 0) {
+    return false  // ✅ 默认不允许操作，更安全
+  }
+  return projectMembers.value.some(member => member.userId === userStore.userId)
 })
+
+// 是否可以操作记录（员工 + 项目成员）
+const canOperate = computed(() => {
+  return isStaff.value && isProjectMember.value
+})
+
+// 监听projectId变化
+watch(() => props.projectId, (newVal) => {
+  if (newVal) {
+    loadProjectMembers()
+  }
+}, { immediate: true })
 
 // 显示的图片（最多3张）
 const displayImages = computed(() => {
