@@ -11,7 +11,7 @@ const getBaseUrl = () => {
   // 开发环境使用本地地址
   if (isDev) {
     // #ifdef H5
-    return 'http://192.168.5.92:8080'
+    // return 'http://192.168.5.92:8080'
     // #endif
     
     // #ifdef MP-WEIXIN

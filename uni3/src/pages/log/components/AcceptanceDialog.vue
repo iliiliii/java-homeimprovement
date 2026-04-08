@@ -33,6 +33,7 @@
           </view>
           <textarea 
             class="form-textarea"
+            :class="{ 'has-content': form.content.length > 50 }"
             v-model="form.content"
             placeholder="请描述验收情况（5-200字）"
             :maxlength="200"
@@ -553,13 +554,19 @@ const handleSubmit = async () => {
 
 .form-textarea {
   width: 100%;
-  height: 140rpx;
+  min-height: 200rpx;
+  max-height: 200rpx;
   padding: 16rpx 20rpx;
   background: #f5f5f5;
   border-radius: 12rpx;
   font-size: 28rpx;
   box-sizing: border-box;
   line-height: 1.5;
+  transition: max-height 0.3s ease;
+  
+  &.has-content {
+    max-height: 400rpx;
+  }
 }
 
 .word-count {
