@@ -42,8 +42,8 @@ export const APP_CONFIG = {
 
     // 版权信息
     copyright: {
-        year: '2025',
-        text: '逅管家 © 2025',
+        year: '2026',
+        text: '逅管家 © 2026',
         icp: '' // 备案号（如需要）
     },
 

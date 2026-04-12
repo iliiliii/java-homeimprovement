@@ -335,23 +335,23 @@ const openRoom = (room) => {
   }
   
   // 检查是否为未登录的游客
-  if (isUnloggedGuest()) {
-    uni.showModal({
-      title: '登录提示',
-      content: '请登录后查看大图',
-      confirmText: '去登录',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          // 跳转到登录页
-          uni.navigateTo({
-            url: '/pages/login/index-new'
-          })
-        }
-      }
-    })
-    return
-  }
+  // if (isUnloggedGuest()) {
+  //   uni.showModal({
+  //     title: '登录提示',
+  //     content: '请登录后查看大图',
+  //     confirmText: '去登录',
+  //     cancelText: '取消',
+  //     success: (res) => {
+  //       if (res.confirm) {
+  //         // 跳转到登录页
+  //         uni.navigateTo({
+  //           url: '/pages/login/index-new'
+  //         })
+  //       }
+  //     }
+  //   })
+  //   return
+  // }
   
   // 登录的游客或正常用户可以查看大图
   currentViewRoom.value = room

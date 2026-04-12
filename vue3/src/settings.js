@@ -52,6 +52,6 @@ export default {
   /**
    * 底部版权文本内容
    */
-  footerContent: 'Copyright © 2025 天相科技. All Rights Reserved.'
+  footerContent: 'Copyright © 2026 天相科技. All Rights Reserved.'
 }
 

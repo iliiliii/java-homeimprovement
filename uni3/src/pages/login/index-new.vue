@@ -44,6 +44,13 @@
           <SvgIcon name="brand-wechat" size="42rpx" style="margin-right: 12rpx;" color="#fff"/>
           {{ loading ? '登录中...' : '微信登录' }}
         </button>
+                <!-- 微信登录按钮 -->
+        <button 
+          class="back-btn" 
+          @click="handleBack"
+        >
+          返回上一页
+        </button>
         
         <view v-if="false" class="switch-mode">
           <text @click="switchLoginMode('sms')">使用短信验证码登录</text>
@@ -529,6 +536,11 @@ const handleWechatLogin = async () => {
     loading.value = false
     uni.hideLoading()
   }
+}
+
+// 返回上一页
+const handleBack = () => {
+  uni.navigateBack()
 }
 
 // 执行openid直接登录
@@ -1418,16 +1430,22 @@ const devSkipToHome = () => {
   }
   
   .back-btn {
-    margin-top: 32rpx;
-    text-align: center;
+    margin-top: 24rpx;
+    height: 88rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26rpx;
-    color: $color-text-tertiary;
+    font-size: 30rpx;
+    border-radius: $radius-full;
+    color: $color-gray-500;
+    background: #fff;
+    border: 1rpx solid $color-border-medium;
     
     &:active {
       opacity: 0.6;
+    }
+    &::after{
+      border:none;
     }
   }
   
