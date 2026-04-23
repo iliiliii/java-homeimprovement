@@ -133,7 +133,8 @@
                 <!-- 时间信息 -->
                 <div class="node-time" v-if="schedule.planStartDate || schedule.actualStartDate">
                   <span v-if="schedule.planStartDate">
-                    计划：{{ formatDate(schedule.planStartDate) }}
+                    计划：{{ formatDate(schedule.planStartDate) }} 
+                    <template v-if="schedule.planEndDate"> - {{ formatDate(schedule.planEndDate) }}</template>
                   </span>
                   <span v-if="schedule.actualStartDate">
                     实际：{{ formatDate(schedule.actualStartDate) }}
