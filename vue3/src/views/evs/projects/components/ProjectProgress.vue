@@ -76,8 +76,16 @@
                 </div>
                 <div style="color: #666; margin-bottom: 8px;">{{ item.description }}</div>
                 <div style="font-size: 13px; color: #999;">
-                  <el-icon style="vertical-align: middle; margin-right: 4px;"><Calendar /></el-icon>
-                  {{ item.date ? item.date.substring(0, 10) : '' }}
+                  <div v-if="item.planStartDate" style="margin-bottom: 2px;">
+                    <el-icon style="vertical-align: middle; margin-right: 4px;"><Calendar /></el-icon>
+                    计划：{{ item.planStartDate }}
+                    <template v-if="item.planEndDate"> ~ {{ item.planEndDate }}</template>
+                  </div>
+                  <div v-if="item.actualStartDate" style="margin-top: 2px;">
+                    <el-icon style="vertical-align: middle; margin-right: 4px;"><Check /></el-icon>
+                    实际：{{ item.actualStartDate }}
+                    <template v-if="item.actualEndDate"> ~ {{ item.actualEndDate }}</template>
+                  </div>
                 </div>
               </div>
               <el-space>
@@ -186,24 +194,80 @@
             </el-col>
 
             <el-col :span="8">
-              <el-form-item label="计划日期" required style="margin-bottom: 0;">
-                <el-date-picker
-                  v-model="timelineForm.date"
-                  placeholder="选择日期"
-                  value-format="YYYY-MM-DD"
-                  style="width: 100%"
-                  size="large"
-                />
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="8">
               <el-form-item label="当前状态" style="margin-bottom: 0;">
                 <el-select v-model="timelineForm.status" style="width: 100%" size="large">
                   <el-option value="pending" label="待开始" />
                   <el-option value="inProgress" label="进行中" />
                   <el-option value="completed" label="已完成" />
                 </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <!-- 计划时间 -->
+          <el-row :gutter="16">
+            <el-col :span="24">
+              <div style="font-weight: 600; margin-bottom: 8px; margin-top: 8px; color: #666; font-size: 14px;">
+                <el-icon style="vertical-align: middle; margin-right: 4px;"><Calendar /></el-icon>
+                计划时间
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="开始日期" required style="margin-bottom: 0;">
+                <el-date-picker
+                  v-model="timelineForm.planStartDate"
+                  type="date"
+                  value-format="YYYY-MM-DD"
+                  placeholder="选择计划开始日期"
+                  style="width: 100%"
+                  size="large"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="结束日期" style="margin-bottom: 0;">
+                <el-date-picker
+                  v-model="timelineForm.planEndDate"
+                  type="date"
+                  value-format="YYYY-MM-DD"
+                  placeholder="选择计划结束日期"
+                  style="width: 100%"
+                  size="large"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <!-- 实际时间 -->
+          <el-row :gutter="16">
+            <el-col :span="24">
+              <div style="font-weight: 600; margin-bottom: 8px; margin-top: 8px; color: #666; font-size: 14px;">
+                <el-icon style="vertical-align: middle; margin-right: 4px;"><Check /></el-icon>
+                实际时间
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="开始日期" style="margin-bottom: 0;">
+                <el-date-picker
+                  v-model="timelineForm.actualStartDate"
+                  type="date"
+                  value-format="YYYY-MM-DD"
+                  placeholder="选择实际开始日期"
+                  style="width: 100%"
+                  size="large"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="结束日期" style="margin-bottom: 0;">
+                <el-date-picker
+                  v-model="timelineForm.actualEndDate"
+                  type="date"
+                  value-format="YYYY-MM-DD"
+                  placeholder="选择实际结束日期"
+                  style="width: 100%"
+                  size="large"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -257,7 +321,7 @@
 import { ref, computed, watch } from 'vue'
 import { useDict } from '@/utils/dict'
 import { listProjectSchedules, addProjectSchedules, updateProjectSchedules, delProjectSchedules, updateProjectSchedulesOrder } from '@/api/evs/projectSchedules'
-import { Plus, Calendar, Edit, Delete, Top, Bottom } from '@element-plus/icons-vue'
+import { Plus, Calendar, Edit, Delete, Top, Bottom, Check } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
 const { decoration_construction_stage, decoration_design_stage } = useDict('decoration_construction_stage', 'decoration_design_stage')
@@ -283,7 +347,10 @@ const isMoving = ref(false) // 是否正在执行移动操作（防抖/节流）
 const timelineForm = ref({
   title: '',
   description: '',
-  date: '',
+  planStartDate: '',      // 计划开始日期
+  planEndDate: '',        // 计划结束日期
+  actualStartDate: '',    // 实际开始日期
+  actualEndDate: '',      // 实际结束日期
   status: 'pending',
   stageType: 'CONSTRUCTION' // 默认施工阶段
 })
@@ -388,7 +455,10 @@ function convertFromBackendData(backendItems) {
     id: item.id,
     title: item.stage,
     description: item.description || '',
-    date: item.planStartDate || item.actualStartDate || '未设置',
+    planStartDate: item.planStartDate || '',
+    planEndDate: item.planEndDate || '',
+    actualStartDate: item.actualStartDate || '',
+    actualEndDate: item.actualEndDate || '',
     status: mapStatusFromBackend(item.status),
     stageType: item.stageType || 'CONSTRUCTION', // 默认施工阶段
     stageOrder: item.stageOrder != null && item.stageOrder > 0 ? Number(item.stageOrder) : null, // 保持null，后续会重新分配
@@ -466,9 +536,10 @@ function convertToBackendData(componentItem) {
     stageType: componentItem.stageType,
     stage: componentItem.title,
     stageOrder: stageOrder,
-    planStartDate: componentItem.date,
-    actualStartDate: componentItem.status === 'inProgress' ? componentItem.date : null,
-    actualEndDate: componentItem.status === 'completed' ? componentItem.date : null,
+    planStartDate: componentItem.planStartDate || null,
+    planEndDate: componentItem.planEndDate || null,
+    actualStartDate: componentItem.actualStartDate || null,
+    actualEndDate: componentItem.actualEndDate || null,
     status: mapStatusToBackend(componentItem.status),
     completionRate: componentItem.status === 'completed' ? 100 : componentItem.status === 'inProgress' ? 50 : 0,
     description: componentItem.description
@@ -525,7 +596,10 @@ function resetTimelineForm(stageType = 'CONSTRUCTION') {
   timelineForm.value = {
     title: '',
     description: '',
-    date: '',
+    planStartDate: '',
+    planEndDate: '',
+    actualStartDate: '',
+    actualEndDate: '',
     status: 'pending',
     stageType: stageType
   }
@@ -538,7 +612,10 @@ function handleEditTimelineItem(item) {
   timelineForm.value = {
     title: item.title,
     description: item.description,
-    date: item.date,
+    planStartDate: item.planStartDate || '',
+    planEndDate: item.planEndDate || '',
+    actualStartDate: item.actualStartDate || '',
+    actualEndDate: item.actualEndDate || '',
     status: item.status,
     stageType: item.stageType || 'CONSTRUCTION'
   }
@@ -570,9 +647,25 @@ function handleSaveTimelineItem() {
     proxy.$modal.msgError("请输入阶段说明")
     return
   }
-  if (!timelineForm.value.date) {
-    proxy.$modal.msgError("请选择计划日期")
+  if (!timelineForm.value.planStartDate) {
+    proxy.$modal.msgError("请选择计划开始日期")
     return
+  }
+  
+  // 验证计划日期范围
+  if (timelineForm.value.planEndDate && timelineForm.value.planStartDate) {
+    if (new Date(timelineForm.value.planEndDate) < new Date(timelineForm.value.planStartDate)) {
+      proxy.$modal.msgError("计划结束日期不能早于开始日期")
+      return
+    }
+  }
+  
+  // 验证实际日期范围
+  if (timelineForm.value.actualEndDate && timelineForm.value.actualStartDate) {
+    if (new Date(timelineForm.value.actualEndDate) < new Date(timelineForm.value.actualStartDate)) {
+      proxy.$modal.msgError("实际结束日期不能早于开始日期")
+      return
+    }
   }
 
   // 检查是否选择了重复的阶段（同类型内检查）
@@ -634,16 +727,17 @@ function handleUpdateTimelineStatus(itemId, status) {
 
   const oldStatus = item.status // 保存原状态用于回滚
   
-  // 只更新状态相关字段，保留原有的 stageOrder
+  // 保留所有日期字段，不再自动覆盖
   const backendData = {
     id: item.id,
     projectId: props.project.id,
     stageType: item.stageType,
     stage: item.title,
     stageOrder: item.stageOrder, // 保留原有排序，不重新计算
-    planStartDate: item.date,
-    actualStartDate: status === 'inProgress' ? item.date : null,
-    actualEndDate: status === 'completed' ? item.date : null,
+    planStartDate: item.planStartDate || null,
+    planEndDate: item.planEndDate || null,
+    actualStartDate: item.actualStartDate || null,
+    actualEndDate: item.actualEndDate || null,
     status: mapStatusToBackend(status),
     completionRate: status === 'completed' ? 100 : status === 'inProgress' ? 50 : 0,
     description: item.description
